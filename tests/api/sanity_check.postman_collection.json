@@ -1,0 +1,102 @@
+{
+	"info": {
+		"_postman_id": "sanity-check-id",
+		"name": "Sanity Check Database",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Check Internships Count & Data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Should have 60 internships\", function () {",
+							"    pm.expect(jsonData.length).to.eql(60);",
+							"});",
+							"",
+							"// Check LAST Intern (ID 60) to ensure SQL completed fully",
+							"pm.sendRequest(pm.environment.get(\"baseUrl\") + \"/internships/60\", function (err, res) {",
+							"    pm.test(\"Last Intern (ID 60) Details OK\", function() {",
+							"        var intern = res.json();",
+							"        var fName = intern.firstName || intern.first_name;",
+							"        var lName = intern.lastName || intern.last_name;",
+							"        pm.expect(fName).to.eql(\"Joël\");",
+							"        pm.expect(lName).to.eql(\"Dacobeau\");",
+							"    });",
+							"});",
+							"",
+							"// Check Associations for Last Intern (Expect 14, 15)",
+							"pm.sendRequest(pm.environment.get(\"baseUrl\") + \"/internships/60/activities\", function (err, res) {",
+							"    pm.test(\"Last Intern Associations OK\", function() {",
+							"        var activities = res.json();",
+							"        pm.expect(activities).to.be.an('array');",
+							"        var ids = activities.map(a => a.id);",
+							"        pm.expect(ids).to.include(14);",
+							"        pm.expect(ids).to.include(15);",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/internships",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"internships"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check Activities Count",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Should have 12 visible activities\", function () {",
+							"    // DB has 15, but 3 are visible=0. API likely returns 12.",
+							"    pm.expect(jsonData.length).to.eql(12);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/activities",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"activities"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,0 +1,22 @@
+# Build stage (optional, for keeping image small if we had build steps)
+# For this simple setup, we can stick to a single stage or multi-stage
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Copy root manifest files
+COPY package.json package-lock.json ./
+
+# Copy packages manifest files to satisfy workspace requirements
+COPY frontend/package.json ./frontend/
+COPY backend/package.json ./backend/
+
+# Install ONLY production dependencies
+RUN npm ci --omit=dev
+
+# Copy backend source
+COPY backend ./backend
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start:backend"]

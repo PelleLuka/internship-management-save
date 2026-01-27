@@ -1,0 +1,62 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../backend:/app/backend
+      - /app/backend/node_modules
+    command: npm run dev --workspace=backend
+    environment:
+      - DB_HOST=database
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=internship_management
+      - PORT=3000
+    depends_on:
+      - database
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      target: builder
+    ports:
+      - "8081:5173"
+    volumes:
+      - ../frontend:/app/frontend
+      - /app/frontend/node_modules
+    command: npm run dev --workspace=frontend -- --host
+    environment:
+      - VITE_API_TARGET=http://backend:3000
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  database:
+    image: mariadb:latest
+    ports:
+      - "3306:3306"
+    environment:
+      - MARIADB_ROOT_PASSWORD=root_password
+      - MARIADB_DATABASE=internship_management
+      - MARIADB_USER=user
+      - MARIADB_PASSWORD=password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+volumes:
+  mariadb_data:
+
+
+networks:
+  app-network:
+    driver: bridge

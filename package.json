@@ -1,0 +1,30 @@
+{
+  "name": "internship-management",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "preview:frontend": "npm run preview --workspace=frontend",
+    "start:backend": "npm run start --workspace=backend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
+    "db:restore": "node tests/setup/restoreDb.js",
+    "test:e2e:simple": "cd tests/e2e && npx playwright test --grep-invert 'Sanity Check'",
+    "test:e2e:sanity": "cd tests/e2e && npx playwright test tests/technical/sanity-db-check.spec.ts",
+    "test:e2e": "npm run db:restore && npm run test:e2e:sanity && npm run test:e2e:simple",
+    "test:api": "npm run db:restore && bash tests/api/run_tests.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.8",
+    "newman": "^6.2.2",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}
