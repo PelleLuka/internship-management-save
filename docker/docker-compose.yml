@@ -53,6 +53,19 @@ services:
     networks:
       - app-network
 
+  backup:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backup
+    volumes:
+      - ../backup/data:/data
+      - ../backup/scripts:/scripts
+      - ../backup/config/crontab:/var/spool/cron/crontabs/root
+    depends_on:
+      - database
+    networks:
+      - app-network
+
 volumes:
   mariadb_data:
 

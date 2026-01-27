@@ -1,0 +1,12 @@
+FROM alpine:latest
+
+# Install MariaDB client to run mysqldump/mariadb-dump
+# Install bash for script execution
+# Install busybox-suid for cron (crond)
+RUN apk add --no-cache mariadb-client bash busybox-suid
+
+# Create directory for logs
+RUN mkdir -p /var/log
+
+# Start Cron in foreground (-f) with log level 8 (-d 8)
+CMD ["crond", "-f", "-d", "8"]
