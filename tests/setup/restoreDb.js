@@ -36,6 +36,19 @@ const restoreDb = async () => {
         // Let's try direct execution first.
 
         console.log('🚀 Executing SQL script...');
+        
+        // Explicitly clear tables first to ensure clean state
+        // Note: multipleStatements: true can be flaky depending on driver version/config
+        await conn.query('SET FOREIGN_KEY_CHECKS = 0');
+        await conn.query('TRUNCATE TABLE internship_activity');
+        await conn.query('TRUNCATE TABLE internship');
+        await conn.query('TRUNCATE TABLE activity');
+        await conn.query('SET FOREIGN_KEY_CHECKS = 1');
+
+        // Now run the inserts from the file (excluding the top SET/TRUNCATEs if they are redundant, but keeping them is fine as we just truncated)
+        // Check if file content needs splitting. 
+        // For robustness, we will use the file content but rely on our explicit truncates above.
+        
         await conn.query(sql);
 
         console.log('✨ Database restored successfully!');
