@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue';
 import { 
   getInternships, 
-  getInternshipById, 
   deleteInternship,
   getInternshipActivities,
   removeActivityFromInternship
@@ -20,21 +19,33 @@ export function useInternships() {
   const sortBy = ref('dateDesc'); // Bound to sort dropdown
   const expandedCards = ref(new Set()); // Tracks which cards are expanded (desktop/mobile)
 
-  // === DATA LOADING ===
-  const loadInternships = async () => {
-    try {
-      const idList = await getInternships();
-      const promises = idList.map((item) =>
-        getInternshipById(item.id).catch((e) => {
-          console.warn(`Failed to load internship ${item.id}`, e);
-          return null;
-        })
-      );
-      const results = await Promise.all(promises);
-      internships.value = results.filter((i) => i !== null);
+  // === DATA LOADING & PAGINATION ===
+  const page = ref(1);
+  const limit = ref(20);
+  const total = ref(0);
+  const isLoading = ref(false);
 
-      // Restore activities for locally expanded cards
-      // (Because loadInternships wipes the internship objects, losing linkedActivities)
+  const loadInternships = async (reset = true) => {
+    if (isLoading.value) return;
+    isLoading.value = true;
+
+    try {
+      if (reset) {
+        page.value = 1;
+        internships.value = [];
+      }
+
+      const { data, total: totalCount } = await getInternships(page.value, limit.value);
+      
+      if (reset) {
+        internships.value = data;
+      } else {
+        internships.value = [...internships.value, ...data];
+      }
+      
+      total.value = totalCount;
+
+      // Restore activities for locally expanded cards if any are visible
       if (expandedCards.value.size > 0) {
         await Promise.all(
           Array.from(expandedCards.value).map(id => updateInternshipActivities(id))
@@ -42,7 +53,15 @@ export function useInternships() {
       }
     } catch (error) {
       console.error('Failed to load internships', error);
+    } finally {
+      isLoading.value = false;
     }
+  };
+
+  const loadNextBatch = async () => {
+    if (isLoading.value || internships.value.length >= total.value) return;
+    page.value++;
+    await loadInternships(false);
   };
 
   const handleDelete = async (id) => {
@@ -178,6 +197,9 @@ export function useInternships() {
     updateInternshipActivities,
     removeActivity,
     toggleCard,
-    groupedInternships
+    groupedInternships,
+    loadNextBatch,
+    isLoading,
+    hasMore: computed(() => internships.value.length < total.value)
   };
 }

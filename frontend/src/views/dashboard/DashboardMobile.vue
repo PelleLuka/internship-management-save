@@ -21,7 +21,8 @@ const {
   removeActivity,
   toggleCard,
   groupedInternships,
-  updateInternshipActivities
+  updateInternshipActivities,
+  loadNextBatch
 } = useInternships();
 
 const {
@@ -150,6 +151,7 @@ onMounted(() => {
                 :groups="groupedInternships" 
                 :header-height="headerHeight"
                 :offset="88" 
+                @load-more="loadNextBatch"
             >
             <!-- Offset 88 = 64 (Navbar) + 24 (Padding) -->
 

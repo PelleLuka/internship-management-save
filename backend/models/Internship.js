@@ -7,13 +7,48 @@ const Internship = {
    * 
    * @returns {Promise<Array<{id: number}>>} Array of objects containing internship IDs.
    */
-  getAllIds: async () => {
+  /**
+   * Retrieves all internships with pagination.
+   * 
+   * @param {number} limit - Number of items per page.
+   * @param {number} offset - Number of items to skip.
+   * @returns {Promise<Array<Object>>} Array of internship objects.
+   */
+  getAll: async (limit, offset) => {
     let conn;
     try {
       conn = await pool.getConnection();
-      // Returns an array of objects: [ { id: 1 }, { id: 2 }, ... ]
-      const rows = await conn.query('SELECT id FROM internship');
-      return rows;
+      const rows = await conn.query(
+        'SELECT * FROM internship ORDER BY start_date DESC LIMIT ? OFFSET ?',
+        [limit, offset]
+      );
+      
+      // Map snake_case to camelCase
+      return rows.map(row => ({
+        id: row.id,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        email: row.email,
+        startDate: row.start_date,
+        endDate: row.end_date
+      }));
+    } catch (err) {
+      throw err;
+    } finally {
+      if (conn) conn.end();
+    }
+  },
+
+  /**
+   * Counts total number of internships.
+   * @returns {Promise<number>} Total count.
+   */
+  count: async () => {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const rows = await conn.query('SELECT COUNT(*) as total FROM internship');
+      return Number(rows[0].total);
     } catch (err) {
       throw err;
     } finally {

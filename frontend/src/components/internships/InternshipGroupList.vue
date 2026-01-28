@@ -1,5 +1,6 @@
 <script setup>
 import { useMasonryGrid } from '../../composables/useMasonryGrid';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import MasonryGrid from '../common/MasonryGrid.vue';
 
 const props = defineProps({
@@ -37,6 +38,29 @@ const props = defineProps({
 const getScrollMargin = () => {
     return (props.headerHeight + props.offset) + 'px';
 };
+
+const emit = defineEmits(['load-more']);
+const sentinel = ref(null);
+let observer = null;
+
+onMounted(() => {
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      emit('load-more');
+    }
+  }, { 
+    rootMargin: '0px 0px 200px 0px', 
+    threshold: 0 
+  });
+
+  if (sentinel.value) {
+    observer.observe(sentinel.value);
+  }
+});
+
+onUnmounted(() => {
+  if (observer) observer.disconnect();
+});
 </script>
 
 <template>
@@ -75,5 +99,8 @@ const getScrollMargin = () => {
     <div v-if="groups.length === 0" class="text-center py-12 text-slate-500">
       <slot name="empty">Aucun résultat trouvé.</slot>
     </div>
+    
+    <!-- Sentinel for Infinite Scroll -->
+    <div ref="sentinel" class="h-4 w-full"></div>
   </div>
 </template>

@@ -2,15 +2,19 @@ import * as internshipService from '../services/internshipService.js';
 import logger from '../config/logger.js';
 
 /**
- * Controller: Get Internship IDs
- * Fetches all internship IDs to populate list views efficiently.
+ * Controller: Get Internships (Paginated)
+ * Fetches internships with pagination support.
+ * Query Params: ?page=1&limit=20
  */
-export const getInternshipIds = async (_req, res) => {
+export const getInternships = async (req, res) => {
     try {
-        const internships = await internshipService.getInternshipIds();
-        res.status(200).json(internships);
+        const page = Number.parseInt(req.query.page, 10) || 1;
+        const limit = Number.parseInt(req.query.limit, 10) || 20;
+
+        const result = await internshipService.getInternships(page, limit);
+        res.status(200).json(result);
     } catch (err) {
-        logger.error('Error fetching internship IDs:', err);
+        logger.error('Error fetching internships:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

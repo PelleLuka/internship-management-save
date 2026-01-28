@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-    getInternshipIds,
+    getInternships,
     getInternshipById,
     createInternship,
     updateInternship,
@@ -16,9 +16,9 @@ const router = express.Router();
 
 /**
  * GET /api/internships
- * Returns list of all internship IDs.
+ * Returns list of all internships (paginated).
  */
-router.get('/', getInternshipIds);
+router.get('/', getInternships);
 
 /**
  * POST /api/internships

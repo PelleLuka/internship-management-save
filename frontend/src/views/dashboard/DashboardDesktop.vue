@@ -22,7 +22,8 @@ const {
   removeActivity,
   toggleCard,
   groupedInternships,
-  updateInternshipActivities
+  updateInternshipActivities,
+  loadNextBatch
 } = useInternships();
 
 const {
@@ -101,6 +102,7 @@ onMounted(() => {
         <InternshipGroupList 
           :groups="groupedInternships" 
           :header-height="headerHeight"
+          @load-more="loadNextBatch"
         >
           <!-- Using the scoped slot to render the specific card for this dashboard -->
           <template #item="{ item }">
