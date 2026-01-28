@@ -8,53 +8,75 @@ const Internship = {
    * @returns {Promise<Array<{id: number}>>} Array of objects containing internship IDs.
    */
   /**
-   * Retrieves all internships with pagination.
-   * 
-   * @param {number} limit - Number of items per page.
-   * @param {number} offset - Number of items to skip.
-   * @returns {Promise<Array<Object>>} Array of internship objects.
-   */
-  getAll: async (limit, offset) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
-      const rows = await conn.query(
-        'SELECT * FROM internship ORDER BY start_date DESC LIMIT ? OFFSET ?',
-        [limit, offset]
-      );
-      
-      // Map snake_case to camelCase
-      return rows.map(row => ({
-        id: row.id,
-        firstName: row.first_name,
-        lastName: row.last_name,
-        email: row.email,
-        startDate: row.start_date,
-        endDate: row.end_date
-      }));
-    } catch (err) {
-      throw err;
-    } finally {
-      if (conn) conn.end();
+ * Retrieves all internships with pagination and optional search.
+ * 
+ * @param {number} limit - Number of items per page.
+ * @param {number} offset - Number of items to skip.
+ * @param {string} [search] - Optional search term to filter by first name, last name, or email.
+ * @returns {Promise<Array<Object>>} Array of internship objects.
+ */
+getAll: async (limit, offset, search = '') => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    
+    let query = 'SELECT * FROM internship';
+    const params = [];
+    
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      query += ' WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?';
+      params.push(searchTerm, searchTerm, searchTerm);
     }
-  },
+    
+    query += ' ORDER BY start_date DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+    
+    const rows = await conn.query(query, params);
+    
+    // Map snake_case to camelCase
+    return rows.map(row => ({
+      id: row.id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      email: row.email,
+      startDate: row.start_date,
+      endDate: row.end_date
+    }));
+  } catch (err) {
+    throw err;
+  } finally {
+    if (conn) conn.end();
+  }
+},
 
   /**
-   * Counts total number of internships.
-   * @returns {Promise<number>} Total count.
-   */
-  count: async () => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
-      const rows = await conn.query('SELECT COUNT(*) as total FROM internship');
-      return Number(rows[0].total);
-    } catch (err) {
-      throw err;
-    } finally {
-      if (conn) conn.end();
+ * Counts total number of internships with optional search filter.
+ * @param {string} [search] - Optional search term to filter by first name, last name, or email.
+ * @returns {Promise<number>} Total count.
+ */
+count: async (search = '') => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    
+    let query = 'SELECT COUNT(*) as total FROM internship';
+    const params = [];
+    
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      query += ' WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?';
+      params.push(searchTerm, searchTerm, searchTerm);
     }
-  },
+    
+    const rows = await conn.query(query, params);
+    return Number(rows[0].total);
+  } catch (err) {
+    throw err;
+  } finally {
+    if (conn) conn.end();
+  }
+},
 
   /**
    * Retrieves full details of a specific internship by its ID.

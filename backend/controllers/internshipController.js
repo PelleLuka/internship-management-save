@@ -2,16 +2,17 @@ import * as internshipService from '../services/internshipService.js';
 import logger from '../config/logger.js';
 
 /**
- * Controller: Get Internships (Paginated)
- * Fetches internships with pagination support.
- * Query Params: ?page=1&limit=20
+ * Controller: Get Internships (Paginated with Search)
+ * Fetches internships with pagination and optional search support.
+ * Query Params: ?page=1&limit=20&search=term
  */
 export const getInternships = async (req, res) => {
     try {
         const page = Number.parseInt(req.query.page, 10) || 1;
         const limit = Number.parseInt(req.query.limit, 10) || 20;
+        const search = req.query.search || '';
 
-        const result = await internshipService.getInternships(page, limit);
+        const result = await internshipService.getInternships(page, limit, search);
         res.status(200).json(result);
     } catch (err) {
         logger.error('Error fetching internships:', err);

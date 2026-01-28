@@ -21,16 +21,17 @@ const isValidDate = (dateString) => {
 /* --- Methods --- */
 
 /**
- * Get all Internships with pagination
+ * Get all Internships with pagination and optional search
  * @param {number} page - Current page number (1-based)
  * @param {number} limit - Items per page
+ * @param {string} [search] - Optional search term
  * @returns {Promise<Object>} { data: Array, total: Number }
  */
-export const getInternships = async (page = 1, limit = 20) => {
+export const getInternships = async (page = 1, limit = 20, search = '') => {
     const offset = (page - 1) * limit;
     const [data, total] = await Promise.all([
-        Internship.getAll(limit, offset),
-        Internship.count()
+        Internship.getAll(limit, offset, search),
+        Internship.count(search)
     ]);
     
     return { data, total };
