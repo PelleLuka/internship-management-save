@@ -13,7 +13,7 @@ import InternshipGroupList from '../../components/internships/InternshipGroupLis
 // Init Composables
 const {
   internships, 
-  searchQuery,
+  searchTerm,
   sortBy,
   expandedCards,
   loadInternships,
@@ -96,7 +96,7 @@ onMounted(() => {
             - Emits @toggle when [Search] is clicked.
            -->
           <DashboardHeader
-            v-model:searchQuery="searchQuery"
+            v-model:searchQuery="searchTerm"
             v-model:sortBy="sortBy"
             :is-open="isNavOpen"
             @toggle="isNavOpen = !isNavOpen"

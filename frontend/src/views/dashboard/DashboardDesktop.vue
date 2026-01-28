@@ -14,7 +14,7 @@ import InternshipGroupList from '../../components/internships/InternshipGroupLis
 // Init Composables
 const {
   internships, 
-  searchQuery,
+  searchTerm,
   sortBy,
   expandedCards,
   loadInternships,
@@ -92,7 +92,7 @@ onMounted(() => {
           class="sticky top-8 z-40 space-y-4 bg-slate-50/95 backdrop-blur-sm -mx-2 px-2 rounded-b-lg"
         >
           <DashboardHeader
-            v-model:searchQuery="searchQuery"
+            v-model:searchQuery="searchTerm"
             v-model:sortBy="sortBy"
             @open-modal="() => { editingId = null; isModalOpen = true; }"
           />

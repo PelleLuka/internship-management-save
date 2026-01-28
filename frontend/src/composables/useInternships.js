@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { 
   getInternships, 
   deleteInternship,
@@ -15,7 +15,7 @@ import { fr } from 'date-fns/locale';
 export function useInternships() {
   // State
   const internships = ref([]);
-  const searchQuery = ref(''); // Bound to search input
+  const searchTerm = ref(''); // Bound to search input (server-side search)
   const sortBy = ref('dateDesc'); // Bound to sort dropdown
   const expandedCards = ref(new Set()); // Tracks which cards are expanded (desktop/mobile)
 
@@ -35,7 +35,7 @@ export function useInternships() {
         internships.value = [];
       }
 
-      const { data, total: totalCount } = await getInternships(page.value, limit.value);
+      const { data, total: totalCount } = await getInternships(page.value, limit.value, searchTerm.value);
       
       if (reset) {
         internships.value = data;
@@ -63,6 +63,11 @@ export function useInternships() {
     page.value++;
     await loadInternships(false);
   };
+
+  // Watch for search term changes and reload data
+  watch(searchTerm, () => {
+    loadInternships(true); // Reset to page 1 on search
+  });
 
   const handleDelete = async (id) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce stagiaire ?')) {
@@ -116,19 +121,9 @@ export function useInternships() {
     expandedCards.value = newSet;
   };
 
-  // === SORTING & FILTERING ===
+  // === SORTING (Client-side only, filtering is server-side) ===
   const sortedInternships = computed(() => {
-    let result = [...internships.value];
-
-    if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase();
-      result = result.filter(
-        (i) =>
-          i.firstName.toLowerCase().includes(query) ||
-          i.lastName.toLowerCase().includes(query) ||
-          i.email.toLowerCase().includes(query)
-      );
-    }
+    const result = [...internships.value];
 
     result.sort((a, b) => {
       switch (sortBy.value) {
@@ -189,8 +184,9 @@ export function useInternships() {
 
   return {
     internships,
-    searchQuery,
-    sortBy,
+    searchTerm, // Bound to search input
+    sortBy, // Bound to sort dropdown
+    sortedInternships,
     expandedCards,
     loadInternships,
     handleDelete,

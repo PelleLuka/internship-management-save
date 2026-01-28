@@ -1,13 +1,18 @@
 import axios from "axios";
 
 /**
- * Service: Get Internships
- * Retrieves the list of internship IDs from the backend.
+ * Service: Get Internships (Paginated with Search)
+ * Retrieves internships with pagination and optional search.
  * 
- * @returns {Promise<Array<{id: number}>>} Promise resolving to an array of internship ID objects.
+ * @param {number} page - Page number (1-based)
+ * @param {number} limit - Items per page
+ * @param {string} [search] - Optional search term
+ * @returns {Promise<Object>} Promise resolving to { data: Array, total: number }
  */
-export const getInternships = async () => {
-    const res = await axios.get("/api/internships");
+export const getInternships = async (page = 1, limit = 20, search = '') => {
+    const params = new URLSearchParams({ page, limit });
+    if (search) params.append('search', search);
+    const res = await axios.get(`/api/internships?${params}`);
     return res.data;
 };
 
