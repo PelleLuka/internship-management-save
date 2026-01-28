@@ -18,7 +18,7 @@ test.describe('SC20 - Mise à jour avec Carte Étendue', () => {
         firstName: 'Persist',
         lastName: `User-${uniqueId}`,
         email: `persist.${uniqueId}@test.com`,
-        startDate: '2025-01-01',
+        startDate: '2099-01-01',
         endDate: '2025-06-01'
     };
     await page.getByLabel('Prénom').fill(user.firstName);

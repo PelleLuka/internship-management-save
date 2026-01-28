@@ -7,7 +7,7 @@ test.describe('SC06 - Suppression de Stagiaire', () => {
     firstName: 'ToDelete',
     lastName: `User-${uniqueId}`,
     email: `delete.user.${uniqueId}@example.com`,
-    startDate: '2025-02-01',
+    startDate: '2099-01-01',
     endDate: '2025-07-31'
   };
 

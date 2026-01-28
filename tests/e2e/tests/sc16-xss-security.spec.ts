@@ -13,7 +13,7 @@ test.describe('SC16 - Sécurité XSS', () => {
     await page.getByLabel('Prénom').fill('Hacker');
     await page.getByLabel('Nom', { exact: true }).fill(xssPayload);
     await page.getByLabel('Email').fill(`hacker.${Date.now()}@test.com`);
-    await page.getByLabel('Date de début').fill('2025-01-01');
+    await page.getByLabel('Date de début').fill('2099-01-01');
     await page.getByLabel('Date de fin').fill('2025-12-31');
     
     await page.getByRole('button', { name: 'Créer' }).click();

@@ -6,7 +6,7 @@ test.describe('SC03 - Création de Stagiaire (Happy Path)', () => {
     firstName: 'Jean',
     lastName: `Dupont-Test-${Date.now()}`,
     email: `jean.dupont.${Date.now()}@example.com`,
-    startDate: '2025-01-01',
+    startDate: '2099-01-01',
     endDate: '2025-06-30'
   };
 

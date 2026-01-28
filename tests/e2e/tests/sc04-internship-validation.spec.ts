@@ -7,7 +7,7 @@ test.describe('SC04 - Validation (Erreurs) Stagiaire', () => {
     firstName: 'Invalid',
     lastName: `User-${uniqueId}`,
     email: `invalid.${uniqueId}@test.com`,
-    startDate: '2025-08-01',
+    startDate: '2099-01-01',
     endDate: '2025-07-01' // FIN AVANT DÉBUT
   };
 

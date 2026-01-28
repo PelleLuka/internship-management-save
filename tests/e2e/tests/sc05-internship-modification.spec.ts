@@ -7,7 +7,7 @@ test.describe('SC05 - Modification de Stagiaire', () => {
     firstName: 'ToEdit',
     lastName: `User-${uniqueId}`,
     email: `edit.user.${uniqueId}@example.com`,
-    startDate: '2025-02-01',
+    startDate: '2099-01-01',
     endDate: '2025-07-31'
   };
 

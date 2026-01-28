@@ -7,7 +7,7 @@ test.describe('SC10 - Recherche Stagiaire', () => {
     firstName: `Searchable`,
     lastName: `User-${uniqueId}`,
     email: `search.${uniqueId}@test.com`,
-    startDate: '2025-09-01',
+    startDate: '2099-01-01',
     endDate: '2026-06-30'
   };
 

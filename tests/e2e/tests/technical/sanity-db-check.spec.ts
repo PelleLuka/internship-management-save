@@ -7,7 +7,7 @@ test.describe('Sanity Check - Database Integrity', () => {
     const internshipsRes = await request.get('/api/internships');
     expect(internshipsRes.ok()).toBeTruthy();
     const internships = await internshipsRes.json();
-    expect(internships.length, 'Le nombre de stagiaires restaurés doit être de 60').toBe(60);
+    expect(internships.total, 'Le nombre de stagiaires restaurés doit être de 60').toBe(60);
 
     // 2. Check Activities Count (Expected: 15)
     const activitiesRes = await request.get('/api/activities');
@@ -23,7 +23,7 @@ test.describe('Sanity Check - Database Integrity', () => {
     }
 
     // 3. Spot Check Integrity (Internship ID 60 - The last one)
-    const intern60InList = internships.find((i: Internship) => i.id === 60);
+    const intern60InList = internships.data.find((i: Internship) => i.id === 60);
     expect(intern60InList, 'Le stagiaire ID 60 doit exister dans la liste').toBeDefined();
 
     // Fetch details for Internship ID 60
