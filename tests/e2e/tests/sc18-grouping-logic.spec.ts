@@ -20,6 +20,7 @@ test.describe('SC18 - Logique de Groupement', () => {
   };
 
   test('Vérifier le groupement par Année et Mois', async ({ page }) => {
+    test.setTimeout(60000); // More time for creation + search + rendering
     await page.goto('/');
 
     // 1. Créer User 2024
@@ -43,6 +44,12 @@ test.describe('SC18 - Logique de Groupement', () => {
     const c2 = page.waitForResponse(r => r.request().method() === 'POST');
     await page.getByRole('button', { name: 'Créer' }).click();
     await c2;
+
+    await c2;
+    
+    // Rechercher les items pour qu'ils soient visibles (sinon perdus sous les 2099)
+    await page.getByPlaceholder('Rechercher...').fill(`Test-${uniqueId}`);
+    await page.waitForTimeout(3000); // 3s wait for search + rendering 
 
     // 3. Vérifier les En-têtes (Headers)
     // On s'attend à voir "2024" et "2025" comme titres principaux (h2)

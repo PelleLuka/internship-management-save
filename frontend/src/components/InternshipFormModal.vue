@@ -179,8 +179,9 @@ const handleSubmit = async () => {
             :class="errors.firstName ? 'border-red-500 focus-visible:ring-red-500' : ''"
             required
             ref="firstInputRef"
+            autofocus
           />
-          <p v-if="errors.firstName" class="text-xs text-red-500">{{ errors.firstName }}</p>
+          <p v-if="errors.firstName" class="text-sm text-red-600 mt-1" role="alert">{{ errors.firstName }}</p>
         </div>
         <div class="space-y-2">
           <label for="lastName" class="text-sm font-medium">Nom</label>
@@ -191,7 +192,7 @@ const handleSubmit = async () => {
             :class="errors.lastName ? 'border-red-500 focus-visible:ring-red-500' : ''"
             required
           />
-          <p v-if="errors.lastName" class="text-xs text-red-500">{{ errors.lastName }}</p>
+          <p v-if="errors.lastName" class="text-sm text-red-600 mt-1" role="alert">{{ errors.lastName }}</p>
         </div>
       </div>
 
@@ -205,7 +206,7 @@ const handleSubmit = async () => {
           :class="errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''"
           required
         />
-        <p v-if="errors.email" class="text-xs text-red-500">{{ errors.email }}</p>
+        <p v-if="errors.email" class="text-sm text-red-600 mt-1" role="alert">{{ errors.email }}</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
@@ -219,7 +220,7 @@ const handleSubmit = async () => {
             :class="errors.startDate ? 'border-red-500 focus-visible:ring-red-500' : ''"
             required
           />
-          <p v-if="errors.startDate" class="text-xs text-red-500">{{ errors.startDate }}</p>
+          <p v-if="errors.startDate" class="text-sm text-red-600 mt-1" role="alert">{{ errors.startDate }}</p>
         </div>
         <div class="space-y-2">
           <label for="endDate" class="text-sm font-medium">Date de fin</label>
@@ -231,7 +232,7 @@ const handleSubmit = async () => {
             :class="errors.endDate ? 'border-red-500 focus-visible:ring-red-500' : ''"
             required
           />
-          <p v-if="errors.endDate" class="text-xs text-red-500">{{ errors.endDate }}</p>
+          <p v-if="errors.endDate" class="text-sm text-red-600 mt-1" role="alert">{{ errors.endDate }}</p>
         </div>
       </div>
 

@@ -6,9 +6,9 @@ test.describe('SC05 - Modification de Stagiaire', () => {
   const originalUser = {
     firstName: 'ToEdit',
     lastName: `User-${uniqueId}`,
-    email: `edit.user.${uniqueId}@example.com`,
+    email: `original.${uniqueId}@test.com`,
     startDate: '2099-01-01',
-    endDate: '2025-07-31'
+    endDate: '2100-01-01'
   };
 
   const modifiedUser = {
@@ -36,20 +36,16 @@ test.describe('SC05 - Modification de Stagiaire', () => {
     // Vérifier qu'il est créé
     const fullNameOriginal = `${originalUser.firstName} ${originalUser.lastName}`;
     
-    // Mobile Check: Ouvrir la recherche si masquee
-    const searchInput = page.getByPlaceholder('Rechercher...');
-    if (!await searchInput.isVisible()) {
-        const toggleBtn = page.getByRole('button', { name: 'Rechercher' }); // L'icone loupe mobile
-        if (await toggleBtn.isVisible()) {
-            await toggleBtn.click();
-            await page.waitForTimeout(500); // Wait for transition
-            await searchInput.waitFor({ state: 'visible' });
-        }
-    }
-    await searchInput.fill(originalUser.email);
-    await expect(page.getByRole('heading', { name: fullNameOriginal })).toBeVisible();
+    // Vérifier qu'il est créé (premier de la liste grâce à 2099)
+    
+    // On attend juste que l'élément apparaisse en haut de liste
+    const cardLocator = page.getByText(fullNameOriginal).first();
+    await expect(cardLocator).toBeVisible();
 
     // 2. Ouvrir la modale d'édition
+    // On clique sur le parent ou le bouton modifier associé
+    // S'il n'y a pas de bouton spécifique visible immédiatement, on peut cliquer sur le texte
+    await cardLocator.click();
     // C'est ici que l'aria-label devient utile
     // On doit peut-être attendre un peu ou scroller, mais avec le filtre recherche il devrait être là
     await page.getByRole('button', { name: `Modifier ${fullNameOriginal}` }).click();

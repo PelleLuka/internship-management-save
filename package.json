@@ -20,6 +20,7 @@
     "test:e2e:simple": "cd tests/e2e && npx playwright test --grep-invert 'Sanity Check'",
     "test:e2e:sanity": "cd tests/e2e && npx playwright test tests/technical/sanity-db-check.spec.ts",
     "test:e2e": "npm run db:restore && npm run test:e2e:sanity && npm run test:e2e:simple",
+    "test:e2e:spec": "npm run db:restore && cd tests/e2e/tests && npx playwright test",
     "test:api": "npm run db:restore && bash tests/api/run_tests.sh"
   },
   "devDependencies": {

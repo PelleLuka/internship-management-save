@@ -140,6 +140,41 @@ La collection Postman utilise des scripts sophistiqués pour garantir la robuste
 | `npm run test:e2e` | Tests Playwright | `db:restore` + `sanity check` + `playwright test` |
 | `npm run db:restore` | Reset BDD | Restaure uniquement la base de données. |
 
+## Lancer un test en particulier
+
+### Tests E2E (Playwright)
+
+Pour gagner du temps, vous pouvez lancer uniquement un fichier ou un scénario spécifique via le script dédié qui restaure la base de données automatiquement :
+
+*   **Par fichier** :
+    ```bash
+    npm run test:e2e:spec -- sc04-internship-validation.spec.ts
+    ```
+*   **Par nom de test (Grep)** :
+    ```bash
+    npm run test:e2e:spec -- -g "SC04"
+    ```
+*   **Sur un navigateur spécifique** :
+    ```bash
+    npm run test:e2e:spec -- --project=chromium
+    ```
+
+> [!NOTE]
+> Le `--` est nécessaire pour transmettre les arguments directement à la commande Playwright sous-jacente.
+
+### Tests API (Postman/Newman)
+
+Bien que le script `run_tests.sh` lance tout, vous pouvez utiliser `newman` directement depuis la racine :
+
+*   **Exécuter la collection entière** :
+    ```bash
+    npx newman run tests/api/test_internship_management.postman_collection.json -e tests/api/postman_environment.json
+    ```
+*   **Filtrer par dossier (Folder)** :
+    ```bash
+    npx newman run tests/api/test_internship_management.postman_collection.json -e tests/api/postman_environment.json --folder "Internships"
+    ```
+
 ## Créer un nouveau test E2E (Astuce Codegen)
 
 Pour créer rapidement un scénario sans écrire de code manuellement :

@@ -124,7 +124,7 @@ const formatDate = (dateStr) => {
               @click="emit('open-activity-menu', internship)"
             >
               <Plus class="w-3 h-3 mr-1" />
-              Ajouter
+              Ajouter une activité
             </AppButton>
 
             <!-- Activity Selection Menu (Simplified for Mobile) -->
@@ -154,7 +154,7 @@ const formatDate = (dateStr) => {
               <div class="flex gap-3 pt-4 border-t border-slate-100 mt-auto">
                 <AppButton class="flex-1" variant="outline" @click="emit('close-activity-menu')">Fermer</AppButton>
                 <AppButton class="flex-1" @click="emit('save-activities', internship.id)">
-                  Valider
+                  Ajouter ({{ tempSelectedActivityIds.size }})
                 </AppButton>
               </div>
             </div>

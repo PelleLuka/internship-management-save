@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 /**
  * Reusable Input Component
@@ -27,14 +27,21 @@ const combinedClasses = computed(() => {
  * Emits updated value to parent.
  * @param {Event} event - The input event.
  */
+const inputRef = ref(null);
+
 const updateValue = (event) => {
 	const target = event.target;
 	emit("update:modelValue", target.value);
 };
+
+defineExpose({
+  focus: () => inputRef.value?.focus()
+});
 </script>
 
 <template>
   <input
+    ref="inputRef"
     :type="type || 'text'"
     :class="combinedClasses"
     :placeholder="placeholder"

@@ -14,7 +14,7 @@ test.describe('SC16 - Sécurité XSS', () => {
     await page.getByLabel('Nom', { exact: true }).fill(xssPayload);
     await page.getByLabel('Email').fill(`hacker.${Date.now()}@test.com`);
     await page.getByLabel('Date de début').fill('2099-01-01');
-    await page.getByLabel('Date de fin').fill('2025-12-31');
+    await page.getByLabel('Date de fin').fill('2100-01-01');
     
     await page.getByRole('button', { name: 'Créer' }).click();
 
@@ -34,7 +34,8 @@ test.describe('SC16 - Sécurité XSS', () => {
     page.on('dialog', dialog => dialog.accept());
     // On clique sur le bouton poubelle associé à ce user
     // On clique sur le bouton poubelle associé à ce user via son aria-label (Regex pour matcher le début)
-    await page.getByRole('button', { name: /Supprimer Hacker/ }).click();
+    // On clique sur le PREMIER bouton poubelle (car notre user est en haut avec 2099)
+    await page.locator('button[aria-label^="Supprimer"]').first().click({ force: true });
   });
 
 });

@@ -6,9 +6,9 @@ test.describe('SC06 - Suppression de Stagiaire', () => {
   const testUser = {
     firstName: 'ToDelete',
     lastName: `User-${uniqueId}`,
-    email: `delete.user.${uniqueId}@example.com`,
+    email: `todelete.${uniqueId}@test.com`,
     startDate: '2099-01-01',
-    endDate: '2025-07-31'
+    endDate: '2100-01-01'
   };
 
   test('Supprimer un stagiaire existant', async ({ page }) => {
@@ -32,10 +32,8 @@ test.describe('SC06 - Suppression de Stagiaire', () => {
     await page.getByRole('button', { name: 'Créer' }).click();
     await createPromise;
 
-    // Vérifier présence
+    // Vérifier présence (premier de liste)
     const fullName = `${testUser.firstName} ${testUser.lastName}`;
-    await page.getByPlaceholder('Rechercher...').fill(testUser.email);
-    await page.getByPlaceholder('Rechercher...').press('Enter');
     await expect(page.getByText(fullName)).toBeVisible();
 
     // 2. Supprimer le stagiaire
@@ -53,7 +51,7 @@ test.describe('SC06 - Suppression de Stagiaire', () => {
 
     // Clic sur bouton poubelle
     // Utilisation de l'aria-label mis en place précédemment
-    await page.getByRole('button', { name: `Supprimer ${fullName}` }).click();
+    await page.getByRole('button', { name: `Supprimer ${fullName}` }).click({ force: true });
 
     // Attendre la fin du DELETE
     await deletePromise;

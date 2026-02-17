@@ -7,7 +7,7 @@ test.describe('SC03 - Création de Stagiaire (Happy Path)', () => {
     lastName: `Dupont-Test-${Date.now()}`,
     email: `jean.dupont.${Date.now()}@example.com`,
     startDate: '2099-01-01',
-    endDate: '2025-06-30'
+    endDate: '2100-01-01'
   };
 
   test('Créer un nouveau stagiaire avec succès', async ({ page }) => {
@@ -24,13 +24,17 @@ test.describe('SC03 - Création de Stagiaire (Happy Path)', () => {
     await page.getByLabel('Date de début').fill(testUser.startDate);
     await page.getByLabel('Date de fin').fill(testUser.endDate);
 
-    // 4. Soumettre
+    // 4. Soumettre et attendre la création
+    const createResponse = page.waitForResponse(res => res.url().includes('/api/internships') && res.request().method() === 'POST' && res.status() === 201);
     await page.getByRole('button', { name: 'Créer' }).click();
+    await createResponse;
 
-    // 5. Vérifier la présence dans la liste
-    // On cherche le texte du nom complet
+    // 5. Vérifier la présence dans la liste (premier élément grâce à 2099)
     const fullName = `${testUser.firstName} ${testUser.lastName}`;
-    await expect(page.getByText(fullName)).toBeVisible();
+    
+    // Attendre que la liste se rafraîchisse avec le nouvel élément
+    // On utilise first() car il pourrait y avoir d'autres éléments, mais le nôtre est en premier (2099)
+    await expect(page.getByText(fullName).first()).toBeVisible();
 
     // Nettoyage (Optionnel mais recommandé si on ne reset pas la DB)
     // On supprime le stagiaire créé pour ne pas polluer

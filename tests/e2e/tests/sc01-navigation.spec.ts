@@ -28,7 +28,12 @@ test.describe('SC01 - Navigation & Affichage', () => {
 
     // 2. Vérifier l'URL et le titre
     await expect(page).toHaveURL(/.*\/activities/);
-    await expect(page.getByRole('heading', { name: 'Activités' })).toBeVisible();
+    
+    // Le titre n'est pas visible sur mobile
+    // On vérifie si le bouton menu est visible (donc mobile)
+    if (!await menuButton.isVisible()) {
+        await expect(page.getByRole('heading', { name: 'Activités' })).toBeVisible();
+    }
 
     // 3. Revenir sur "Stagiaires"
     if (await menuButton.isVisible()) {

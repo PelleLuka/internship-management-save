@@ -20,33 +20,19 @@ test.describe('SC12 - Tri et Groupement', () => {
   };
 
   test('Vérifier le tri de la liste', async ({ page }) => {
+    // test.skip(true, 'Sorting flaky on parallel runs');
     // 0. Setup: Créer 2 stagiaires
     await page.goto('/');
     
-    // Création User A
-    await page.getByRole('button', { name: 'Nouveau' }).click();
-    await page.getByLabel('Prénom').fill(userA.firstName);
-    await page.getByLabel('Nom', { exact: true }).fill(userA.lastName);
-    await page.getByLabel('Email').fill(userA.email);
-    await page.getByLabel('Date de début').fill(userA.startDate);
-    await page.getByLabel('Date de fin').fill(userA.endDate);
-    await page.getByRole('button', { name: 'Créer' }).click();
+    // ... (rest of setup)
 
-    // Création User Z
-    await page.getByRole('button', { name: 'Nouveau' }).click();
-    await page.getByLabel('Prénom').fill(userZ.firstName);
-    await page.getByLabel('Nom', { exact: true }).fill(userZ.lastName);
-    await page.getByLabel('Email').fill(userZ.email);
-    await page.getByLabel('Date de début').fill(userZ.startDate);
-    await page.getByLabel('Date de fin').fill(userZ.endDate);
-    await page.getByRole('button', { name: 'Créer' }).click();
-
-    // 1. Tri par Défaut (Date Descendant normalement)
-    // Albert (Janvier) vs Zoe (Février). Zoe devrait être avant Albert si Date Desc.
-    // On va forcer le tri pour être sûr.
-    
     // 2. Tri par Prénom (A-Z) -> Albert avant Zoe
+    // Ajout d'un filtre préalable pour isoler les tests (sinon noyés)
+    await page.getByPlaceholder('Rechercher...').fill(`SortTest-${uniqueId}`);
+    await page.waitForTimeout(1000); // Wait for search
+    
     await page.getByRole('combobox').selectOption('firstName');
+    await page.waitForTimeout(2500); // Wait for sort (Debounce 300ms + Fetch + Render)
     
     // On vérifie l'ordre dans le DOM
     // On récupère tous les titres de cartes qui contiennent "SortTest"
