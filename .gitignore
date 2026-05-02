@@ -25,3 +25,4 @@ dist-ssr
 backups/
 backup/data/*.sql
 scripts/backup_db.sh
+.superpowers/
