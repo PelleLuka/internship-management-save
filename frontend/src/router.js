@@ -31,6 +31,16 @@ const router = createRouter({
 			name: "activities",
 			component: () => import("./views/ActivityList.vue"),
 		},
+
+        /**
+         * Categories Management
+         * Displays the list of activity categories.
+         */
+		{
+			path: "/categories",
+			name: "categories",
+			component: () => import("./views/CategoryList.vue"),
+		},
 	],
 });
 

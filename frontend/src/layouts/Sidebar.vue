@@ -1,5 +1,5 @@
 <script setup>
-import { Activity, User, X } from "lucide-vue-next";
+import { Activity, Tag, User, X } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useMediaQuery } from "../composables/useMediaQuery";
 
@@ -23,6 +23,7 @@ const isCollapsed = computed(() => {
 const navItems = [
 	{ to: "/internships", icon: User, label: "Stagiaires" },
 	{ to: "/activities", icon: Activity, label: "Activités" },
+	{ to: "/categories", icon: Tag, label: "Catégories" },
 ];
 </script>
 
