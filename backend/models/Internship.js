@@ -9,7 +9,7 @@ const Internship = {
    */
   /**
  * Retrieves all internships with pagination and optional search.
- * 
+ *
  * @param {number} limit - Number of items per page.
  * @param {number} offset - Number of items to skip.
  * @param {string} [search] - Optional search term to filter by first name, last name, or email.
@@ -19,32 +19,29 @@ getAll: async (limit, offset, search = '') => {
   let conn;
   try {
     conn = await pool.getConnection();
-    
-    let query = 'SELECT * FROM internship';
+    let query = `
+      SELECT i.id, i.person_id, p.first_name, p.last_name, p.email, i.start_date, i.end_date
+      FROM internship i
+      JOIN person p ON i.person_id = p.id
+    `;
     const params = [];
-    
     if (search && search.trim()) {
-      const searchTerm = `%${search.trim()}%`;
-      query += ' WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?';
-      params.push(searchTerm, searchTerm, searchTerm);
+      const term = `%${search.trim()}%`;
+      query += ' WHERE p.first_name LIKE ? OR p.last_name LIKE ? OR p.email LIKE ?';
+      params.push(term, term, term);
     }
-    
-    query += ' ORDER BY start_date DESC LIMIT ? OFFSET ?';
+    query += ' ORDER BY i.start_date DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
-    
     const rows = await conn.query(query, params);
-    
-    // Map snake_case to camelCase
     return rows.map(row => ({
       id: row.id,
+      personId: Number(row.person_id),
       firstName: row.first_name,
       lastName: row.last_name,
       email: row.email,
       startDate: row.start_date,
-      endDate: row.end_date
+      endDate: row.end_date,
     }));
-  } catch (err) {
-    throw err;
   } finally {
     if (conn) conn.end();
   }
@@ -59,20 +56,15 @@ count: async (search = '') => {
   let conn;
   try {
     conn = await pool.getConnection();
-    
-    let query = 'SELECT COUNT(*) as total FROM internship';
+    let query = `SELECT COUNT(*) as total FROM internship i JOIN person p ON i.person_id = p.id`;
     const params = [];
-    
     if (search && search.trim()) {
-      const searchTerm = `%${search.trim()}%`;
-      query += ' WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?';
-      params.push(searchTerm, searchTerm, searchTerm);
+      const term = `%${search.trim()}%`;
+      query += ' WHERE p.first_name LIKE ? OR p.last_name LIKE ? OR p.email LIKE ?';
+      params.push(term, term, term);
     }
-    
     const rows = await conn.query(query, params);
     return Number(rows[0].total);
-  } catch (err) {
-    throw err;
   } finally {
     if (conn) conn.end();
   }
@@ -81,7 +73,7 @@ count: async (search = '') => {
   /**
    * Retrieves full details of a specific internship by its ID.
    * Mapping snake_case DB fields to camelCase for frontend consistency.
-   * 
+   *
    * @param {number} id - The unique identifier of the internship.
    * @returns {Promise<Object|null>} The internship object if found, or null.
    */
@@ -89,22 +81,22 @@ count: async (search = '') => {
     let conn;
     try {
       conn = await pool.getConnection();
-      const rows = await conn.query('SELECT * FROM internship WHERE id = ?', [id]);
-      if (rows.length > 0) {
-        const row = rows[0];
-        // Map snake_case to camelCase
-        return {
-          id: row.id,
-          firstName: row.first_name,
-          lastName: row.last_name,
-          email: row.email,
-          startDate: row.start_date,
-          endDate: row.end_date
-        };
-      }
-      return null;
-    } catch (err) {
-      throw err;
+      const rows = await conn.query(`
+        SELECT i.id, i.person_id, p.first_name, p.last_name, p.email, i.start_date, i.end_date
+        FROM internship i
+        JOIN person p ON i.person_id = p.id
+        WHERE i.id = ?
+      `, [id]);
+      if (!rows[0]) return null;
+      return {
+        id: rows[0].id,
+        personId: Number(rows[0].person_id),
+        firstName: rows[0].first_name,
+        lastName: rows[0].last_name,
+        email: rows[0].email,
+        startDate: rows[0].start_date,
+        endDate: rows[0].end_date,
+      };
     } finally {
       if (conn) conn.end();
     }
@@ -139,11 +131,9 @@ count: async (search = '') => {
 
   /**
    * Creates a new internship record.
-   * 
+   *
    * @param {Object} data - The internship data.
-   * @param {string} data.firstName - First name of the intern.
-   * @param {string} data.lastName - Last name of the intern.
-   * @param {string} data.email - Email address.
+   * @param {number} data.personId - ID of the linked person.
    * @param {string} data.startDate - Start date (YYYY-MM-DD).
    * @param {string} data.endDate - End date (YYYY-MM-DD).
    * @returns {Promise<number>} The ID of the newly created internship.
@@ -153,13 +143,10 @@ count: async (search = '') => {
     try {
       conn = await pool.getConnection();
       const res = await conn.query(
-        'INSERT INTO internship (first_name, last_name, email, start_date, end_date) VALUES (?, ?, ?, ?, ?)',
-        [data.firstName, data.lastName, data.email, data.startDate, data.endDate]
+        'INSERT INTO internship (person_id, start_date, end_date) VALUES (?, ?, ?)',
+        [data.personId, data.startDate, data.endDate]
       );
-      // Return the new ID (convert BigInt to Number)
       return Number(res.insertId);
-    } catch (err) {
-      throw err;
     } finally {
       if (conn) conn.end();
     }
@@ -191,27 +178,6 @@ count: async (search = '') => {
   },
 
   /**
-   * Deletes an internship record.
-   * Assuming DB constraints (ON DELETE CASCADE) handle related data cleanup.
-   * 
-   * @param {number} id - The ID of the internship to delete.
-   * @returns {Promise<boolean>} True if a row was deleted, false if not found.
-   */
-  delete: async (id) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
-      // Assuming ON DELETE CASCADE is set up in DB for relations
-      const res = await conn.query('DELETE FROM internship WHERE id = ?', [id]);
-      return res.affectedRows > 0;
-    } catch (err) {
-      throw err;
-    } finally {
-      if (conn) conn.end();
-    }
-  },
-
-  /**
    * Unlinks an activity from an internship.
    * 
    * @param {number} internshipId - The ID of the internship.
@@ -235,24 +201,42 @@ count: async (search = '') => {
   },
 
   /**
-   * Updates an existing internship's details.
-   * 
+   * Updates an existing internship's dates.
+   *
    * @param {number} id - The ID of the internship to update.
-   * @param {Object} data - Object containing fields to update.
+   * @param {Object} data - Object containing fields to update (startDate, endDate).
    * @returns {Promise<boolean>} True if the update was successful (row found).
    */
   update: async (id, data) => {
     let conn;
     try {
       conn = await pool.getConnection();
-      const res = await conn.query(
-        'UPDATE internship SET first_name = ?, last_name = ?, email = ?, start_date = ?, end_date = ? WHERE id = ?',
-        [data.firstName, data.lastName, data.email, data.startDate, data.endDate, id]
-      );
-      // res.affectedRows gives the number of rows changed
+      const fields = [];
+      const values = [];
+      if (data.startDate !== undefined) { fields.push('start_date = ?'); values.push(data.startDate); }
+      if (data.endDate !== undefined) { fields.push('end_date = ?'); values.push(data.endDate); }
+      if (!fields.length) return false;
+      values.push(id);
+      const res = await conn.query(`UPDATE internship SET ${fields.join(', ')} WHERE id = ?`, values);
       return res.affectedRows > 0;
-    } catch (err) {
-      throw err;
+    } finally {
+      if (conn) conn.end();
+    }
+  },
+
+  /**
+   * Deletes an internship record.
+   * Assuming DB constraints (ON DELETE CASCADE) handle related data cleanup.
+   *
+   * @param {number} id - The ID of the internship to delete.
+   * @returns {Promise<boolean>} True if a row was deleted, false if not found.
+   */
+  delete: async (id) => {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const res = await conn.query('DELETE FROM internship WHERE id = ?', [id]);
+      return res.affectedRows > 0;
     } finally {
       if (conn) conn.end();
     }

@@ -1,5 +1,6 @@
 import Activity from '../models/Activity.js';
 import Internship from '../models/Internship.js';
+import Person from '../models/Person.js';
 
 /**
  * Service: Internship
@@ -67,41 +68,24 @@ export const getInternshipActivities = async (id) => {
  * @throws {Error} If validation fails
  */
 export const createInternship = async (data) => {
-    const { firstName, lastName, email, startDate, endDate } = data;
+  if (!data.firstName?.trim()) throw new Error('VALIDATION_ERROR:first_name required');
+  if (!data.lastName?.trim()) throw new Error('VALIDATION_ERROR:last_name required');
+  if (!isValidEmail(data.email)) throw new Error('VALIDATION_ERROR:invalid email');
+  if (!isValidDate(data.startDate)) throw new Error('VALIDATION_ERROR:invalid start_date');
+  if (!isValidDate(data.endDate)) throw new Error('VALIDATION_ERROR:invalid end_date');
+  if (data.startDate > data.endDate) throw new Error('VALIDATION_ERROR:end_date before start_date');
 
-    if (!firstName || !lastName || !email || !startDate || !endDate) {
-        throw new Error('MISSING_FIELDS');
-    }
-
-    if (firstName.length >= 80 || lastName.length >= 80) {
-        throw new Error('NAME_TOO_LONG');
-    }
-
-    if (!isValidDate(startDate) || !isValidDate(endDate)) {
-        throw new Error('INVALID_DATE_FORMAT');
-    }
-
-    if (new Date(endDate) < new Date(startDate)) {
-        throw new Error('END_DATE_BEFORE_START');
-    }
-
-    if (email.length > 254) {
-        throw new Error('EMAIL_TOO_LONG');
-    }
-    if (!isValidEmail(email)) {
-        throw new Error('INVALID_EMAIL');
-    }
-
-    const newId = await Internship.create({ firstName, lastName, email, startDate, endDate });
-
-    return {
-        id: newId,
-        firstName,
-        lastName,
-        email,
-        startDate,
-        endDate
-    };
+  const personId = await Person.create({
+    firstName: data.firstName.trim(),
+    lastName: data.lastName.trim(),
+    email: data.email.trim(),
+  });
+  const internshipId = await Internship.create({
+    personId,
+    startDate: data.startDate,
+    endDate: data.endDate,
+  });
+  return internshipId;
 };
 
 /**
@@ -112,40 +96,25 @@ export const createInternship = async (data) => {
  * @throws {Error} If validation fails or internship not found
  */
 export const updateInternship = async (id, data) => {
-    const { firstName, lastName, email, startDate, endDate } = data;
+  const internship = await Internship.getById(id);
+  if (!internship) throw new Error('NOT_FOUND');
 
-    if (!firstName || !lastName || !email || !startDate || !endDate) {
-        throw new Error('MISSING_FIELDS');
-    }
+  if (data.email && !isValidEmail(data.email)) throw new Error('VALIDATION_ERROR:invalid email');
+  if (data.startDate && !isValidDate(data.startDate)) throw new Error('VALIDATION_ERROR:invalid start_date');
+  if (data.endDate && !isValidDate(data.endDate)) throw new Error('VALIDATION_ERROR:invalid end_date');
+  const start = data.startDate ?? internship.startDate;
+  const end = data.endDate ?? internship.endDate;
+  if (start > end) throw new Error('VALIDATION_ERROR:end_date before start_date');
 
-    if (firstName.length >= 80 || lastName.length >= 80) {
-        throw new Error('NAME_TOO_LONG');
-    }
-
-    if (!isValidDate(startDate) || !isValidDate(endDate)) {
-        throw new Error('INVALID_DATE_FORMAT');
-    }
-
-    if (new Date(endDate) < new Date(startDate)) {
-        throw new Error('END_DATE_BEFORE_START');
-    }
-
-    if (email) {
-        if (email.length > 254) {
-             throw new Error('EMAIL_TOO_LONG');
-        }
-        if (!isValidEmail(email)) {
-             throw new Error('INVALID_EMAIL');
-        }
-    }
-
-    const updated = await Internship.update(id, { firstName, lastName, email, startDate, endDate });
-
-    if (!updated) {
-         throw new Error('NOT_FOUND');
-    }
-
-    return { id, firstName, lastName, email, startDate, endDate };
+  await Person.update(internship.personId, {
+    firstName: data.firstName?.trim(),
+    lastName: data.lastName?.trim(),
+    email: data.email?.trim(),
+  });
+  await Internship.update(id, {
+    startDate: data.startDate,
+    endDate: data.endDate,
+  });
 };
 
 /**
@@ -155,10 +124,8 @@ export const updateInternship = async (id, data) => {
  * @throws {Error} If internship not found
  */
 export const deleteInternship = async (id) => {
-    const deleted = await Internship.delete(id);
-    if (!deleted) {
-        throw new Error('NOT_FOUND');
-    }
+  const deleted = await Internship.delete(id);
+  if (!deleted) throw new Error('NOT_FOUND');
 };
 
 /**
