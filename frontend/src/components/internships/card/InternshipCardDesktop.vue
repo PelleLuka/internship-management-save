@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
-import { Calendar, Mail, Pencil, Trash2, Plus } from 'lucide-vue-next';
+import { downloadCertificate } from '../../../services/certificateService.js';
+import { Calendar, Mail, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AppButton from '../../AppButton.vue';
@@ -42,6 +43,8 @@ const formatDate = (dateStr) => {
     return dateStr;
   }
 };
+
+const handleCertificate = () => downloadCertificate(props.internship.id);
 </script>
 
 <template>
@@ -82,6 +85,13 @@ const formatDate = (dateStr) => {
               : 'opacity-0 pointer-events-none [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto'
           ]"
         >
+          <button
+            @click.stop="handleCertificate"
+            class="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 transition-colors"
+            title="Télécharger le certificat"
+          >
+            <Printer class="w-4 h-4" />
+          </button>
           <button
             @click.stop="emit('edit', internship)"
             class="p-1.5 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"

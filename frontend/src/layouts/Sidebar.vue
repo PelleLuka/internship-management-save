@@ -1,5 +1,5 @@
 <script setup>
-import { Activity, Tag, User, X } from "lucide-vue-next";
+import { Activity, Settings, Tag, User, X } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useMediaQuery } from "../composables/useMediaQuery";
 
@@ -24,6 +24,7 @@ const navItems = [
 	{ to: "/internships", icon: User, label: "Stagiaires" },
 	{ to: "/activities", icon: Activity, label: "Activités" },
 	{ to: "/categories", icon: Tag, label: "Catégories" },
+	{ to: "/settings", icon: Settings, label: "Paramètres" },
 ];
 </script>
 

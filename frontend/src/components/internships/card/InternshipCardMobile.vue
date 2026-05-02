@@ -1,9 +1,10 @@
 <script setup>
 import { computed } from 'vue';
-import { Calendar, Pencil, Trash2, Plus } from 'lucide-vue-next';
+import { Calendar, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AppButton from '../../AppButton.vue';
+import { downloadCertificate } from '../../../services/certificateService.js';
 
 const props = defineProps({
   internship: { type: Object, required: true },
@@ -42,6 +43,8 @@ const formatDate = (dateStr) => {
     return dateStr;
   }
 };
+
+const handleCertificate = () => downloadCertificate(props.internship.id);
 </script>
 
 <template>
@@ -90,6 +93,13 @@ const formatDate = (dateStr) => {
       <!-- Mobile Actions (Always Visible Below) -->
       <!-- On mobile, hover interactions don't exist, so actions are placed in a dedicated row. -->
       <div class="mt-3 flex justify-end gap-2">
+        <button
+          @click.stop="handleCertificate"
+          class="p-2 bg-slate-50 text-slate-600 rounded-lg active:scale-95 transition-transform"
+          :aria-label="'Télécharger le certificat'"
+        >
+          <Printer class="w-4 h-4" />
+        </button>
         <button
           @click.stop="emit('edit', internship)"
           class="p-2 bg-blue-50 text-blue-600 rounded-lg active:scale-95 transition-transform"
