@@ -12,6 +12,13 @@ export const downloadCertificate = async (internshipId) => {
   URL.revokeObjectURL(url);
 };
 
+export const getCertificateBlobUrl = async (internshipId) => {
+  const res = await axios.get(`/api/internships/${internshipId}/certificate`, {
+    responseType: 'blob',
+  });
+  return URL.createObjectURL(res.data);
+};
+
 export const uploadCertificateTemplate = async (file) => {
   const form = new FormData();
   form.append('template', file);
