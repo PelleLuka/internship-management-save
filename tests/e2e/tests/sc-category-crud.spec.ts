@@ -6,7 +6,7 @@ test.describe('Category CRUD', () => {
     await page.getByRole('button', { name: /nouvelle catégorie/i }).click();
     await page.getByPlaceholder(/ex.*développement/i).fill('Développement');
     await page.getByRole('button', { name: /^créer$/i }).click();
-    await expect(page.getByText('Développement')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Développement' }).first()).toBeVisible();
   });
 
   test('edit a category', async ({ page }) => {
@@ -15,13 +15,13 @@ test.describe('Category CRUD', () => {
     await page.getByRole('button', { name: /nouvelle catégorie/i }).click();
     await page.getByPlaceholder(/ex.*développement/i).fill('A Modifier');
     await page.getByRole('button', { name: /^créer$/i }).click();
-    await expect(page.getByText('A Modifier')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'A Modifier' }).first()).toBeVisible();
     // Edit it
-    const row = page.locator('div').filter({ hasText: /^A Modifier/ }).first();
-    await row.getByRole('button', { name: /modifier/i }).click();
+    const card = page.locator('div.bg-white.rounded-xl').filter({ has: page.getByRole('heading', { name: 'A Modifier' }) }).first();
+    await card.getByRole('button', { name: /modifier/i }).click();
     await page.getByPlaceholder(/ex.*développement/i).fill('Modifié');
     await page.getByRole('button', { name: /enregistrer/i }).click();
-    await expect(page.getByText('Modifié')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modifié' }).first()).toBeVisible();
   });
 
   test('delete button is disabled when category has linked activities', async ({ page }) => {
@@ -40,10 +40,19 @@ test.describe('Category CRUD', () => {
     await page.getByRole('button', { name: /nouvelle catégorie/i }).click();
     await page.getByPlaceholder(/ex.*développement/i).fill('A Supprimer');
     await page.getByRole('button', { name: /^créer$/i }).click();
-    await expect(page.getByText('A Supprimer')).toBeVisible();
-    // Find delete button for this row (should be enabled, 0 linked activities)
-    const row = page.locator('div').filter({ hasText: /^A Supprimer/ }).first();
-    await row.getByRole('button', { name: /supprimer/i }).click();
-    await expect(page.getByText('A Supprimer')).not.toBeVisible();
+    await expect(page.getByRole('heading', { name: 'A Supprimer' }).first()).toBeVisible();
+    // Find delete button for this card (should be enabled, 0 linked activities)
+    const card = page.locator('div.bg-white.rounded-xl').filter({ has: page.getByRole('heading', { name: 'A Supprimer' }) }).first();
+    await card.getByRole('button', { name: /supprimer/i }).click();
+    await expect(page.getByRole('heading', { name: 'A Supprimer' })).not.toBeVisible();
+  });
+
+  test('categories displayed as card grid', async ({ page }) => {
+    await page.goto('/categories');
+    // Layout must be a grid, not a list
+    await expect(page.locator('.grid')).toBeVisible();
+    // Seeded categories must appear (use role to be more specific)
+    await expect(page.getByRole('heading', { name: 'Programmation' }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Web' }).first()).toBeVisible();
   });
 });
