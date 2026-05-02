@@ -60,4 +60,4 @@ test.describe('SC08 - Association Stage-Activité', () => {
     await expect(successTag).toBeVisible({ timeout: 10000 });
   });
 
-});
+}); 

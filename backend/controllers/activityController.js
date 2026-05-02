@@ -1,5 +1,11 @@
-import * as activityService from '../services/activityService.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import logger from '../config/logger.js';
+import Activity from '../models/Activity.js';
+import * as activityService from '../services/activityService.js';
+
+const __dirname_ctrl = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Controller: Get Activity IDs
@@ -84,7 +90,7 @@ export const createActivity = async (req, res) => {
 export const deleteActivity = async (req, res) => {
     try {
         const id = Number.parseInt(req.params.id, 10);
-        
+
         await activityService.deleteActivity(id);
         res.status(204).send();
     } catch (err) {
@@ -93,5 +99,65 @@ export const deleteActivity = async (req, res) => {
         }
         logger.error('Error deleting activity:', err);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Controller: Upload Activity Document
+ * Uploads a document file for a specific activity.
+ */
+export const uploadDocument = async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const id = Number(req.params.id);
+        const activity = await Activity.getById(id);
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+
+        if (activity.documentUrl) {
+            const oldPath = path.join(__dirname_ctrl, '../uploads/activities', activity.documentUrl);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+
+        await Activity.update(id, { documentUrl: req.file.filename });
+        res.json({ documentUrl: req.file.filename, originalName: req.file.originalname });
+    } catch (err) {
+        logger.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+/**
+ * Controller: Download Activity Document
+ * Streams the document file for a specific activity.
+ */
+export const downloadDocument = async (req, res) => {
+    try {
+        const activity = await Activity.getById(Number(req.params.id));
+        if (!activity?.documentUrl) return res.status(404).json({ error: 'No document' });
+        const filePath = path.join(__dirname_ctrl, '../uploads/activities', activity.documentUrl);
+        if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on disk' });
+        res.download(filePath);
+    } catch (err) {
+        logger.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+/**
+ * Controller: Delete Activity Document
+ * Removes the document file and clears the documentUrl for an activity.
+ */
+export const deleteDocument = async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const activity = await Activity.getById(id);
+        if (!activity?.documentUrl) return res.status(404).json({ error: 'No document' });
+        const filePath = path.join(__dirname_ctrl, '../uploads/activities', activity.documentUrl);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        await Activity.update(id, { documentUrl: null });
+        res.json({ success: true });
+    } catch (err) {
+        logger.error(err);
+        res.status(500).json({ error: 'Server error' });
     }
 };

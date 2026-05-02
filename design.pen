@@ -1,0 +1,239 @@
+# Design System — Internship Management App
+# Framework: Vue 3 + Tailwind CSS
+
+# ─────────────────────────────────────────
+# COLORS
+# ─────────────────────────────────────────
+
+[palette]
+  # Primary
+  primary           = #2563eb   # blue-600 — CTAs, active nav, tags selected
+  primary-hover     = #1d4ed8   # blue-700 — button hover
+  primary-light     = #eff6ff   # blue-50  — highlight backgrounds
+  primary-border    = #dbeafe   # blue-100 — light accents, tag borders
+
+  # Neutral / Surface
+  bg                = #f8fafc   # slate-50  — page background
+  surface           = #ffffff   # white     — cards, modals, inputs
+  border            = #e2e8f0   # slate-200 — card borders, dividers
+  text-primary      = #0f172a   # slate-900 — main text
+  text-secondary    = #64748b   # slate-600 — secondary text
+  text-tertiary     = #94a3b8   # slate-400 — placeholders, labels
+
+  # Sidebar / Dark
+  sidebar-bg        = #0f172a   # slate-900 — sidebar background
+  sidebar-hover     = #1e293b   # slate-800 — sidebar hover state
+  sidebar-text      = #ffffff   # white     — text on dark surfaces
+
+  # Semantic
+  danger            = #dc2626   # red-600   — delete, destructive
+  danger-light      = #fee2e2   # red-50    — error backgrounds
+  overlay           = rgba(0,0,0,0.5)  # modal backdrop
+
+
+# ─────────────────────────────────────────
+# TYPOGRAPHY
+# ─────────────────────────────────────────
+
+[typography]
+  font-family = system-ui, sans-serif   # Tailwind default system stack
+
+  # Headings
+  h1 = text-2xl font-bold text-slate-900        # 28px — page titles
+  h2 = text-2xl font-bold text-slate-900        # 28px — year groups
+  h3 = text-lg font-semibold text-slate-700     # 18px — month groups, card titles
+  h4 = text-lg font-semibold                    # 18px — modal headers
+
+  # Body
+  body       = text-sm                          # 14px — default text
+  body-small = text-xs                          # 12px — secondary info
+  label      = text-sm font-medium text-slate-700    # 14px — form labels
+  micro      = text-[10px] uppercase tracking-wider font-semibold text-slate-400  # card metadata
+
+  # Utilities
+  truncate   = truncate                         # single-line ellipsis
+
+
+# ─────────────────────────────────────────
+# BORDER RADIUS
+# ─────────────────────────────────────────
+
+[radius]
+  sm   = rounded-md    # 0.375rem — inputs, buttons
+  md   = rounded-lg    # 0.5rem  — cards
+  lg   = rounded-xl    # 0.75rem — internship cards, activity cards
+  full = rounded-full  # circular — tags / badges
+
+
+# ─────────────────────────────────────────
+# SHADOWS
+# ─────────────────────────────────────────
+
+[shadows]
+  subtle  = shadow-sm   # cards (default)
+  hover   = shadow-md   # cards on hover
+  modal   = shadow-lg   # dialogs
+  drawer  = shadow-xl   # mobile sidebar drawer
+
+
+# ─────────────────────────────────────────
+# SPACING
+# ─────────────────────────────────────────
+
+[spacing]
+  # Padding
+  p-card-mobile   = p-4        # 16px
+  p-card-desktop  = p-5        # 20px
+  p-modal         = p-6        # 24px
+  p-input         = px-3 py-2  # horizontal 12px, vertical 8px
+  p-button-md     = px-4 py-2  # 16px / 8px
+  p-button-lg     = px-6       # 24px
+
+  # Gaps
+  gap-xs  = gap-2   # 8px  — small button groups
+  gap-sm  = gap-3   # 12px — form sections
+  gap-md  = gap-4   # 16px — card content sections
+  gap-lg  = gap-6   # 24px — major layout sections
+  gap-xl  = gap-8   # 32px — page-level sections
+
+
+# ─────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────
+
+[button]
+  base = inline-flex items-center justify-center rounded-md font-medium transition-colors
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+         disabled:pointer-events-none disabled:opacity-50
+
+  # Variants
+  primary   = bg-blue-600 text-white hover:bg-blue-700
+  secondary = bg-slate-100 text-slate-900 hover:bg-slate-200
+  danger    = bg-red-600 text-white hover:bg-red-700
+  ghost     = bg-transparent hover:bg-slate-100 text-slate-700
+  outline   = border border-slate-200 bg-transparent hover:bg-slate-100 text-slate-900
+
+  # Sizes
+  sm   = h-8 px-3 text-xs
+  md   = h-10 px-4 py-2        # default
+  lg   = h-12 px-6 text-lg
+  icon = h-10 w-10 p-2 flex items-center justify-center
+
+[input]
+  base = h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm
+         placeholder:text-slate-500
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+         disabled:cursor-not-allowed disabled:opacity-50
+  error = border-red-500 focus-visible:ring-red-500
+
+[select]
+  base = h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm
+         focus:outline-none focus:ring-2 focus:ring-blue-500
+
+[card]
+  base          = bg-white rounded-lg border border-slate-200 shadow-sm
+  internship    = bg-white rounded-xl border border-slate-200 shadow-sm
+                  hover:shadow-md transition-all duration-200 p-5
+  activity      = bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md p-5
+
+[badge/tag]
+  base     = inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+  default  = bg-blue-50 text-blue-700 border border-blue-100
+  selected = bg-blue-600 text-white border-blue-600 shadow-sm
+
+[dialog]
+  backdrop = fixed inset-0 bg-black/50 backdrop-blur-sm z-50
+  panel    = w-full max-w-lg rounded-lg bg-white p-6 shadow-lg
+             animate-in fade-in zoom-in duration-200
+  header   = flex items-center justify-between mb-4
+
+[form]
+  section-gap = space-y-4
+  field-gap   = space-y-2
+  two-col     = grid grid-cols-2 gap-4
+  error-msg   = text-sm text-red-600 mt-1
+
+
+# ─────────────────────────────────────────
+# LAYOUT
+# ─────────────────────────────────────────
+
+[layout]
+  root       = flex min-h-screen bg-slate-50
+  sidebar-expanded  = w-64 sticky top-0 h-screen bg-slate-900 text-white
+  sidebar-collapsed = w-20
+  # Sidebar auto-collapses at <1800px, expands on hover
+  # Mobile sidebar: fixed drawer with overlay
+
+  main       = flex-1 overflow-y-auto
+
+  breakpoints:
+    mobile   = max-width 890px
+    desktop  = min-width 891px
+    large    = min-width 1022px
+    xl       = min-width 1380px   # custom Tailwind override
+    sidebar-auto-collapse = min-width 1800px
+
+[header-desktop]
+  = bg-white p-4 rounded-lg border border-slate-200 shadow-sm sticky top-8 z-40
+  # Contains: search input + sort select + "New internship" button (primary)
+
+[header-mobile]
+  bar    = fixed top-0 left-0 right-0 h-16 bg-slate-900 text-white z-50 border-b border-slate-800
+  sticky = sticky top-16 z-30 bg-slate-50/95 backdrop-blur-sm px-2 -mx-2
+  # Actions are teleported to #header-actions slot in the top bar
+
+[sidebar-nav-item]
+  base   = flex items-center gap-3 px-4 py-3
+  hover  = hover:bg-slate-800
+  active = bg-blue-600 text-white
+
+[masonry-grid]
+  wrapper = flex gap-6 items-start
+  column  = flex-1 space-y-6 min-w-0
+  # 1 col mobile / 2 col tablet / 3 col desktop
+
+[grouping]
+  year  = mb-6 border-b border-slate-200 pb-2
+  month = mb-8 space-y-4
+
+
+# ─────────────────────────────────────────
+# MOTION / TRANSITIONS
+# ─────────────────────────────────────────
+
+[animation]
+  fast    = transition-colors                         # color-only (instant feel)
+  normal  = transition-all duration-200               # card hover, button press
+  slow    = transition-all duration-300               # sidebar expand
+  modal   = animate-in fade-in zoom-in duration-200   # dialog entrance
+  slide   = animate-in slide-in-from-top-2 duration-200  # expand/collapse
+  press   = active:scale-95                           # mobile button feedback
+
+
+# ─────────────────────────────────────────
+# ICONS
+# ─────────────────────────────────────────
+
+[icons]
+  library = lucide-vue-next v0.555.0
+  used    = Calendar, Mail, Pencil, Trash2, Plus, Search, Menu, ChevronDown,
+            ChevronRight, X, User, Building2, GraduationCap, Briefcase
+
+
+# ─────────────────────────────────────────
+# DESIGN PATTERNS / DECISIONS
+# ─────────────────────────────────────────
+
+[patterns]
+  # Dark sidebar + light content area
+  # Separate mobile/desktop components switch at 891px
+  # Hover-reveal edit/delete on desktop; always-visible on mobile
+  # Expandable internship cards with smooth animation
+  # Masonry 3-col desktop / 2-col tablet / 1-col mobile
+  # Activities: floating popover desktop / full-screen modal mobile
+  # Teleportation: mobile filter actions rendered inside fixed top bar
+  # Dashed border = secondary/additive action (e.g. "Add activity" button)
+  # Infinite scroll for internship list pagination
+  # French locale date formatting: dd MMM yyyy (via date-fns v4)
+  # Scroll offset calculation for sticky headers on anchor navigation

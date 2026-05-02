@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"http://localhost:3000/api/internships?limit=1\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/internships -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s \"http://localhost:3000/api/internships/1000\")",
+      "Bash(curl -s -X PUT http://localhost:3000/api/internships/1000 -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s -X DELETE \"http://localhost:3000/api/internships/1000\")",
+      "Bash(curl -s \"http://localhost:3000/api/internships?search=Joël&limit=5\")",
+      "Bash(curl -s \"http://localhost:3000/api/internships?search=Joël\")",
+      "Bash(curl -s -X PUT http://localhost:3000/api/internships/1001 -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s -w '\\\\nStatus: %{http_code}\\\\n' -X PUT http://localhost:3000/api/internships/1001 -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s \"http://localhost:3000/api/internships/1001\")",
+      "Bash(cat)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -X DELETE \"http://localhost:3000/api/internships/999999\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/categories -H 'Content-Type: application/json' -d '{\"name\":\"Développement\",\"description\":\"Ateliers de programmation\"}')",
+      "Bash(curl -s http://localhost:3000/api/categories)",
+      "Bash(curl -s -X DELETE http://localhost:3000/api/categories/1000)",
+      "Bash(curl -s -X POST http://localhost:3000/api/activities -H 'Content-Type: application/json' -d '{\"title\":\"Test enrichi\",\"description\":\"Une description test\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:3000/api/activities -H 'Content-Type: application/json' -d '{\"title\":\"Test enrichi 2\"}')",
+      "Bash(curl -s http://localhost:3000/api/activities/1)",
+      "Bash(npm install *)",
+      "Bash(curl -s -X POST http://localhost:3000/api/activities/1/document -F \"document=@/dev/null;type=application/pdf\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/activities/1/document -F \"document=@/tmp/test-doc.pdf;type=application/pdf\")",
+      "Bash(git -C /Users/pellegrinelliluka/projects/Test-internship-management log --oneline -4)",
+      "Bash(curl -s -X DELETE http://localhost:3000/api/activities/1/document)",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(docker exec *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('documentUrl'\\)\\)\")",
+      "Bash(git -C /Users/pellegrinelliluka/projects/Test-internship-management add backend/middleware/upload.js backend/uploads/ backend/routes/activityRoutes.js backend/package.json backend/package-lock.json docker/docker-compose.yml)",
+      "Bash(git -C /Users/pellegrinelliluka/projects/Test-internship-management commit -m ' *)",
+      "Bash(git -C /Users/pellegrinelliluka/projects/Test-internship-management add backend/middleware/upload.js backend/uploads/ backend/routes/activityRoutes.js backend/package.json docker/docker-compose.yml)"
+    ],
+    "additionalDirectories": [
+      "/private/tmp"
+    ]
+  }
+}
