@@ -91,7 +91,7 @@ const filteredActivities = computed(() => {
 	return activities.value.filter(
 		(a) =>
 			a.title.toLowerCase().includes(query) ||
-			a.description.toLowerCase().includes(query),
+			(a.description ?? '').toLowerCase().includes(query),
 	);
 });
 
@@ -196,6 +196,22 @@ onMounted(loadActivities);
         <h3 class="font-semibold text-slate-900 text-lg mb-2 break-words" :title="activity.title">
           {{ activity.title }}
         </h3>
+
+        <!-- Description excerpt -->
+        <p v-if="activity.description" class="text-sm text-slate-500 line-clamp-2 mb-2 leading-relaxed">
+          {{ activity.description }}
+        </p>
+
+        <!-- Category badges -->
+        <div v-if="activity.categories?.length" class="flex flex-wrap gap-1 mb-2">
+          <span
+            v-for="cat in activity.categories"
+            :key="cat.id"
+            class="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full border border-blue-100"
+          >
+            {{ cat.name }}
+          </span>
+        </div>
 
         <!-- Documentation section — always visible -->
         <div class="mt-3 pt-3 border-t border-slate-100">

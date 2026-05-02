@@ -25,4 +25,18 @@ test.describe('Enriched Activity Form', () => {
     // Category should now be selected (has blue styling)
     await expect(page.getByText('Test Cat E2E')).toHaveClass(/bg-blue-600/);
   });
+
+  test('activity card shows category badges', async ({ page }) => {
+    await page.goto('/activities');
+    // Activity 4 "Réalisation d'un site Web..." is seeded with Programmation + Web categories
+    const card = page.locator('.grid > div').filter({ hasText: 'Réalisation d\'un site Web' });
+    await expect(card.locator('span').filter({ hasText: 'Web' })).toBeVisible();
+    await expect(card.locator('span').filter({ hasText: 'Programmation' })).toBeVisible();
+  });
+
+  test('activity card shows description excerpt', async ({ page }) => {
+    await page.goto('/activities');
+    const card = page.locator('.grid > div').filter({ hasText: 'Réalisation d\'un site Web' });
+    await expect(card.locator('text=Réalisation d\'un site web complet')).toBeVisible();
+  });
 });
