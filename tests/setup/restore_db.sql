@@ -54,6 +54,21 @@ INSERT INTO internship_activity (internship_id, activity_id) VALUES
   (1,1),(1,2),(2,3),(2,4),(3,5),(3,6),(4,7),(4,8),(5,9),(5,10),
   (6,11),(6,12),(7,13),(7,14),(8,15),(8,1),(9,2),(9,3),(10,4),(10,5);
 
+-- Descriptions on activities used in card display tests
+UPDATE activity SET description = 'Développement d\'un jeu utilisant Python et des LEDs pour créer une séquence lumineuse interactive.' WHERE id = 1;
+UPDATE activity SET description = 'Réalisation d\'un site web complet avec formulaires PHP, base de données MySQL et mise en page CSS avancée.' WHERE id = 4;
+
+-- Seed categories
+INSERT INTO category (id, name, description) VALUES
+  (1, 'Programmation', 'Activités liées à la programmation et au développement logiciel'),
+  (2, 'Web', 'Activités liées au développement web et à la création de sites');
+
+-- Link categories to activities
+INSERT INTO activity_category (activity_id, category_id) VALUES
+  (1, 1),
+  (4, 1),
+  (4, 2);
+
 SET FOREIGN_KEY_CHECKS = 1;
 ALTER TABLE internship AUTO_INCREMENT = 1000;
 ALTER TABLE person AUTO_INCREMENT = 1000;
