@@ -33,9 +33,9 @@ const status = computed(() => {
 })
 
 const statusConfig = computed(() => ({
-  upcoming: { label: '◷ À VENIR',  classes: 'bg-blue-50  text-blue-600  border border-blue-200'  },
-  active:   { label: '● EN COURS', classes: 'bg-green-50 text-green-600 border border-green-200' },
-  done:     { label: '✓ TERMINÉ',  classes: 'bg-red-50   text-red-600   border border-red-200'   },
+  upcoming: { label: 'À venir',  classes: 'bg-amber-100 text-amber-600' },
+  active:   { label: 'En cours', classes: 'bg-green-100 text-green-600' },
+  done:     { label: 'Terminé',  classes: 'bg-blue-100  text-blue-600'  },
 }[status.value]))
 
 const formatDate = (dateStr) => {
@@ -67,7 +67,8 @@ const handleCertificate = () => router.push(`/certificate/${props.internship.id}
             >
               {{ internship.firstName }} {{ internship.lastName }}
             </h3>
-            <span :class="['text-[10px] font-bold px-2 py-1 rounded-full shrink-0 whitespace-nowrap', statusConfig.classes]">
+            <span :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full shrink-0 text-xs font-semibold whitespace-nowrap', statusConfig.classes]">
+              <span class="w-2 h-2 rounded-full bg-current shrink-0"></span>
               {{ statusConfig.label }}
             </span>
           </div>

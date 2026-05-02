@@ -193,24 +193,25 @@ onMounted(loadActivities);
           </div>
         </div>
 
-        <h3 class="font-semibold text-slate-900 text-lg mb-2 break-words" :title="activity.title">
+        <h3 class="font-semibold text-slate-900 text-base break-words" :title="activity.title">
           {{ activity.title }}
         </h3>
 
-        <!-- Description excerpt -->
-        <p v-if="activity.description" class="text-sm text-slate-500 line-clamp-2 mb-2 leading-relaxed">
-          {{ activity.description }}
-        </p>
-
-        <!-- Category badges -->
-        <div v-if="activity.categories?.length" class="flex flex-wrap gap-1 mb-2">
+        <!-- Category badges — separator + badges (Pencil order) -->
+        <div v-if="activity.categories?.length" class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-1">
           <span
             v-for="cat in activity.categories"
             :key="cat.id"
-            class="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full border border-blue-100"
+            class="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-xl"
           >
             {{ cat.name }}
           </span>
+        </div>
+
+        <!-- Description section — label + text (Pencil order) -->
+        <div v-if="activity.description" class="mt-3 pt-3 border-t border-slate-100">
+          <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Description</p>
+          <p class="text-sm text-slate-500 line-clamp-2 leading-relaxed">{{ activity.description }}</p>
         </div>
 
         <!-- Documentation section — always visible -->
