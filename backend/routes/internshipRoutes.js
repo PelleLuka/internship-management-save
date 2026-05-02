@@ -9,6 +9,7 @@ import {
     addActivityToInternship,
     removeActivityFromInternship
 } from '../controllers/internshipController.js';
+import { generateCertificate } from '../controllers/certificateController.js';
 
 const router = express.Router();
 
@@ -58,5 +59,11 @@ router.post('/:internshipId/activities/:activityId', addActivityToInternship);
 
 // DELETE /internships/:internshipId/activities/:activityId
 router.delete('/:internshipId/activities/:activityId', removeActivityFromInternship);
+
+/**
+ * GET /api/internships/:id/certificate
+ * Generates and downloads a PDF certificate for the internship.
+ */
+router.get('/:id/certificate', generateCertificate);
 
 export default router;

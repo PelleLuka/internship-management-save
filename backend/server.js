@@ -8,6 +8,7 @@ import healthRoutes from './routes/healthRoutes.js';
 import internshipRoutes from './routes/internshipRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import certificateRoutes from './routes/certificateRoutes.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -44,6 +45,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/internships', internshipRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/certificate', certificateRoutes);
 
 // Optional: Global error handler
 app.use((err, _req, res, _next) => {
