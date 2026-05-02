@@ -1,9 +1,9 @@
 <script setup>
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import AppButton from "./AppButton.vue";
 import AppDialog from "./AppDialog.vue";
 import AppInput from "./AppInput.vue";
-import { createActivity, getActivityById, updateActivity } from "../services/activityService";
+import { createActivity, getActivityById, getCategories, updateActivity } from "../services/activityService";
 
 /**
  * Props definition.
@@ -22,8 +22,22 @@ const formData = ref({
 	visible: true,
 });
 
+const description = ref('');
+const selectedCategoryIds = ref([]);
+const categories = ref([]);
+
 const loading = ref(false);
 const errors = ref({});
+
+onMounted(async () => {
+	categories.value = await getCategories();
+});
+
+const toggleCategory = (id) => {
+	const idx = selectedCategoryIds.value.indexOf(id);
+	if (idx === -1) selectedCategoryIds.value.push(id);
+	else selectedCategoryIds.value.splice(idx, 1);
+};
 
 /**
  * Watcher: Loads activity data when editing.
@@ -39,6 +53,8 @@ watch(
 					title: data.title,
 					visible: data.visible !== undefined ? data.visible : true,
 				};
+				description.value = data.description ?? '';
+				selectedCategoryIds.value = data.categories?.map(c => c.id) ?? [];
                 errors.value = {};
 			} catch (error) {
 				console.error("Failed to load activity", error);
@@ -49,6 +65,8 @@ watch(
 				title: "",
 				visible: true,
 			};
+			description.value = '';
+			selectedCategoryIds.value = [];
             errors.value = {};
 		}
 	},
@@ -58,7 +76,7 @@ watch(
 /**
  * Validates the activity form data.
  * Checks title presence and length.
- * 
+ *
  * @returns {boolean} True if valid, false otherwise.
  */
 const validate = () => {
@@ -81,11 +99,16 @@ const handleSubmit = async () => {
 
 	loading.value = true;
 	try {
+		const payload = {
+			...formData.value,
+			description: description.value,
+			categoryIds: selectedCategoryIds.value,
+		};
 		if (props.activityId) {
-			await updateActivity(props.activityId, formData.value);
+			await updateActivity(props.activityId, payload);
 		} else {
 			await createActivity({
-				...formData.value,
+				...payload,
 				id: crypto.randomUUID(),
 			});
 		}
@@ -119,6 +142,43 @@ const handleSubmit = async () => {
           required
         />
         <p v-if="errors.title" class="text-xs text-red-500">{{ errors.title }}</p>
+      </div>
+
+      <!-- Description -->
+      <div class="space-y-2">
+        <label class="text-sm font-medium text-slate-700">Description</label>
+        <textarea
+          v-model="description"
+          rows="3"
+          class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm
+                 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2
+                 focus-visible:ring-blue-500 resize-none"
+          placeholder="Description de l'atelier..."
+        />
+      </div>
+
+      <!-- Catégories -->
+      <div class="space-y-2">
+        <label class="text-sm font-medium text-slate-700">Catégories</label>
+        <div class="flex flex-wrap gap-2 min-h-[28px]">
+          <button
+            v-for="cat in categories"
+            :key="cat.id"
+            type="button"
+            @click="toggleCategory(cat.id)"
+            :class="[
+              'px-3 py-1 rounded-full text-xs font-medium transition-colors border',
+              selectedCategoryIds.includes(cat.id)
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+            ]"
+          >
+            {{ cat.name }}
+          </button>
+          <span v-if="!categories.length" class="text-xs text-slate-400 self-center">
+            Aucune catégorie — créez-en dans la page Catégories
+          </span>
+        </div>
       </div>
 
       <div class="flex justify-end gap-3 pt-4">

@@ -1,6 +1,13 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
-import { getActivities, getActivityById, deleteActivity } from "../services/activityService";
+import {
+  deleteActivity,
+  deleteActivityDocument,
+  getActivities,
+  getActivityById,
+  getActivityDocumentUrl,
+  uploadActivityDocument,
+} from "../services/activityService";
 import { useMediaQuery } from "../composables/useMediaQuery";
 import ActivityFormModal from "../components/ActivityFormModal.vue";
 import AppButton from "../components/AppButton.vue";
@@ -48,6 +55,30 @@ const handleDelete = async (id) => {
 			alert("Erreur lors de la suppression de l'activité.");
 		}
 	}
+};
+
+/**
+ * Uploads a document for an activity and reloads the list.
+ *
+ * @param {number} activityId - The ID of the activity.
+ * @param {Event} event - The file input change event.
+ */
+const handleUploadDocument = async (activityId, event) => {
+	const file = event.target.files[0];
+	if (!file) return;
+	await uploadActivityDocument(activityId, file);
+	await loadActivities();
+};
+
+/**
+ * Deletes the document attached to an activity and reloads the list.
+ *
+ * @param {number} activityId - The ID of the activity.
+ */
+const handleDeleteDocument = async (activityId) => {
+	if (!confirm('Supprimer ce document ?')) return;
+	await deleteActivityDocument(activityId);
+	await loadActivities();
 };
 
 /**
@@ -165,6 +196,54 @@ onMounted(loadActivities);
         <h3 class="font-semibold text-slate-900 text-lg mb-2 break-words" :title="activity.title">
           {{ activity.title }}
         </h3>
+
+        <!-- Documentation section — always visible -->
+        <div class="mt-3 pt-3 border-t border-slate-100">
+          <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2">
+            Documentation
+          </p>
+
+          <!-- State: file attached -->
+          <template v-if="activity.documentUrl">
+            <div class="bg-green-50 border border-green-200 rounded-md px-3 py-2 flex items-center justify-between gap-2 mb-2">
+              <span class="text-xs text-green-800 font-medium truncate">
+                📄 {{ activity.documentUrl.split('-').slice(5).join('-') || activity.documentUrl }}
+              </span>
+              <div class="flex gap-1 shrink-0">
+                <a v-if="activity.documentUrl.toLowerCase().endsWith('.pdf')"
+                  :href="getActivityDocumentUrl(activity.id)"
+                  target="_blank"
+                  class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 whitespace-nowrap">
+                  👁 Voir
+                </a>
+                <a :href="getActivityDocumentUrl(activity.id)"
+                  download
+                  class="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded hover:bg-slate-200">
+                  ⬇
+                </a>
+                <button @click="handleDeleteDocument(activity.id)"
+                  class="text-xs text-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-100">
+                  🗑
+                </button>
+              </div>
+            </div>
+            <!-- Replace zone -->
+            <label class="block border border-dashed border-slate-300 rounded-md p-2 text-center
+                          text-xs text-slate-400 cursor-pointer hover:border-slate-400 transition-colors">
+              🔄 Remplacer
+              <input type="file" class="hidden" @change="(e) => handleUploadDocument(activity.id, e)" />
+            </label>
+          </template>
+
+          <!-- State: no file -->
+          <label v-else
+            class="block border-2 border-dashed border-slate-200 rounded-md p-3 text-center
+                   text-xs text-slate-400 cursor-pointer hover:border-slate-300 transition-colors">
+            📎 Glisser un fichier ou <span class="text-blue-500 underline">parcourir</span><br>
+            <span class="text-[10px]">PDF, DOCX, ODT… · max 10 MB</span>
+            <input type="file" class="hidden" @change="(e) => handleUploadDocument(activity.id, e)" />
+          </label>
+        </div>
       </div>
     </div>
 

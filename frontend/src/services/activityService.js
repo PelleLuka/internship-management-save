@@ -51,10 +51,57 @@ export const updateActivity = async (id, activity) => {
 /**
  * Service: Delete Activity
  * Soft-deletes an activity.
- * 
+ *
  * @param {number} id - The ID of the activity.
  * @returns {Promise<void>}
  */
 export const deleteActivity = async (id) => {
     await axios.delete(`/api/activities/${id}`);
 };
+
+/**
+ * Service: Get Categories
+ * Retrieves all categories with activity counts.
+ *
+ * @returns {Promise<Array<{id, name, description, activityCount}>>}
+ */
+export const getCategories = async () => {
+    const res = await axios.get('/api/categories');
+    return res.data;
+};
+
+/**
+ * Service: Upload Activity Document
+ * Uploads a document file for an activity.
+ *
+ * @param {number} activityId - The ID of the activity.
+ * @param {File} file - The file to upload.
+ * @returns {Promise<Object>}
+ */
+export const uploadActivityDocument = async (activityId, file) => {
+    const form = new FormData();
+    form.append('document', file);
+    const res = await axios.post(`/api/activities/${activityId}/document`, form);
+    return res.data;
+};
+
+/**
+ * Service: Delete Activity Document
+ * Removes the document attached to an activity.
+ *
+ * @param {number} activityId - The ID of the activity.
+ * @returns {Promise<void>}
+ */
+export const deleteActivityDocument = async (activityId) => {
+    await axios.delete(`/api/activities/${activityId}/document`);
+};
+
+/**
+ * Service: Get Activity Document URL
+ * Returns the URL to download/view an activity's document.
+ *
+ * @param {number} activityId - The ID of the activity.
+ * @returns {string}
+ */
+export const getActivityDocumentUrl = (activityId) =>
+    `/api/activities/${activityId}/document`;
