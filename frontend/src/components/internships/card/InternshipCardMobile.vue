@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { Calendar, Pencil, Trash2, Plus } from 'lucide-vue-next';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -18,6 +19,22 @@ const emit = defineEmits([
   'toggle-activity-selection', 'save-activities'
 ]);
 
+const status = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const start = new Date(props.internship.startDate)
+  const end = new Date(props.internship.endDate)
+  if (today < start) return 'upcoming'
+  if (today > end) return 'done'
+  return 'active'
+})
+
+const statusConfig = computed(() => ({
+  upcoming: { label: '◷ À VENIR',  classes: 'bg-blue-50  text-blue-600  border border-blue-200'  },
+  active:   { label: '● EN COURS', classes: 'bg-green-50 text-green-600 border border-green-200' },
+  done:     { label: '✓ TERMINÉ',  classes: 'bg-red-50   text-red-600   border border-red-200'   },
+}[status.value]))
+
 const formatDate = (dateStr) => {
   try {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
@@ -35,14 +52,19 @@ const formatDate = (dateStr) => {
       @click="emit('toggle', internship.id)"
     >
       <div class="flex justify-between items-start gap-4">
-        <div>
-          <h3
-            class="font-semibold text-base transition-colors truncate"
-            :class="[expanded ? 'text-blue-600' : 'text-slate-900']"
-          >
-            {{ internship.firstName }} {{ internship.lastName }}
-          </h3>
-          <div class="text-xs text-slate-500 mt-1 break-all">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <h3
+              class="font-semibold text-base transition-colors truncate"
+              :class="[expanded ? 'text-blue-600' : 'text-slate-900']"
+            >
+              {{ internship.firstName }} {{ internship.lastName }}
+            </h3>
+            <span :class="['text-[10px] font-bold px-2 py-1 rounded-full shrink-0 whitespace-nowrap', statusConfig.classes]">
+              {{ statusConfig.label }}
+            </span>
+          </div>
+          <div class="text-xs text-slate-500 mt-2 break-all">
             {{ internship.email }}
           </div>
         </div>
