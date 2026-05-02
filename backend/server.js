@@ -7,6 +7,7 @@ import requestLogger from './middleware/requestLogger.js'; // Import Middleware
 import healthRoutes from './routes/healthRoutes.js';
 import internshipRoutes from './routes/internshipRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -37,10 +38,12 @@ app.use(requestLogger);
  * @route /health - Health check endpoint
  * @route /internships - Internship management endpoints
  * @route /activities - Activity management endpoints
+ * @route /categories - Category management endpoints
  */
 app.use('/api/health', healthRoutes);
 app.use('/api/internships', internshipRoutes);
 app.use('/api/activities', activityRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Optional: Global error handler
 app.use((err, _req, res, _next) => {
