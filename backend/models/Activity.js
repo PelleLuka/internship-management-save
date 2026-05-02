@@ -32,7 +32,20 @@ const Activity = {
     try {
       conn = await pool.getConnection();
       const rows = await conn.query('SELECT * FROM activity WHERE id = ?', [id]);
-      return rows[0] || null;
+      if (!rows[0]) return null;
+      const categories = await conn.query(`
+        SELECT c.id, c.name FROM category c
+        JOIN activity_category ac ON ac.category_id = c.id
+        WHERE ac.activity_id = ?
+      `, [id]);
+      return {
+        id: rows[0].id,
+        title: rows[0].title,
+        description: rows[0].description,
+        documentUrl: rows[0].document_url,
+        visible: rows[0].visible,
+        categories: categories.map(c => ({ id: c.id, name: c.name })),
+      };
     } finally {
       if (conn) conn.end();
     }
@@ -50,13 +63,20 @@ const Activity = {
     let conn;
     try {
       conn = await pool.getConnection();
-      // visible defaults to true if not provided (though DB likely defaults it too, safe to be explicit or let DB handle)
-      const visible = data.visible !== undefined ? data.visible : true;
       const res = await conn.query(
-        'INSERT INTO activity (title, visible) VALUES (?, ?)',
-        [data.title, visible]
+        'INSERT INTO activity (title, description, visible) VALUES (?, ?, ?)',
+        [data.title, data.description ?? null, data.visible !== undefined ? data.visible : true]
       );
-      return Number(res.insertId);
+      const id = Number(res.insertId);
+      if (data.categoryIds?.length) {
+        for (const cid of data.categoryIds) {
+          await conn.query(
+            'INSERT INTO activity_category (activity_id, category_id) VALUES (?, ?)',
+            [id, cid]
+          );
+        }
+      }
+      return id;
     } finally {
       if (conn) conn.end();
     }
@@ -74,30 +94,26 @@ const Activity = {
     let conn;
     try {
       conn = await pool.getConnection();
-
       const fields = [];
       const values = [];
-
-      if (data.title !== undefined) {
-        fields.push('title = ?');
-        values.push(data.title);
+      if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
+      if (data.description !== undefined) { fields.push('description = ?'); values.push(data.description); }
+      if (data.documentUrl !== undefined) { fields.push('document_url = ?'); values.push(data.documentUrl); }
+      if (data.visible !== undefined) { fields.push('visible = ?'); values.push(data.visible); }
+      if (fields.length) {
+        values.push(id);
+        await conn.query(`UPDATE activity SET ${fields.join(', ')} WHERE id = ?`, values);
       }
-
-      if (data.visible !== undefined) {
-        fields.push('visible = ?');
-        values.push(data.visible);
+      if (data.categoryIds !== undefined) {
+        await conn.query('DELETE FROM activity_category WHERE activity_id = ?', [id]);
+        for (const cid of data.categoryIds) {
+          await conn.query(
+            'INSERT INTO activity_category (activity_id, category_id) VALUES (?, ?)',
+            [id, cid]
+          );
+        }
       }
-
-      if (fields.length === 0) {
-        return false; // No fields to update
-      }
-
-      values.push(id);
-
-      const query = `UPDATE activity SET ${fields.join(', ')} WHERE id = ?`;
-      const res = await conn.query(query, values);
-
-      return res.affectedRows > 0;
+      return true;
     } finally {
       if (conn) conn.end();
     }

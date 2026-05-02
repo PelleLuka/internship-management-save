@@ -44,7 +44,12 @@ export const createActivity = async (data) => {
         throw new Error('TITLE_TOO_LONG');
     }
 
-    const newId = await Activity.create({ title, visible });
+    const newId = await Activity.create({
+        title: data.title.trim(),
+        description: data.description?.trim() ?? null,
+        categoryIds: data.categoryIds ?? [],
+        visible: true,
+    });
 
     return {
         id: newId,
@@ -63,7 +68,7 @@ export const createActivity = async (data) => {
 export const updateActivity = async (id, data) => {
     const { title, visible } = data;
 
-    if (title === undefined && visible === undefined) {
+    if (title === undefined && visible === undefined && data.description === undefined && data.categoryIds === undefined && data.documentUrl === undefined) {
         throw new Error('INVALID_INPUT');
     }
 
@@ -71,7 +76,13 @@ export const updateActivity = async (id, data) => {
         throw new Error('TITLE_TOO_LONG');
     }
 
-    const success = await Activity.update(id, { title, visible });
+    const success = await Activity.update(id, {
+        title,
+        visible,
+        description: data.description !== undefined ? data.description?.trim() ?? null : undefined,
+        documentUrl: data.documentUrl,
+        categoryIds: data.categoryIds,
+    });
 
     if (!success) {
         const existing = await Activity.getById(id);
