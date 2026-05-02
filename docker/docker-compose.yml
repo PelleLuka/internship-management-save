@@ -8,6 +8,7 @@ services:
     volumes:
       - ../backend:/app/backend
       - /app/backend/node_modules
+      - uploads_data:/app/backend/uploads
     command: npm run dev --workspace=backend
     environment:
       - DB_HOST=database
@@ -68,6 +69,7 @@ services:
 
 volumes:
   mariadb_data:
+  uploads_data:
 
 
 networks:
