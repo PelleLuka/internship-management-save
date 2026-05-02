@@ -1,10 +1,10 @@
 <script setup>
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { Calendar, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AppButton from '../../AppButton.vue';
-import { downloadCertificate } from '../../../services/certificateService.js';
 
 const props = defineProps({
   internship: { type: Object, required: true },
@@ -44,7 +44,8 @@ const formatDate = (dateStr) => {
   }
 };
 
-const handleCertificate = () => downloadCertificate(props.internship.id);
+const router = useRouter();
+const handleCertificate = () => router.push(`/certificate/${props.internship.id}`);
 </script>
 
 <template>
@@ -96,7 +97,8 @@ const handleCertificate = () => downloadCertificate(props.internship.id);
         <button
           @click.stop="handleCertificate"
           class="p-2 bg-slate-50 text-slate-600 rounded-lg active:scale-95 transition-transform"
-          :aria-label="'Télécharger le certificat'"
+          title="Aperçu du certificat"
+          :aria-label="'Aperçu du certificat'"
         >
           <Printer class="w-4 h-4" />
         </button>

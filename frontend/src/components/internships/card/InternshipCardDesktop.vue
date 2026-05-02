@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import { downloadCertificate } from '../../../services/certificateService.js';
+import { useRouter } from 'vue-router';
 import { Calendar, Mail, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -15,10 +15,12 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
-  'toggle', 'edit', 'delete', 'remove-activity', 
-  'open-activity-menu', 'close-activity-menu', 
+  'toggle', 'edit', 'delete', 'remove-activity',
+  'open-activity-menu', 'close-activity-menu',
   'toggle-activity-selection', 'save-activities'
 ]);
+
+const router = useRouter();
 
 const status = computed(() => {
   const today = new Date()
@@ -44,7 +46,7 @@ const formatDate = (dateStr) => {
   }
 };
 
-const handleCertificate = () => downloadCertificate(props.internship.id);
+const handleCertificate = () => router.push(`/certificate/${props.internship.id}`);
 </script>
 
 <template>
@@ -88,7 +90,7 @@ const handleCertificate = () => downloadCertificate(props.internship.id);
           <button
             @click.stop="handleCertificate"
             class="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 transition-colors"
-            title="Télécharger le certificat"
+            title="Aperçu du certificat"
           >
             <Printer class="w-4 h-4" />
           </button>
