@@ -1,16 +1,15 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Internship Status Badges', () => {
-  test('past internships show TERMINÉ badge', async ({ page }) => {
+  test('past internships show Terminé badge', async ({ page }) => {
     await page.goto('/internships');
     // Seed data has internships ending in 2024 — all past
-    await expect(page.getByText('✓ TERMINÉ').first()).toBeVisible();
+    await expect(page.locator('span').filter({ hasText: 'Terminé' }).first()).toBeVisible();
   });
 
-  test('future internship shows À VENIR badge', async ({ page }) => {
-    // internship id=60 has dates 2025-09-01 to 2025-09-02 — past as of May 2026
-    // Create a future one via API
-    const personRes = await page.request.post('/api/internships', {
+  test('future internship shows À venir badge', async ({ page }) => {
+    // Create a future internship via API
+    const res = await page.request.post('/api/internships', {
       data: {
         firstName: 'Future',
         lastName: 'Test',
@@ -19,16 +18,16 @@ test.describe('Internship Status Badges', () => {
         endDate: '2027-01-02',
       }
     });
-    expect(personRes.ok()).toBeTruthy();
+    expect(res.ok()).toBeTruthy();
     await page.goto('/internships');
-    await expect(page.getByText('◷ À VENIR').first()).toBeVisible();
+    await expect(page.locator('span').filter({ hasText: 'À venir' }).first()).toBeVisible();
   });
 
   test('status badge is visible on each card', async ({ page }) => {
     await page.goto('/internships');
-    // At least one badge of any type should be visible
+    // At least one badge of any status type should be visible
     const badges = page.locator('span').filter({
-      hasText: /✓ TERMINÉ|● EN COURS|◷ À VENIR/
+      hasText: /^(Terminé|En cours|À venir)$/
     });
     await expect(badges.first()).toBeVisible();
   });

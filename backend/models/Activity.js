@@ -33,11 +33,16 @@ const Activity = {
       conn = await pool.getConnection();
       const rows = await conn.query('SELECT * FROM activity WHERE id = ?', [id]);
       if (!rows[0]) return null;
-      const categories = await conn.query(`
-        SELECT c.id, c.name FROM category c
-        JOIN activity_category ac ON ac.category_id = c.id
-        WHERE ac.activity_id = ?
-      `, [id]);
+      const [categories, internCount] = await Promise.all([
+        conn.query(`
+          SELECT c.id, c.name FROM category c
+          JOIN activity_category ac ON ac.category_id = c.id
+          WHERE ac.activity_id = ?
+        `, [id]),
+        conn.query(
+          'SELECT COUNT(*) AS cnt FROM internship_activity WHERE activity_id = ?', [id]
+        ),
+      ]);
       return {
         id: rows[0].id,
         title: rows[0].title,
@@ -45,7 +50,21 @@ const Activity = {
         documentUrl: rows[0].document_url,
         visible: rows[0].visible,
         categories: categories.map(c => ({ id: c.id, name: c.name })),
+        internshipCount: Number(internCount[0].cnt),
       };
+    } finally {
+      if (conn) conn.end();
+    }
+  },
+
+  countLinkedInternships: async (id) => {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const rows = await conn.query(
+        'SELECT COUNT(*) AS cnt FROM internship_activity WHERE activity_id = ?', [id]
+      );
+      return Number(rows[0].cnt);
     } finally {
       if (conn) conn.end();
     }

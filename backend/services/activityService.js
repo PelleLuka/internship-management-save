@@ -101,6 +101,12 @@ export const updateActivity = async (id, data) => {
  * @throws {Error} If activity not found
  */
 export const deleteActivity = async (id) => {
+    // CdC §2.1: only activities with no linked internships can be deleted
+    const linkedCount = await Activity.countLinkedInternships(id);
+    if (linkedCount > 0) {
+        throw new Error('HAS_LINKED_INTERNSHIPS');
+    }
+
     const success = await Activity.delete(id);
 
     if (!success) {

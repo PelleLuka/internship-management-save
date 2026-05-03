@@ -94,6 +94,9 @@ export const deleteActivity = async (req, res) => {
         await activityService.deleteActivity(id);
         res.status(204).send();
     } catch (err) {
+        if (err.message === 'HAS_LINKED_INTERNSHIPS') {
+            return res.status(409).json({ error: 'Activity cannot be deleted: it has linked internships' });
+        }
         if (err.message === 'NOT_FOUND') {
             return res.status(404).json({ error: 'Activity not found' });
         }
