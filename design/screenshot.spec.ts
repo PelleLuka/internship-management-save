@@ -1,8 +1,10 @@
 import { test } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const OUT_DIR = resolve(process.cwd(), 'design/screenshots');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const OUT_DIR = resolve(__dirname, 'screenshots');
 
 const SCREENS = [
   { name: 'internships', path: '/internships' },
