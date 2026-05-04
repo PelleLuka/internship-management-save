@@ -9,7 +9,7 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import ActivityFormModal from '../components/ActivityFormModal.vue';
 import AppButton from '../components/AppButton.vue';
 import AppInput from '../components/AppInput.vue';
@@ -127,6 +127,10 @@ const closeCategoryMenu = () => {
   tempCategoryIds.value = new Set();
 };
 
+const handleEscape = (e) => {
+  if (e.key === 'Escape') closeCategoryMenu();
+};
+
 const toggleCategorySelection = (catId) => {
   const s = new Set(tempCategoryIds.value);
   if (s.has(catId)) s.delete(catId);
@@ -163,8 +167,13 @@ const removeCategoryFromActivity = async (activity, catId) => {
 };
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleEscape);
   await loadActivities();
   allCategories.value = await getCategories();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleEscape);
 });
 </script>
 
@@ -403,6 +412,13 @@ onMounted(async () => {
               >
                 + Ajouter une catégorie
               </button>
+
+              <!-- Outside-click overlay -->
+              <div
+                v-if="categoryMenuActivityId === activity.id"
+                class="fixed inset-0 z-40"
+                @click="closeCategoryMenu"
+              />
 
               <div
                 v-if="categoryMenuActivityId === activity.id"
