@@ -47,6 +47,34 @@ test.describe('Category CRUD', () => {
     await expect(page.getByRole('heading', { name: 'A Supprimer' })).not.toBeVisible();
   });
 
+  test('cannot delete modal appears when category has linked activities', async ({ page }) => {
+    // Create a category via API
+    const catRes = await page.request.post('/api/categories', {
+      data: { name: 'CatBlock E2E' },
+    });
+    const { id: catId } = await catRes.json();
+
+    // Link it to an activity via API (create activity with this category)
+    await page.request.post('/api/activities', {
+      data: { title: 'ActForCatBlock E2E', categoryIds: [catId] },
+    });
+
+    await page.goto('/categories');
+
+    // Find the category card and click delete button
+    const card = page.locator('.grid > div').filter({ hasText: 'CatBlock E2E' });
+    const deleteBtn = card.locator('button').filter({ hasText: '' }).last();
+    await deleteBtn.click({ force: true });
+
+    // Modal should appear with the category name
+    await expect(page.getByText('Suppression impossible')).toBeVisible();
+    await expect(page.getByText('CatBlock E2E')).toBeVisible();
+
+    // Close modal
+    await page.getByRole('button', { name: 'Fermer' }).click();
+    await expect(page.getByText('Suppression impossible')).not.toBeVisible();
+  });
+
   test('categories displayed as card grid', async ({ page }) => {
     await page.goto('/categories');
     // Layout must be a grid, not a list

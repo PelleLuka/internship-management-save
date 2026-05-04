@@ -12,19 +12,19 @@ onMounted(load);
 const showForm = ref(false);
 const editTarget = ref(null);
 const form = ref({ name: '', description: '' });
-const deleteError = ref('');
+const cannotDeleteTarget = ref(null); // { id, name } | null
 
 const openCreate = () => {
   editTarget.value = null;
   form.value = { name: '', description: '' };
-  deleteError.value = '';
+  cannotDeleteTarget.value = null;
   showForm.value = true;
 };
 
 const openEdit = (cat) => {
   editTarget.value = cat;
   form.value = { name: cat.name, description: cat.description ?? '' };
-  deleteError.value = '';
+  cannotDeleteTarget.value = null;
   showForm.value = true;
 };
 
@@ -38,11 +38,11 @@ const submit = async () => {
 };
 
 const handleDelete = async (cat) => {
-  deleteError.value = '';
+  cannotDeleteTarget.value = null;
   try {
     await remove(cat.id);
-  } catch (err) {
-    deleteError.value = `Impossible de supprimer "${cat.name}" : des ateliers y sont liés.`;
+  } catch {
+    cannotDeleteTarget.value = cat;
   }
 };
 </script>
@@ -57,10 +57,22 @@ const handleDelete = async (cat) => {
       </AppButton>
     </div>
 
-    <div v-if="deleteError"
-      class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md">
-      {{ deleteError }}
-    </div>
+    <AppDialog
+      :isOpen="!!cannotDeleteTarget"
+      title="Suppression impossible"
+      @close="cannotDeleteTarget = null"
+    >
+      <p class="text-slate-600 text-sm">
+        La catégorie <strong class="text-slate-900">« {{ cannotDeleteTarget?.name }} »</strong>
+        ne peut pas être supprimée car des ateliers lui sont associés.
+      </p>
+      <p class="text-slate-500 text-sm mt-2">
+        Retirez d'abord cette catégorie de tous les ateliers concernés, puis réessayez.
+      </p>
+      <div class="flex justify-end mt-4">
+        <AppButton @click="cannotDeleteTarget = null">Fermer</AppButton>
+      </div>
+    </AppDialog>
 
     <!-- Empty state -->
     <div v-if="!categories.length" class="text-center py-12 bg-white rounded-lg border border-dashed border-slate-300">
