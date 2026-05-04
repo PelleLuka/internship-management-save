@@ -1084,34 +1084,189 @@ format email, cohérence des dates).
 
 ## 7. Tests de fonctionnement
 
+Le tableau ci-dessous constitue le protocole de test des fonctionnalités principales
+de l'application. Les tests sont exécutés après restauration de la base de données
+via `tests/setup/restore_db.sql`.
+
+| N° | Scénario | Préconditions | Résultat attendu | Résultat obtenu | Statut |
+|---|---|---|---|---|---|
+| T01 | Créer un stagiaire valide | App lancée, DB restaurée | Carte du stagiaire apparaît dans la liste, statut calculé correct | ⚠️ À compléter | — |
+| T02 | Créer un stagiaire avec date de fin < début | App lancée | Message d'erreur, aucun enregistrement créé | ⚠️ À compléter | — |
+| T03 | Modifier un stagiaire existant | Stagiaire T01 créé | Les nouvelles données sont affichées sur la carte | ⚠️ À compléter | — |
+| T04 | Supprimer un stagiaire | Stagiaire sans ateliers | Carte disparaît de la liste | ⚠️ À compléter | — |
+| T05 | Badge « À venir » affiché | Stage avec startDate future | Badge amber « À venir » visible | ⚠️ À compléter | — |
+| T06 | Badge « Terminé » affiché | Stage avec endDate passée | Badge bleu « Terminé » visible | ⚠️ À compléter | — |
+| T07 | Créer un atelier avec catégories | Catégories existantes | Carte atelier affiche les badges de catégories | ⚠️ À compléter | — |
+| T08 | Supprimer atelier lié à un stage | Atelier associé à un stage | Bouton désactivé, message « Suppression impossible » | ⚠️ À compléter | — |
+| T09 | Supprimer atelier sans stage | Atelier non associé | Atelier disparu du catalogue | ⚠️ À compléter | — |
+| T10 | Upload document sur atelier | Atelier existant | Zone document affiche le fichier uploadé | ⚠️ À compléter | — |
+| T11 | Upload fichier > 10 MB | — | Erreur HTTP 400, fichier rejeté | ⚠️ À compléter | — |
+| T12 | Créer une catégorie | — | Catégorie apparaît dans la grille | ⚠️ À compléter | — |
+| T13 | Supprimer catégorie liée à atelier | Catégorie avec ateliers | Bouton désactivé | ⚠️ À compléter | — |
+| T14 | Associer un atelier à un stage | Stage + atelier existants | Atelier apparaît dans la liste du stage | ⚠️ À compléter | — |
+| T15 | Générer le certificat PDF | Template uploadé, stage avec ateliers | PDF affiché dans l'iframe, données correctes | ⚠️ À compléter | — |
+| T16 | Générer certificat sans template | Aucun template uploadé | Message d'erreur explicite | ⚠️ À compléter | — |
+
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT** : Remplir les colonnes « Résultat obtenu » et
+> « Statut » (✅ / ❌) après exécution des tests durant le TPI. Ajouter la signature
+> du chef de projet.
+
 ---
 
 ## 8. Problèmes rencontrés
+
+> ⚠️ **SECTION GUIDÉE — À RÉDIGER PAR LE CANDIDAT**
+>
+> Cette section documente les obstacles techniques rencontrés durant le développement
+> et les solutions apportées. Elle est évaluée par les experts comme preuve de la
+> capacité à résoudre des problèmes (critère 170 — Découverte de solutions).
+>
+> **Pistes à développer avec ton vécu :**
+>
+> **Problème 1 — Soft delete et contrainte FK**
+> Contexte : La suppression d'un atelier via DELETE SQL déclenchait la contrainte
+> ON DELETE RESTRICT de internship_activity, même si l'atelier n'était lié à aucun
+> stage actif.
+> Solution : Implémentation d'un soft delete (UPDATE SET visible = 0) couplé à un
+> guard applicatif dans le service vérifiant internshipCount avant toute suppression.
+>
+> **Problème 2 — Réactivité Vue 3 avec Set**
+> Contexte : La mutation d'un ref<Set> (ex: .add(), .delete()) ne déclenchait pas
+> de re-render Vue car Vue ne détecte pas les mutations internes des objets natifs.
+> Solution : Remplacement systématique de la référence au lieu de la muter
+> (tempCategoryIds.value = new Set(modified)).
+>
+> **Problème 3 — Tests E2E sur éléments hover**
+> Contexte : Les boutons d'action des cartes sont masqués par pointer-events: none
+> en dehors du survol. Playwright ne pouvait pas les cliquer normalement.
+> Solution : Utilisation de l'option { force: true } dans les appels .click() Playwright
+> pour forcer le clic même sur des éléments techniquement non cliquables.
+>
+> **Ajouter ici les autres problèmes rencontrés** durant ton développement.
 
 ---
 
 ## 9. Amélioration et évolution
 
+### Améliorations techniques identifiées
+
+Plusieurs pistes d'amélioration technique ont été identifiées lors du développement
+mais sortent du périmètre du TPI :
+
+- **Authentification** : L'application est actuellement sans authentification (accès libre
+  en réseau local). L'intégration de la CA TIC Authentication Gateway (Microsoft MFA),
+  déjà utilisée dans d'autres projets CA TIC, constituerait la prochaine étape logique.
+
+- **Optimisation des requêtes** : La page des ateliers effectue actuellement une requête
+  `GET /api/activities/:id` pour chaque atelier affiché (pattern N+1). Un endpoint
+  `GET /api/activities/details` retournant toutes les données enrichies en une seule
+  requête améliorerait significativement les performances avec un grand catalogue.
+
+- **Recherche et filtrage** : Filtres côté serveur sur les stagiaires (par statut, par
+  période) et sur les ateliers (par catégorie, par titre) pour faciliter la navigation
+  avec un grand volume de données.
+
+### Évolutions fonctionnelles (CdC)
+
+Le cahier des charges mentionne des évolutions futures envisagées :
+
+- Intégration de la gestion des inscriptions via FriStages
+- Planification des stages dans la même application
+- Export des données pour la gestion des certifications
+
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT** : Ajouter tes propres idées d'amélioration
+> issues de l'utilisation réelle de l'application.
+
 ---
 
 ## 10. Conclusion
+
+> ⚠️ **SECTION GUIDÉE — À RÉDIGER PAR LE CANDIDAT**
+>
+> **Points à aborder :**
+> - Rappeler les 5 exigences du CdC et confirmer leur implémentation
+>   (Gestion stagiaires ✅, Gestion ateliers ✅, Gestion catégories ✅,
+>   Génération certificat ✅, Association ateliers↔stages ✅)
+> - Ce qui a bien fonctionné (ex : architecture claire, tests automatisés, Docker)
+> - Ce qui aurait été fait différemment avec le recul
+> - Bilan personnel : compétences acquises, apprentissages clés du TPI
 
 ---
 
 ## 11. Remerciements
 
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT**
+
 ---
 
 ## 12. Déclaration de non plagiat
+
+Je soussigné, Luka Pellegrinelli, déclare que le présent rapport de travail pratique
+individuel est le résultat de mon propre travail. Les sources et outils utilisés sont
+clairement référencés dans ce document.
+
+> ⚠️ **À SIGNER PAR LE CANDIDAT** — Date et lieu : _________________________, le _____ / _____ / 2026
 
 ---
 
 ## 13. Glossaire
 
+| Terme | Définition |
+|---|---|
+| **API REST** | Interface de programmation applicative suivant le style architectural REST (Representational State Transfer), basée sur le protocole HTTP |
+| **Biome** | Outil de linting et formatage de code JavaScript/TypeScript, remplaçant ESLint + Prettier |
+| **BLOB** | Binary Large Object — données binaires (fichier, image) stockées directement en base de données |
+| **carbone.js** | Bibliothèque Node.js de templating de documents (DOCX, ODT) avec injection de données |
+| **CFC** | Certificat Fédéral de Capacité — diplôme suisse d'apprentissage professionnel |
+| **CRUD** | Create, Read, Update, Delete — les 4 opérations de base sur les données |
+| **Docker** | Plateforme de conteneurisation permettant d'exécuter des applications dans des environnements isolés |
+| **E2E** | End-to-End (bout en bout) — tests simulant les actions réelles d'un utilisateur dans un vrai navigateur |
+| **FK** | Foreign Key (clé étrangère) — contrainte d'intégrité référentielle entre tables SQL |
+| **HMR** | Hot Module Replacement — mise à jour du code en temps réel sans rechargement complet de la page |
+| **HTTP** | HyperText Transfer Protocol — protocole de communication client-serveur du web |
+| **LibreOffice** | Suite bureautique libre utilisée ici pour convertir des fichiers DOCX en PDF |
+| **MCD** | Modèle Conceptuel de Données — représentation graphique des entités et relations d'une base de données |
+| **Monorepo** | Dépôt Git unique contenant plusieurs projets (frontend, backend, tests) |
+| **multer** | Middleware Express.js pour la gestion des uploads de fichiers (multipart/form-data) |
+| **Newman** | Outil CLI permettant d'exécuter des collections Postman en ligne de commande |
+| **NPM Workspaces** | Fonctionnalité npm permettant de gérer plusieurs packages dans un même dépôt |
+| **Playwright** | Framework de tests E2E permettant de simuler des actions navigateur |
+| **Postman** | Outil de test et documentation d'APIs REST |
+| **REST** | Representational State Transfer — style architectural pour les APIs web |
+| **SPA** | Single Page Application — application web dont le contenu est chargé dynamiquement sans rechargement de page |
+| **Soft delete** | Suppression logique : marquage d'un enregistrement comme supprimé sans le retirer physiquement de la base |
+| **SQL** | Structured Query Language — langage de requête pour les bases de données relationnelles |
+| **TPI** | Travail Pratique Individuel — examen pratique de fin d'apprentissage CFC |
+| **VCS** | Version Control System — système de gestion de versions du code (ici : Git) |
+| **Vue.js** | Framework JavaScript progressif pour la construction d'interfaces utilisateur |
+
 ---
 
 ## 14. Annexes
 
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT**
+>
+> Contenu attendu :
+> - Journal de bord complet (jour par jour)
+> - Listings de code des composants principaux (si demandé par les experts)
+> - Collection Postman exportée (JSON)
+
 ---
 
 ## 15. Table des illustrations
+
+> ⚠️ **À GÉNÉRER AUTOMATIQUEMENT DANS WORD** : Références → Insérer une table des illustrations
+>
+> Figures à inclure :
+> - Figure 1 — Extrait OneNote (section 4.1)
+> - Figure 2 — Schéma de principe de fonctionnement (section 4.2)
+> - Figure 3 — Diagramme de cas d'utilisation (section 4.4.1)
+> - Figure 4 — Schéma d'architecture 3-tiers (section 5.1)
+> - Figure 5 — Diagramme de séquence : création d'un stagiaire (section 5.2)
+> - Figure 6 — Diagramme de séquence : upload d'un document (section 5.2)
+> - Figure 7 — Diagramme de séquence : génération du certificat PDF (section 5.2)
+> - Figure 8 — Modèle relationnel de la base de données (section 5.3)
+> - Figure 9 — Mockup : liste des stages (section 5.4)
+> - Figure 10 — Mockup : liste des ateliers (section 5.4)
+> - Figure 11 — Mockup : page catégories (section 5.4)
+> - Figure 12 — Mockup : page paramètres (section 5.4)
