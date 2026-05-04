@@ -1,6 +1,8 @@
 <script setup>
 import {
   Activity as ActivityIcon,
+  CircleCheck,
+  CircleX,
   Pencil,
   Plus,
   Search,
@@ -344,6 +346,26 @@ onMounted(async () => {
           class="px-5 pb-0 animate-in slide-in-from-top-2 duration-200"
         >
           <div class="pt-3 border-t border-slate-100">
+            <!-- Card/Stat + Card/StatDoc -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-1">
+                <span class="text-xs font-medium text-slate-500">Stages utilisant cet atelier</span>
+                <span class="text-2xl font-bold text-blue-600">{{ activity.internshipCount }}</span>
+              </div>
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-2">
+                <span class="text-xs font-medium text-slate-500">Document</span>
+                <div class="flex items-center gap-2">
+                  <CircleCheck v-if="activity.documentUrl" class="w-4 h-4 text-green-600 shrink-0" />
+                  <CircleX v-else class="w-4 h-4 text-slate-400 shrink-0" />
+                  <span
+                    class="text-sm font-medium"
+                    :class="activity.documentUrl ? 'text-green-600' : 'text-slate-400'"
+                  >
+                    {{ activity.documentUrl ? 'Disponible' : 'Aucun document' }}
+                  </span>
+                </div>
+              </div>
+            </div>
             <span
               class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2 block"
               >Catégories</span

@@ -52,6 +52,20 @@ test.describe('Enriched Activity Form', () => {
     ).toBeVisible();
   });
 
+  test('expanded activity card shows stat cards', async ({ page }) => {
+    await page.goto('/activities');
+    // Activity 4 "Réalisation d'un site Web..." is seeded with categories
+    const card = page
+      .locator('.grid > div')
+      .filter({ hasText: "Réalisation d'un site Web" });
+    // Click to expand
+    await card.locator('div').first().click();
+    // Card/Stat: internship count label visible
+    await expect(card.locator('text=Stages utilisant cet atelier')).toBeVisible();
+    // Card/StatDoc: document status label visible
+    await expect(card.locator('text=Document').first()).toBeVisible();
+  });
+
   test('delete button is disabled for activities linked to internships', async ({
     page,
   }) => {
