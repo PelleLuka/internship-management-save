@@ -21,9 +21,9 @@ de découverte du métier d'informaticien-ne CFC à destination des jeunes du cy
 d'orientation (CO). Ces stages, d'une durée de 1 à 2 jours, permettent aux participants de
 réaliser divers ateliers pratiques.
 
-Actuellement, le suivi de ces stages est assuré via Microsoft OneNote : la liste des
-stagiaires et les ateliers réalisés sont consignés manuellement dans des notes non
-structurées. Ce fonctionnement ne permet pas de centraliser efficacement les données,
+Jusqu'alors, le suivi de ces stages était assuré via Microsoft OneNote : la liste des
+stagiaires et les ateliers réalisés étaient consignés manuellement dans des notes non
+structurées. Ce fonctionnement ne permettait pas de centraliser efficacement les données,
 d'identifier clairement les stages terminés ou en cours, ni de générer automatiquement les
 certificats de stage.
 
@@ -50,9 +50,10 @@ L'application couvre cinq modules fonctionnels :
 Toutes les exigences fonctionnelles définies dans le cahier des charges ont été
 implémentées et validées. L'interface permet à l'équipe CA TIC de gérer l'ensemble du
 cycle de vie d'un stage depuis une seule application. Les contraintes métier critiques sont
-garanties côté serveur (suppression bloquée si des stages sont liés à un atelier, ou des
-ateliers liés à une catégorie). La qualité du code est assurée par des tests automatisés :
-scénarios de bout en bout Playwright et tests d'intégration API Postman/Newman.
+appliquées côté serveur (suppression d'un atelier bloquée s'il est lié à un stage actif,
+suppression d'une catégorie bloquée si des ateliers lui sont associés). La qualité du code
+est assurée par des tests automatisés : scénarios de bout en bout Playwright et tests
+fonctionnels API via Postman/Newman.
 
 ---
 
