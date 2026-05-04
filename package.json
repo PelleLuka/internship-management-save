@@ -22,7 +22,8 @@
     "test:e2e": "npm run db:restore && npm run test:e2e:sanity && npm run test:e2e:simple",
     "test:e2e:spec": "npm run db:restore && cd tests/e2e/tests && npx playwright test",
     "test:api": "npm run db:restore && bash tests/api/run_tests.sh",
-    "sync:tokens": "node design/sync-tokens.js"
+    "sync:tokens": "node design/sync-tokens.js",
+    "screenshot:app": "cd tests/e2e && npx playwright test --config ../../design/playwright-screenshot.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
