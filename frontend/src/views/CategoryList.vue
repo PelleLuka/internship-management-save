@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { Plus, Pencil, Trash2, Tag } from 'lucide-vue-next';
+import { computed, onMounted, ref } from 'vue';
+import { Pencil, Plus, Search, Tag, Trash2 } from 'lucide-vue-next';
 import { useCategories } from '../composables/useCategories.js';
 import AppButton from '../components/AppButton.vue';
 import AppDialog from '../components/AppDialog.vue';
@@ -12,7 +12,17 @@ onMounted(load);
 
 const showForm = ref(false);
 const editTarget = ref(null);
-const cannotDeleteTarget = ref(null); // { id, name } | null
+const cannotDeleteTarget = ref(null);
+const searchQuery = ref('');
+
+const filteredCategories = computed(() => {
+  if (!searchQuery.value) return categories.value;
+  const q = searchQuery.value.toLowerCase();
+  return categories.value.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    (c.description ?? '').toLowerCase().includes(q),
+  );
+});
 
 const openCreate = () => {
   editTarget.value = null;
@@ -47,12 +57,18 @@ const handleDelete = async (cat) => {
 
 <template>
   <div class="w-full max-w-7xl mx-auto px-4 pb-12">
-    <div class="flex items-center justify-between bg-white p-4 rounded-lg border border-slate-200 shadow-sm sticky top-8 z-40 mb-8">
+    <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm sticky top-8 z-40 mb-8">
       <h1 class="text-2xl font-bold text-slate-900">Catégories</h1>
-      <AppButton @click="openCreate">
-        <Plus class="w-4 h-4 mr-2" />
-        Nouvelle catégorie
-      </AppButton>
+      <div class="flex gap-3 w-full sm:w-auto">
+        <div class="relative w-full sm:w-56">
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <AppInput v-model="searchQuery" class="pl-9" placeholder="Rechercher..." />
+        </div>
+        <AppButton @click="openCreate">
+          <Plus class="w-4 h-4 mr-2" />
+          Nouvelle catégorie
+        </AppButton>
+      </div>
     </div>
 
     <AppDialog
@@ -73,7 +89,7 @@ const handleDelete = async (cat) => {
     </AppDialog>
 
     <!-- Empty state -->
-    <div v-if="!categories.length" class="text-center py-12 bg-white rounded-lg border border-dashed border-slate-300">
+    <div v-if="!filteredCategories.length" class="text-center py-12 bg-white rounded-lg border border-dashed border-slate-300">
       <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4">
         <Tag class="w-6 h-6 text-blue-500" />
       </div>
@@ -84,7 +100,7 @@ const handleDelete = async (cat) => {
     <!-- Card grid -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
-        v-for="cat in categories"
+        v-for="cat in filteredCategories"
         :key="cat.id"
         class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 p-5 flex flex-col gap-3"
       >

@@ -20,11 +20,16 @@ const emit = defineEmits([
   'toggle-activity-selection', 'save-activities'
 ]);
 
+const parseLocalDate = (str) => {
+  const [y, m, d] = String(str).slice(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 const status = computed(() => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const start = new Date(props.internship.startDate)
-  const end = new Date(props.internship.endDate)
+  const start = parseLocalDate(props.internship.startDate)
+  const end = parseLocalDate(props.internship.endDate)
   if (today < start) return 'upcoming'
   if (today > end) return 'done'
   return 'active'

@@ -10,7 +10,7 @@ const props = defineProps({
 
 const emit = defineEmits(["close"]);
 
-const isLargeScreen = useMediaQuery("(min-width: 1800px)");
+const isLargeScreen = useMediaQuery("(min-width: 1024px)");
 const isHovered = ref(false);
 
 // Desktop collapse logic: Collapsed if NOT large screen AND NOT hovered

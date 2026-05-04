@@ -316,7 +316,7 @@ onUnmounted(() => {
             {{ activity.title }}
           </h3>
 
-          <!-- Category badges — display only -->
+          <!-- Category badges — deletable -->
           <div
             v-if="activity.categories?.length"
             class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-1"
@@ -324,9 +324,16 @@ onUnmounted(() => {
             <span
               v-for="cat in activity.categories"
               :key="cat.id"
-              class="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-xl"
+              class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-xl group/cat hover:bg-blue-100 transition-colors"
             >
               {{ cat.name }}
+              <button
+                @click.stop="removeCategoryFromActivity(activity, cat.id)"
+                class="text-blue-400 hover:text-blue-600 opacity-0 group-hover/cat:opacity-100 transition-opacity focus:outline-none"
+                title="Retirer la catégorie"
+              >
+                <X class="w-3 h-3" />
+              </button>
             </span>
           </div>
 
