@@ -49,7 +49,6 @@ const handleDelete = async (id) => {
   if (confirm('Êtes-vous sûr de vouloir supprimer cette activité ?')) {
     try {
       await deleteActivity(id);
-      activities.value = activities.value.filter((a) => a.id !== id);
       await loadActivities();
     } catch (error) {
       if (error.response?.status === 409) {

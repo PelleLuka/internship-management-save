@@ -57,18 +57,6 @@ const Activity = {
     }
   },
 
-  countLinkedInternships: async (id) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
-      const rows = await conn.query(
-        'SELECT COUNT(*) AS cnt FROM internship_activity WHERE activity_id = ?', [id]
-      );
-      return Number(rows[0].cnt);
-    } finally {
-      if (conn) conn.end();
-    }
-  },
 
   /**
    * Creates a new activity.
