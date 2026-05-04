@@ -31,10 +31,9 @@ const Category = {
       conn = await pool.getConnection();
       const rows = await conn.query(`
         SELECT c.id, c.name, c.description,
-               COUNT(CASE WHEN a.visible = 1 THEN 1 END) as activity_count
+               COUNT(ac.category_id) as activity_count
         FROM category c
         LEFT JOIN activity_category ac ON ac.category_id = c.id
-        LEFT JOIN activity a ON a.id = ac.activity_id
         WHERE c.id = ?
         GROUP BY c.id
       `, [id]);
