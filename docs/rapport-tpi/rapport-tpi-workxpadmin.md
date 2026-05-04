@@ -574,13 +574,216 @@ pertinence.
 
 ### 5.1 Schéma d'architecture
 
+L'application suit une architecture trois tiers conteneurisée via Docker Compose.
+
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT** : Insérer ici le diagramme d'architecture.
+> À créer avec Draw.io. Contenu : 3 boîtes (Frontend Vue.js :8081, Backend Express :3000,
+> MariaDB :3306) + volume uploads_data + flèches HTTP/SQL étiquetées.
+
+*Figure 4 — Schéma d'architecture 3-tiers*
+
+**Description des composants :**
+
+| Composant | Technologie | Port | Rôle |
+|---|---|---|---|
+| Frontend | Vue.js 3 + Vite | 8081 | Interface SPA, rendu côté client, appels API via Axios |
+| Backend | Node.js + Express.js | 3000 | API REST, logique métier, accès DB, gestion fichiers |
+| Base de données | MariaDB | 3306 | Stockage persistant des données relationnelles |
+| Volume `uploads_data` | Docker volume | — | Persistance des fichiers uploadés (documents + template certificat) |
+
+Le navigateur charge l'application Vue.js qui communique exclusivement avec le backend
+via des requêtes HTTP/JSON (API REST). Le backend accède à MariaDB via un pool de
+connexions et au filesystem via le volume Docker monté sur `/app/uploads`.
+
 ### 5.2 Diagrammes de séquences
+
+Les diagrammes de séquences illustrent les flux d'interactions entre les composants pour
+les opérations principales.
+
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT** : Créer les diagrammes avec PlantUML ou
+> SequenceDiagram.org. Insérer les images ci-dessous.
+
+**Séquence 1 — Création d'un stagiaire**
+
+Acteurs : Administrateur, Vue.js, Express API, MariaDB
+
+1. Administrateur remplit le formulaire et clique « Enregistrer »
+2. Vue.js → `POST /api/internships` avec `{ firstName, lastName, email, startDate, endDate }`
+3. Express valide les données (dates cohérentes, champs obligatoires)
+4. Express → MariaDB : `INSERT INTO person` puis `INSERT INTO internship`
+5. MariaDB → Express : `{ insertId: N }`
+6. Express → Vue.js : `201 Created { id, firstName, lastName, ... }`
+7. Vue.js recharge la liste et ferme le formulaire
+
+*Figure 5 — Diagramme de séquence : création d'un stagiaire*
+
+**Séquence 2 — Upload d'un document sur un atelier**
+
+1. Administrateur glisse un fichier dans la zone upload
+2. Vue.js → `POST /api/activities/:id/document` (multipart/form-data)
+3. Express/multer valide le type MIME et la taille (max 10 MB)
+4. multer stocke le fichier dans `/app/uploads/activities/<uuid>-<nom>.<ext>`
+5. Express → MariaDB : `UPDATE activity SET document_url = ?`
+6. Express → Vue.js : `200 OK { documentUrl: "..." }`
+7. Vue.js met à jour la zone document de la carte
+
+*Figure 6 — Diagramme de séquence : upload d'un document*
+
+**Séquence 3 — Génération du certificat PDF**
+
+1. Administrateur clique « Aperçu du certificat » sur une carte de stage
+2. Vue.js navigue vers `/certificate/:id`
+3. `CertificateView.vue` → `GET /api/internships/:id/certificate`
+4. Express récupère les données du stage et les ateliers associés depuis MariaDB
+5. Express lit le template `/app/uploads/certificate/template.docx`
+6. carbone.js injecte les données dans le template DOCX
+7. LibreOffice convertit le DOCX en PDF
+8. Express → Vue.js : stream binaire PDF (Content-Type: application/pdf)
+9. Vue.js crée un Blob URL et l'affiche dans un `<iframe>`
+
+*Figure 7 — Diagramme de séquence : génération du certificat PDF*
 
 ### 5.3 Base de données
 
+La base de données relationnelle MariaDB contient 5 tables liées par des contraintes
+d'intégrité référentielle.
+
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT** : Insérer ici le schéma MCD/MLD. À créer avec
+> DbDiagram.io ou Draw.io.
+
+*Figure 8 — Modèle relationnel de la base de données*
+
+#### Table `person`
+
+| Colonne | Type | Contrainte | Description |
+|---|---|---|---|
+| `id` | INT | PK, AUTO_INCREMENT | Identifiant unique |
+| `first_name` | VARCHAR(80) | NOT NULL | Prénom du stagiaire |
+| `last_name` | VARCHAR(80) | NOT NULL | Nom du stagiaire |
+| `email` | VARCHAR(254) | NOT NULL | Email de contact |
+
+#### Table `internship`
+
+| Colonne | Type | Contrainte | Description |
+|---|---|---|---|
+| `id` | INT | PK, AUTO_INCREMENT | Identifiant unique |
+| `person_id` | INT | FK → person(id) CASCADE | Référence à la personne |
+| `start_date` | DATE | NOT NULL | Date de début du stage |
+| `end_date` | DATE | NOT NULL, CHECK ≥ start_date | Date de fin du stage |
+
+La suppression d'une personne supprime en cascade tous ses stages (`ON DELETE CASCADE`).
+Le statut du stage (À venir / En cours / Terminé) est calculé côté frontend à partir des
+dates, sans être stocké en base.
+
+#### Table `activity`
+
+| Colonne | Type | Contrainte | Description |
+|---|---|---|---|
+| `id` | INT | PK, AUTO_INCREMENT | Identifiant unique |
+| `title` | VARCHAR(255) | NOT NULL | Titre de l'atelier |
+| `description` | TEXT | NULL | Description détaillée |
+| `document_url` | VARCHAR(500) | NULL | Chemin vers le fichier document |
+| `visible` | BOOLEAN | DEFAULT true | Soft delete : false = supprimé |
+
+#### Table `category`
+
+| Colonne | Type | Contrainte | Description |
+|---|---|---|---|
+| `id` | INT | PK, AUTO_INCREMENT | Identifiant unique |
+| `name` | VARCHAR(100) | NOT NULL | Nom de la catégorie |
+| `description` | TEXT | NULL | Description optionnelle |
+
+#### Table `internship_activity` (jonction N:M)
+
+| Colonne | Type | Contrainte |
+|---|---|---|
+| `internship_id` | INT | FK → internship(id) CASCADE DELETE |
+| `activity_id` | INT | FK → activity(id) RESTRICT DELETE |
+
+La contrainte RESTRICT sur `activity_id` empêche la suppression d'un atelier lié à
+au moins un stage. Cette règle est également enforced au niveau applicatif
+(service `deleteActivity` vérifie `internshipCount > 0` → erreur `HAS_LINKED_INTERNSHIPS`).
+
+**Note sur le soft delete :** La suppression d'un atelier est implémentée comme un soft
+delete (`UPDATE activity SET visible = 0`) et non un `DELETE`. Cela évite de déclencher
+la contrainte `ON DELETE RESTRICT` tout en préservant les associations historiques.
+La vérification métier se fait donc au niveau applicatif avant l'opération.
+
+#### Table `activity_category` (jonction N:M)
+
+| Colonne | Type | Contrainte |
+|---|---|---|
+| `activity_id` | INT | FK → activity(id) CASCADE DELETE |
+| `category_id` | INT | FK → category(id) RESTRICT DELETE |
+
+La contrainte RESTRICT sur `category_id` empêche la suppression d'une catégorie liée
+à des ateliers.
+
 ### 5.4 Mockups
 
+Le design de l'application a été conçu en amont du développement à l'aide de l'outil
+Pencil (fichier `WorkXPAdmin.pen`). Ce fichier a servi de référence visuelle tout au
+long du développement pour garantir la cohérence de l'interface.
+
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT** : Insérer des captures d'écran des mockups Pencil
+> pour les écrans principaux : liste des stages, liste des ateliers (repliée et dépliée),
+> page catégories, page paramètres, page certificat.
+
+*Figure 9 — Mockup : liste des stages*
+
+*Figure 10 — Mockup : liste des ateliers (carte dépliée)*
+
+*Figure 11 — Mockup : page catégories*
+
+*Figure 12 — Mockup : page paramètres*
+
 ### 5.5 Stratégie de tests
+
+Deux types de tests automatisés sont mis en place pour garantir la non-régression de
+l'application.
+
+#### Tests de bout en bout — Playwright E2E
+
+Playwright simule un vrai navigateur (Chromium) et exécute des scénarios utilisateurs
+complets sur l'application en cours d'exécution. La base de données est réinitialisée
+avant chaque exécution via le script `tests/setup/restore_db.sql`.
+
+| Scénario | Fichier | Ce qui est testé |
+|---|---|---|
+| Navigation | `sc01-navigation.spec.ts` | Accès aux pages principales, sidebar |
+| Création stage | `sc03-internship-creation.spec.ts` | Formulaire de création, validation |
+| Validation stage | `sc04-internship-validation.spec.ts` | Erreurs de saisie, cohérence dates |
+| Modification stage | `sc05-internship-modification.spec.ts` | Édition, persistance des données |
+| Suppression stage | `sc06-internship-deletion.spec.ts` | Confirmation, disparition de la liste |
+| CRUD atelier | `sc07-activity-crud.spec.ts` | Création, modification, suppression |
+| Association ateliers | `sc08-internship-association.spec.ts` | Ajout d'un atelier à un stage |
+| Dissociation ateliers | `sc09-internship-dissociation.spec.ts` | Retrait d'un atelier |
+| Ateliers enrichis | `sc-activity-enriched.spec.ts` | Description, catégories, suppression bloquée |
+| Badges de statut | `sc-status-badges.spec.ts` | À venir / En cours / Terminé |
+| CRUD catégories | `sc-category-crud.spec.ts` | Création, modification, contrainte suppression |
+| Certificat | `sc-certificate-download.spec.ts` | Navigation vers la page de prévisualisation |
+
+#### Tests fonctionnels API — Postman / Newman
+
+La collection Postman (`tests/api/test_internship_management.postman_collection.json`)
+valide le contrat d'interface de l'API REST. Elle est exécutable en ligne de commande
+via Newman.
+
+Les tests couvrent :
+- CRUD complet sur `/api/internships`, `/api/activities`, `/api/categories`
+- Contraintes métier : suppression bloquée (HTTP 409), validation des champs (HTTP 422)
+- Endpoints document : upload, téléchargement, suppression
+- Endpoint certificat : génération PDF
+
+**Exécution des tests :**
+
+```bash
+# Tests E2E Playwright
+npm run test:e2e
+
+# Tests fonctionnels API Postman/Newman
+npm run test:api
+```
 
 ---
 
