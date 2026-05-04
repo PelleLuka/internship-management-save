@@ -184,7 +184,84 @@ de code. Il ne s'agit en aucun cas d'un remplacement des compétences du candida
 
 ## 3. Cahier des charges
 
----
+Ce chapitre décrit la consigne du travail telle qu'elle a été communiquée au début du
+projet dans le cahier des charges officiel.
+
+### Donnée du problème
+
+Le Centre d'Apprentissage TIC (CA TIC) de la HEIA-FR organise régulièrement des stages
+de découverte du métier d'informaticien-ne CFC. Ces stages, d'une durée de 1 à 2 jours
+en général, sont destinés aux jeunes du cycle d'orientation. Durant ces stages, les
+participants réalisent divers ateliers afin de découvrir les multiples aspects de ce métier.
+
+Actuellement, la liste des stagiaires ainsi que les travaux qu'ils ont réalisés sont notés
+dans un document OneNote. L'inscription à ces stages se fait par email, par téléphone ou
+directement via la plateforme FriStages (hors périmètre du projet).
+
+Le but est de développer une application web permettant de répertorier de manière
+centralisée les données de ces stages. Le système doit analyser les besoins et en tenir
+compte afin de rendre le produit évolutif. L'application se limitera dans cette première
+phase à gérer une liste de stagiaires, une liste d'ateliers et l'établissement des
+certificats de stage.
+
+**Technologies imposées :** VueJS, ExpressJS et MariaDB.
+
+### Description et objectifs du projet
+
+L'application web d'administration des stages découverte de l'informatique au CA TIC
+devra offrir les fonctionnalités suivantes :
+
+- **Gestion des stagiaires** : interfaces permettant d'ajouter un stagiaire avec ses données
+  personnelles ainsi que les dates du stage. Un même stagiaire peut réaliser plusieurs
+  stages à différentes périodes. Modification de l'ensemble des informations. Suppression
+  d'un stagiaire. Liste permettant d'identifier clairement les stages terminés, en cours
+  et à venir.
+
+- **Gestion des ateliers** : interfaces permettant d'ajouter un atelier composé d'un nom,
+  d'une description, d'une ou plusieurs catégories et facultativement d'un document PDF.
+  Modification et suppression des ateliers (seuls les ateliers sans stagiaires peuvent être
+  supprimés).
+
+- **Gestion des catégories** : interfaces permettant d'ajouter, de modifier et de supprimer
+  des catégories. Seules les catégories sans ateliers peuvent être supprimées.
+
+- **Génération du certificat** : fonctionnalité permettant de générer et d'imprimer le
+  certificat de stage. Le candidat fait une proposition de format et de contenu selon son
+  analyse des besoins.
+
+- **Association ateliers ↔ stages** : il doit être facile et pratique de définir et
+  visualiser quels ateliers ont été réalisés par chaque stagiaire.
+
+Les données seront stockées dans une base de données MariaDB. Un concept de tests
+automatisés du backend devra être mis en place afin de garantir la non-régression de
+l'application.
+
+### Exigences fonctionnelles
+
+| Exigence fonctionnelle | Description | Priorité | Temps estimé |
+|---|---|---|---|
+| Gestion des stagiaires | Analyse, conception, implémentation, documentation et tests de fonctionnement | Haute | 2 jours |
+| Gestion des ateliers | Analyse, conception, implémentation, documentation et tests de fonctionnement | Haute | 2 jours |
+| Gestion des catégories | Analyse, conception, implémentation, documentation et tests de fonctionnement | Moyenne | 1 jour |
+| Génération du certificat | Analyse, conception, implémentation, documentation et tests de fonctionnement | Basse | 1 jour |
+| Association des ateliers et stagiaires | Analyse, conception, implémentation, documentation et tests de fonctionnement | Haute | 1.5 jour |
+| Automatisation des tests | Automatiser les tests de fonctionnement de l'application | Moyenne | 1.5 jour |
+| Gestion de projet | Planification, journal de travail, réunions avec les experts, finalisation et envoi des documents sur PkOrg, etc. | Haute | 1 jour |
+
+### Infrastructure nécessaire
+
+Pour la réalisation du projet, l'apprenti-e dispose de l'infrastructure suivante :
+
+- 1 laptop (réalisation et déploiement du code en local)
+- Tous logiciels nécessaires pour la réalisation de ce projet
+- Accès au code de la partie existante du projet
+- GitLab de la HEFR
+
+### Délais
+
+Le projet y compris la remise du projet aux experts se terminera le **2 juin 2026 à 17
+heures**. Le dernier délai pour la présentation du projet est fixé au **17 juin 2026 à
+12h00**.
 
 ## 4. Analyse
 
