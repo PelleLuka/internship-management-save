@@ -791,21 +791,294 @@ npm run test:api
 
 ### 6.1 Structure du projet
 
+Le projet est organisé sous forme de monorepo géré par NPM Workspaces. Cela permet de
+centraliser toutes les dépendances et d'orchestrer les scripts depuis la racine.
+
+```
+Test-internship-management/
+├── frontend/               # Application Vue.js 3
+│   ├── src/
+│   │   ├── views/          # Pages principales (InternshipDashboard, ActivityList, ...)
+│   │   ├── components/     # Composants réutilisables (AppButton, AppCard, ...)
+│   │   ├── services/       # Appels API (internshipService, activityService, ...)
+│   │   └── router.js       # Vue Router (routes SPA)
+│   └── vite.config.js
+├── backend/                # API REST Express.js
+│   ├── server.js           # Point d'entrée
+│   ├── routes/             # Routeurs Express par entité
+│   ├── controllers/        # Logique décisionnelle (validation + appel service)
+│   ├── services/           # Logique métier (règles CdC)
+│   ├── models/             # Accès base de données (requêtes SQL)
+│   ├── middleware/         # Upload multer
+│   └── uploads/            # Fichiers uploadés (monté comme volume Docker)
+├── database/               # Schémas et migrations SQL
+├── tests/
+│   ├── e2e/                # Tests Playwright
+│   └── api/                # Collection Postman + environnement
+├── docker/                 # Dockerfiles + docker-compose.yml
+├── docs/                   # Documentation technique
+├── biome.json              # Configuration linter/formatter
+└── package.json            # Scripts globaux + workspaces
+```
+
+Le backend suit le pattern **Routes → Controller → Service → Model** :
+- **Route** : définit l'URL et le verbe HTTP
+- **Controller** : valide les entrées HTTP, appelle le service, construit la réponse
+- **Service** : applique la logique métier (règles CdC, erreurs nommées)
+- **Model** : exécute les requêtes SQL sur MariaDB
+
 ### 6.2 Linter et code formatter
+
+**Biome** est utilisé comme outil tout-en-un de linting et de formatage du code. Il
+remplace à la fois ESLint et Prettier avec une configuration unique et des performances
+supérieures.
+
+La configuration est définie dans `biome.json` à la racine du projet. Les règles actives
+incluent notamment le tri automatique des imports (`organizeImports: "on"`), la détection
+des variables inutilisées, et le formatage cohérent (indentation 2 espaces, guillemets
+simples).
+
+**Exécution :**
+
+```bash
+npm run format   # Formate et corrige automatiquement
+npm run lint     # Vérification seule, sans modification
+```
+
+Biome est exécuté avant chaque commit pour garantir la cohérence du style de code dans
+tout le projet, conformément aux conventions de codage du CA TIC.
 
 ### 6.3 Design et interface
 
+L'interface utilisateur est développée avec **Tailwind CSS**, un framework CSS utilitaire
+qui permet de construire des designs cohérents sans écrire de CSS custom. Les classes
+utilitaires sont appliquées directement dans les templates Vue.
+
+Le design visuel est calqué sur le fichier `WorkXPAdmin.pen` (Pencil), utilisé comme
+référence tout au long du développement. Les principales décisions de design sont :
+
+- **Palette de couleurs** : bleu primaire (`blue-600`), fond clair (`gray-50`), cartes
+  blanches avec ombre légère (`shadow-sm`)
+- **Badges de statut** : fond pastel + texte coloré + point indicateur
+  - À venir : `bg-amber-100 text-amber-600`
+  - En cours : `bg-green-100 text-green-600`
+  - Terminé : `bg-blue-100 text-blue-600`
+- **Cartes dépliables** : les cartes d'ateliers s'expandent au clic pour révéler la
+  gestion des catégories et la zone document
+- **Interface responsive** : grilles adaptatives (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`)
+
+**Composants réutilisables** (`frontend/src/components/`) :
+- `AppButton.vue` : bouton avec variantes (primary, danger, ghost)
+- `AppCard.vue` : conteneur carte avec ombre
+- `AppInput.vue` : champ de saisie avec label et message d'erreur
+- `AppDialog.vue` : modal de confirmation
+
 ### 6.4 Gestion des stagiaires
+
+La gestion des stagiaires est le module central de l'application. Elle est implémentée
+via le composant `frontend/src/views/InternshipDashboard.vue` et les endpoints
+`/api/internships`.
+
+**Endpoints API :**
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `/api/internships` | Liste tous les stages |
+| POST | `/api/internships` | Crée un nouveau stage |
+| GET | `/api/internships/:id` | Détails d'un stage |
+| PUT | `/api/internships/:id` | Modifie un stage |
+| DELETE | `/api/internships/:id` | Supprime un stage |
+| GET | `/api/internships/:id/activities` | Ateliers liés au stage |
+| POST | `/api/internships/:id/activities/:activityId` | Associe un atelier |
+| DELETE | `/api/internships/:id/activities/:activityId` | Dissocie un atelier |
+| GET | `/api/internships/:id/certificate` | Génère le certificat PDF |
+
+**Calcul du statut (côté frontend) :**
+
+Le statut est calculé en temps réel par une propriété `computed` Vue à partir des dates
+du stage comparées à la date du jour :
+
+```javascript
+const status = computed(() => {
+  const today = new Date();
+  const start = new Date(props.internship.startDate);
+  const end = new Date(props.internship.endDate);
+  if (start > today) return 'upcoming';   // À venir
+  if (end < today)   return 'done';       // Terminé
+  return 'active';                         // En cours
+});
+```
+
+Ce calcul ne nécessite aucun stockage en base de données ni appel API supplémentaire.
+
+**Validation backend :**
+- Prénom, nom, email obligatoires
+- `start_date` et `end_date` obligatoires, cohérence vérifiée par contrainte SQL `CHECK`
+- Email : format valide
 
 ### 6.5 Gestion des ateliers
 
+Les ateliers sont gérés via `frontend/src/views/ActivityList.vue` et les endpoints
+`/api/activities`.
+
+**Endpoints API :**
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `/api/activities` | Liste les IDs des ateliers visibles |
+| GET | `/api/activities/:id` | Détails d'un atelier (avec catégories + internshipCount) |
+| POST | `/api/activities` | Crée un atelier |
+| PATCH | `/api/activities/:id` | Modifie partiellement un atelier |
+| DELETE | `/api/activities/:id` | Soft delete (visible = 0) |
+| POST | `/api/activities/:id/document` | Upload d'un document |
+| GET | `/api/activities/:id/document` | Téléchargement du document |
+| DELETE | `/api/activities/:id/document` | Suppression du document |
+
+**Carte dépliable :**
+
+Chaque atelier est affiché sous forme d'une carte. Un clic sur le header déplie la carte
+pour révéler :
+- La zone de gestion des catégories (badges + bouton « Ajouter une catégorie »)
+- La zone documentation (état vide avec drag & drop ou état rempli avec le fichier)
+
+**Contrainte de suppression (CdC §2.1) :**
+
+La suppression d'un atelier est bloquée s'il est lié à au moins un stage. Cette règle
+est appliquée à deux niveaux :
+
+1. **Backend** (service) : `getById` retourne `internshipCount`. Si `internshipCount > 0`,
+   le service lève `HAS_LINKED_INTERNSHIPS` → controller retourne HTTP 409.
+2. **Frontend** : Le bouton supprimer est désactivé (`disabled`) avec
+   `aria-label="Suppression impossible : atelier lié à des stages"`.
+
+La suppression est implémentée comme un **soft delete** (`UPDATE activity SET visible = 0`)
+pour éviter de déclencher la contrainte `ON DELETE RESTRICT` de la table
+`internship_activity`, tout en préservant l'intégrité des données historiques.
+
+**Upload de documents :**
+
+multer valide le type MIME côté serveur (pas seulement l'extension) et la taille (max
+10 MB). Le fichier est stocké dans `/app/uploads/activities/<uuid>-<nom-sanitisé>.<ext>`.
+
 ### 6.6 Gestion des catégories
+
+Les catégories sont gérées via `frontend/src/views/CategoryList.vue` et les endpoints
+`/api/categories`. Elles permettent de classifier les ateliers par domaine.
+
+**Endpoints API :**
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `/api/categories` | Liste toutes les catégories avec leur nombre d'ateliers |
+| POST | `/api/categories` | Crée une catégorie |
+| PUT | `/api/categories/:id` | Modifie une catégorie |
+| DELETE | `/api/categories/:id` | Supprime une catégorie |
+
+**Interface :** Grille de cartes responsive (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`)
+avec icône Tag, nom, description optionnelle et compteur d'ateliers liés.
+
+**Contrainte de suppression :** La contrainte FK `RESTRICT` sur `activity_category` empêche
+la suppression d'une catégorie liée à des ateliers au niveau base de données. Le controller
+intercepte l'erreur MariaDB (errno 1451) et retourne HTTP 409 avec un message explicite.
+Le bouton de suppression est désactivé côté frontend si `activityCount > 0`.
 
 ### 6.7 Génération du certificat
 
+La génération du certificat de stage en PDF est implémentée via **carbone.js** avec
+un template DOCX personnalisable.
+
+**Flux complet :**
+
+1. L'administrateur uploade un template `.docx` via la page Paramètres
+   (`POST /api/certificate/template`)
+2. Le template est stocké dans `/app/uploads/certificate/template.docx`
+3. Sur la carte d'un stage, le bouton « Aperçu du certificat » navigue vers
+   `/certificate/:id`
+4. `CertificateView.vue` appelle `GET /api/internships/:id/certificate`
+5. Le backend récupère les données du stage et les ateliers associés depuis MariaDB
+6. carbone.js injecte les données dans le template DOCX via les balises :
+
+| Balise | Valeur injectée |
+|---|---|
+| `{prenom}` | Prénom du stagiaire |
+| `{nom}` | Nom du stagiaire |
+| `{email}` | Email du stagiaire |
+| `{date_debut}` | Date de début formatée (DD.MM.YYYY) |
+| `{date_fin}` | Date de fin formatée (DD.MM.YYYY) |
+| `{#ateliers}` | Début de boucle sur les ateliers |
+| `{titre}` | Titre de l'atelier (dans la boucle) |
+| `{categories}` | Catégories de l'atelier (dans la boucle) |
+| `{/ateliers}` | Fin de boucle |
+| `{date_emission}` | Date d'émission automatique (aujourd'hui) |
+
+7. LibreOffice (installé dans le conteneur Docker backend) convertit le DOCX en PDF
+8. Le PDF est renvoyé au frontend comme flux binaire
+9. Vue.js crée un `Blob URL` et l'affiche dans un `<iframe>` avec boutons
+   « Imprimer » et « Télécharger PDF »
+
+**Prérequis Docker :** LibreOffice est installé dans l'image backend Alpine
+(`apk add --no-cache libreoffice`). Impact : +~300 MB sur l'image.
+
+**Un template de démonstration** est livré avec le projet
+(`backend/uploads/certificate/template.docx`) permettant de tester la fonctionnalité
+sans configuration préalable.
+
 ### 6.8 Base de données
 
+L'accès à MariaDB est géré via le driver officiel `mariadb` (Node.js) avec un **pool
+de connexions** pour optimiser les performances.
+
+**Pattern d'accès :** Chaque opération ouvre une connexion depuis le pool, exécute
+la requête et libère la connexion dans un bloc `finally` :
+
+```javascript
+getById: async (id) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query('SELECT * FROM activity WHERE id = ?', [id]);
+    // ...
+    return result;
+  } finally {
+    if (conn) conn.end();
+  }
+}
+```
+
+**Soft delete :** La suppression des ateliers est implémentée comme un soft delete
+(`UPDATE activity SET visible = 0`). Les ateliers soft-deleted n'apparaissent pas
+dans le catalogue (`WHERE visible = 1`) mais leurs associations dans `internship_activity`
+sont préservées pour maintenir l'intégrité des données historiques.
+
+**Compteur d'associations :** Le modèle `Activity.getById()` retourne `internshipCount`
+via une requête `COUNT(*)` parallèle, permettant au service d'appliquer la règle métier
+de suppression sans requête supplémentaire.
+
 ### 6.9 Traitement des erreurs
+
+Le traitement des erreurs suit une architecture en couches cohérente sur l'ensemble
+du backend.
+
+**Codes HTTP utilisés :**
+
+| Code | Signification | Cas d'utilisation |
+|---|---|---|
+| 200 | OK | GET / PATCH / PUT réussi |
+| 201 | Created | POST réussi (ressource créée) |
+| 204 | No Content | DELETE réussi |
+| 400 | Bad Request | Fichier invalide (type, taille) |
+| 404 | Not Found | Ressource non trouvée |
+| 409 | Conflict | Suppression bloquée (HAS_LINKED_INTERNSHIPS, HAS_LINKED_ACTIVITIES) |
+| 422 | Unprocessable Entity | Données invalides (MISSING_TITLE, TITLE_TOO_LONG, etc.) |
+| 500 | Internal Server Error | Erreur serveur inattendue |
+
+**Erreurs nommées (services) :** Les services lèvent des erreurs avec des codes
+sémantiques (`throw new Error('NOT_FOUND')`) que les controllers interceptent pour
+construire la réponse HTTP appropriée. Cela découple la logique métier du protocole HTTP.
+
+**Validation frontend :** En complément de la validation backend, Vue.js valide les
+formulaires côté client pour une meilleure expérience utilisateur (champs obligatoires,
+format email, cohérence des dates).
 
 ---
 
