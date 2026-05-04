@@ -26,3 +26,8 @@ backups/
 backup/data/*.sql
 scripts/backup_db.sh
 .superpowers/
+
+# Design sync — fichiers générés (non commités)
+design/screens/
+design/screenshots/
+design/validation-report.html
