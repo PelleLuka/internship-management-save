@@ -29,8 +29,22 @@ const Category = {
     let conn;
     try {
       conn = await pool.getConnection();
-      const rows = await conn.query('SELECT * FROM category WHERE id = ?', [id]);
-      return rows[0] || null;
+      const rows = await conn.query(`
+        SELECT c.id, c.name, c.description,
+               COUNT(CASE WHEN a.visible = 1 THEN 1 END) as activity_count
+        FROM category c
+        LEFT JOIN activity_category ac ON ac.category_id = c.id
+        LEFT JOIN activity a ON a.id = ac.activity_id
+        WHERE c.id = ?
+        GROUP BY c.id
+      `, [id]);
+      if (!rows[0]) return null;
+      return {
+        id: rows[0].id,
+        name: rows[0].name,
+        description: rows[0].description,
+        activityCount: Number(rows[0].activity_count),
+      };
     } finally {
       if (conn) conn.end();
     }

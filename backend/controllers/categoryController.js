@@ -45,10 +45,10 @@ export const updateCategory = async (req, res) => {
 export const deleteCategory = async (req, res) => {
   try {
     await categoryService.deleteCategory(Number(req.params.id));
-    res.json({ success: true });
+    res.status(204).send();
   } catch (err) {
     if (err.message === 'NOT_FOUND') return res.status(404).json({ error: 'Category not found' });
-    if (err.message?.startsWith('CONFLICT')) return res.status(409).json({ error: err.message.split(':')[1] });
+    if (err.message === 'HAS_LINKED_ACTIVITIES') return res.status(409).json({ error: 'Category cannot be deleted: it has linked activities' });
     res.status(500).json({ error: 'Server error' });
   }
 };

@@ -24,14 +24,8 @@ export const updateCategory = async (id, data) => {
 };
 
 export const deleteCategory = async (id) => {
-  const cat = await Category.getById(id);
-  if (!cat) throw new Error('NOT_FOUND');
-  try {
-    await Category.delete(id);
-  } catch (err) {
-    if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.errno === 1451) {
-      throw new Error('CONFLICT:category has linked activities');
-    }
-    throw err;
-  }
+  const existing = await Category.getById(id);
+  if (!existing) throw new Error('NOT_FOUND');
+  if (existing.activityCount > 0) throw new Error('HAS_LINKED_ACTIVITIES');
+  await Category.delete(id);
 };
