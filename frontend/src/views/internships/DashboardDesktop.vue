@@ -7,8 +7,8 @@ import { useMediaQuery } from '../../composables/useMediaQuery';
 // Components
 import DashboardHeader from '../../components/internships/DashboardHeader.vue';
 import InternshipCard from '../../components/internships/InternshipCard.vue';
-import InternshipFormModal from '../../components/InternshipFormModal.vue';
-import SidebarNavigation from '../../components/internships/SidebarNavigation.vue';
+import InternshipFormModal from '../../components/internships/InternshipFormModal.vue';
+import SidebarNavigation from '../../components/nav/SidebarNavigation.vue';
 import InternshipGroupList from '../../components/internships/InternshipGroupList.vue';
 
 // Init Composables

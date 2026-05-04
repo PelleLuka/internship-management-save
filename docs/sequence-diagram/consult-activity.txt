@@ -1,0 +1,27 @@
+title Consulter la liste des activités\n
+
+actor Admin
+participant Frontend
+participant Backend
+database Database
+
+Admin->Frontend:Clique sur le bouton des activités
+activate Frontend
+
+    Frontend->Backend:GET /activities
+    activate Backend
+
+      Backend->Database: Récupère les données
+      activate Database
+
+      Database-->>Backend:Validation
+      deactivate Database
+
+    Backend-->>Frontend:200 OK
+    deactivate Backend
+Frontend-->>Admin:Affiche la liste des activités
+deactivate Frontend
+
+
+
+

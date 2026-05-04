@@ -1,11 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
 import { Pencil, Plus, Search, Tag, Trash2 } from 'lucide-vue-next';
-import { useCategories } from '../composables/useCategories.js';
+import { computed, onMounted, ref } from 'vue';
 import AppButton from '../components/AppButton.vue';
 import AppDialog from '../components/AppDialog.vue';
 import AppInput from '../components/AppInput.vue';
-import CategoryFormModal from '../components/CategoryFormModal.vue';
+import CategoryFormModal from '../components/categories/CategoryFormModal.vue';
+import { useCategories } from '../composables/useCategories.js';
 
 const { categories, load, create, update, remove } = useCategories();
 onMounted(load);

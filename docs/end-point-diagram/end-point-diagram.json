@@ -1,0 +1,605 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API Internship Management",
+    "version": "1.0.1",
+    "description": "API for managing internships and activities at the apprenticeship center."
+  },
+  "servers": [
+    {
+      "url": "https://virtserver.swaggerhub.com/heiafr-48e/internship/1.0.1",
+      "description": "SwaggerHub API Auto Mocking"
+    }
+  ],
+  "paths": {
+    "/internships": {
+      "get": {
+        "tags": [
+          "Internships"
+        ],
+        "summary": "Retrieve the list of all internships",
+        "description": "Get all internships registered in the system.",
+        "responses": {
+          "200": {
+            "description": "List of internships retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Internship"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Internships"
+        ],
+        "summary": "Create a new internship",
+        "description": "Create a new internship record. The end date must be greater than or equal to the start date.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InternshipCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Internship created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Internship"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/internships/{internshipId}": {
+      "get": {
+        "tags": [
+          "Internships"
+        ],
+        "summary": "Retrieve an internship",
+        "description": "Get a single internship by its identifier, including its associated activities.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InternshipId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Internship found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternshipDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Internship not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Internships"
+        ],
+        "summary": "Update an internship",
+        "description": "Partially update an internship's details. The end date must be greater than or equal to the start date.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InternshipId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InternshipUpdateRequest"
+              },
+              "examples": {
+                "updateFirstName": {
+                  "summary": "Update first name",
+                  "value": {
+                    "firstName": "Lukas"
+                  }
+                },
+                "updateLastName": {
+                  "summary": "Update last name",
+                  "value": {
+                    "lastName": "Meyer"
+                  }
+                },
+                "updateEmail": {
+                  "summary": "Update email address",
+                  "value": {
+                    "email": "stagiaire.updated@example.com"
+                  }
+                },
+                "updateStartDate": {
+                  "summary": "Update start date",
+                  "value": {
+                    "startDate": "2025-03-10"
+                  }
+                },
+                "updateEndDate": {
+                  "summary": "Update end date",
+                  "value": {
+                    "endDate": "2025-03-21"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Internship updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternshipDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Internship not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Internships"
+        ],
+        "summary": "Delete an internship",
+        "description": "Delete an internship record. This will automatically remove all associations with activities (Cascade delete).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InternshipId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Internship deleted successfully"
+          },
+          "404": {
+            "description": "Internship not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/internships/{internshipId}/activities/{activityId}": {
+      "post": {
+        "tags": [
+          "Internships"
+        ],
+        "summary": "Link an activity to an internship",
+        "description": "Associate an existing activity with a specific internship. Creates a record in the `internship_activities` join table.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InternshipId"
+          },
+          {
+            "$ref": "#/components/parameters/ActivityId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity linked successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activity"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Internship or Activity not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Internships"
+        ],
+        "summary": "Unlink an activity from an internship",
+        "description": "Remove the association between an activity and an internship. Removes the record from the `internship_activities` join table. The activity itself is not deleted.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InternshipId"
+          },
+          {
+            "$ref": "#/components/parameters/ActivityId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Activity unlinked successfully"
+          },
+          "404": {
+            "description": "Association not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/activities": {
+      "get": {
+        "tags": [
+          "Activities"
+        ],
+        "summary": "Retrieve all activities",
+        "description": "Get the list of all available activities.",
+        "responses": {
+          "200": {
+            "description": "List of activities retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Activity"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Activities"
+        ],
+        "summary": "Create a new activity",
+        "description": "Create a new standalone activity.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Activity created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/activities/{activityId}": {
+      "get": {
+        "tags": [
+          "Activities"
+        ],
+        "summary": "Retrieve an activity",
+        "description": "Get a specific activity by its identifier.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ActivityId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activity"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Activity not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Activities"
+        ],
+        "summary": "Update an activity",
+        "description": "Partially update an activity (e.g., change title or visibility). Use the `visible` field to hide an activity from the frontend if it cannot be deleted.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ActivityId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityUpdateRequest"
+              },
+              "examples": {
+                "updateTitle": {
+                  "summary": "Update activity title",
+                  "value": {
+                    "title": "New Activity Title"
+                  }
+                },
+                "hideActivity": {
+                  "summary": "Hide activity (soft delete)",
+                  "value": {
+                    "visible": false
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Activity updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Activity not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "InternshipId": {
+        "name": "internshipId",
+        "in": "path",
+        "description": "Unique identifier of the internship",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "ActivityId": {
+        "name": "activityId",
+        "in": "path",
+        "description": "Unique identifier of the activity",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "schemas": {
+      "InternshipBase": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "First name of the intern"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name of the intern"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address of the intern"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Start date of the internship (YYYY-MM-DD)"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "End date of the internship (YYYY-MM-DD)"
+          }
+        }
+      },
+      "Internship": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/InternshipBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "startDate",
+              "endDate"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64",
+                "description": "Unique identifier of the internship"
+              }
+            }
+          }
+        ]
+      },
+      "InternshipCreateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/InternshipBase"
+          },
+          {
+            "required": [
+              "firstName",
+              "lastName",
+              "email",
+              "startDate",
+              "endDate"
+            ]
+          }
+        ]
+      },
+      "InternshipUpdateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/InternshipBase"
+          }
+        ]
+      },
+      "InternshipDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Internship"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "activities": {
+                "type": "array",
+                "description": "List of activities associated with this internship",
+                "items": {
+                  "$ref": "#/components/schemas/Activity"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ActivityBase": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the activity"
+          },
+          "visible": {
+            "type": "boolean",
+            "description": "Visibility status in the frontend",
+            "default": true
+          }
+        }
+      },
+      "Activity": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ActivityBase"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "title",
+              "visible"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64",
+                "description": "Unique identifier of the activity"
+              }
+            }
+          }
+        ]
+      },
+      "ActivityCreateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ActivityBase"
+          },
+          {
+            "required": [
+              "title"
+            ]
+          }
+        ]
+      },
+      "ActivityUpdateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ActivityBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "visible": {
+                "type": "boolean",
+                "description": "Set to false to soft-delete/hide the activity"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

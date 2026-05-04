@@ -1,0 +1,29 @@
+title Créer un stagiaire\n
+
+actor Admin
+participant Frontend
+participant Backend
+database Database
+
+
+    
+    Admin->Frontend:Remplis le formulaire et le soumet
+    activate Frontend
+
+    Frontend->Backend:POST /internships
+    activate Backend
+
+      Backend->Database: Envoie les données 
+      activate Database
+
+      Database-->>Backend:Validation
+      deactivate Database
+
+    Backend-->>Frontend:201 Created - {new-intership-id}
+    deactivate Backend
+Frontend-->>Admin:Redirige vers la liste des stagiaires
+deactivate Frontend
+
+
+
+

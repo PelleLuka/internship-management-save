@@ -23,6 +23,25 @@ test.describe('Internship Status Badges', () => {
     await expect(page.locator('span').filter({ hasText: 'À venir' }).first()).toBeVisible();
   });
 
+  test('internship starting today shows En cours badge', async ({ page }) => {
+    const today = new Date();
+    const fmt = (d) => d.toISOString().slice(0, 10);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const res = await page.request.post('/api/internships', {
+      data: {
+        firstName: 'Today',
+        lastName: 'Active',
+        email: 'today.active@example.com',
+        startDate: fmt(today),
+        endDate: fmt(tomorrow),
+      }
+    });
+    expect(res.ok()).toBeTruthy();
+    await page.goto('/internships');
+    await expect(page.locator('span').filter({ hasText: 'En cours' }).first()).toBeVisible();
+  });
+
   test('status badge is visible on each card', async ({ page }) => {
     await page.goto('/internships');
     // At least one badge of any status type should be visible

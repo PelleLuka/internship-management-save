@@ -1,0 +1,27 @@
+title Afficher la liste des stagiaires\n
+
+actor Admin
+participant Frontend
+participant Backend
+database Database
+
+Admin->Frontend:Accède à la liste des stagiaires
+activate Frontend
+
+    Frontend->Backend:GET /internships
+    activate Backend
+
+      Backend->Database: Récupère la liste des stagiaires
+      activate Database
+
+      Database-->>Backend:Retourne la liste
+      deactivate Database
+
+    Backend-->>Frontend:200 OK - liste des stagiaires
+    deactivate Backend
+Frontend-->>Admin:Affiche la liste des stagiaires
+deactivate Frontend
+
+
+
+

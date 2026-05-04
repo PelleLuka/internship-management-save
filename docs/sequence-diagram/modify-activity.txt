@@ -1,0 +1,23 @@
+title Modifier une activité\n
+
+actor Admin
+participant Frontend
+participant Backend
+database Database
+
+Admin->Frontend:Modifie une activité et la soumet
+activate Frontend
+
+    Frontend->Backend:PATCH /activityies/{activity-id}
+    activate Backend
+
+      Backend->Database: Envoie les données
+      activate Database
+
+      Database-->>Backend:Validation
+      deactivate Database
+
+    Backend-->>Frontend:200 OK - {activity-id}
+    deactivate Backend
+Frontend-->>Admin:Affiche la liste des activités
+deactivate Frontend

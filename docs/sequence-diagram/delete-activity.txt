@@ -1,0 +1,23 @@
+title Gérer les activités d'un stagiaire\n
+
+actor Admin
+participant Frontend
+participant Backend
+database Database
+
+Admin->Frontend:Sélectionne une activité et la soumet
+activate Frontend
+
+    Frontend->Backend:PATCH /internships/{internship-id}/activityies/{activity-id}
+    activate Backend
+
+      Backend->Database: Enregistre les données
+      activate Database
+
+      Database-->>Backend:Validation
+      deactivate Database
+
+    Backend-->>Frontend:200 OK - {internship-id} - {activity-id}
+    deactivate Backend
+Frontend-->>Admin:Affiche les détails du stagiaire
+deactivate Frontend

@@ -1,0 +1,27 @@
+title Consulter les informations d'un stagiaire\n
+
+actor Admin
+participant Frontend
+participant Backend
+database Database
+
+Admin->Frontend:Sélectionne un stagiaire dans la liste
+activate Frontend
+
+    Frontend->Backend:GET /internships/{id}
+    activate Backend
+
+      Backend->Database: Récupère les données 
+      activate Database
+
+      Database-->>Backend:Confirmation
+      deactivate Database
+
+    Backend-->>Frontend:200 OK
+    deactivate Backend
+Frontend-->>Admin:Affiche les informations du stagiaire
+deactivate Frontend
+
+
+
+

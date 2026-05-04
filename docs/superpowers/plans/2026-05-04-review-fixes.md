@@ -1,6 +1,6 @@
 # WorkXP Admin — Review Fixes Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Corriger les bugs backend critiques et aligner l'UI avec le design Pencil (Card/Stat, Cannot Delete Modal, CategoryFormModal, popover dismiss).
 
@@ -33,7 +33,7 @@
 
 **Problème :** `new Promise(async (resolve, reject) => { await ... })` — les rejections des awaits internes ne sont pas transmises au reject externe → unhandled rejection possible.
 
-- [ ] **Step 1 : Remplacer le fichier complet**
+- [x] **Step 1 : Remplacer le fichier complet**
 
 Contenu exact de `backend/services/certificateService.js` :
 
@@ -89,11 +89,11 @@ export const getTemplatePath = () =>
   fs.existsSync(TEMPLATE_PATH) ? TEMPLATE_PATH : null;
 ```
 
-- [ ] **Step 2 : Vérifier que le controller certificat est compatible**
+- [x] **Step 2 : Vérifier que le controller certificat est compatible**
 
 Le controller `backend/controllers/certificateController.js` appelle `generateCertificate` et doit gérer une async function qui throw (au lieu d'un callback-style Promise). Vérifier qu'il est dans un bloc try/catch. Si oui, aucun changement nécessaire.
 
-- [ ] **Step 3 : Test manuel**
+- [x] **Step 3 : Test manuel**
 
 ```bash
 cd /Users/pellegrinelliluka/projects/Test-internship-management
@@ -102,7 +102,7 @@ docker-compose -f docker/docker-compose.yml up -d
 # → PDF doit s'afficher dans l'iframe
 ```
 
-- [ ] **Step 4 : Commit**
+- [x] **Step 4 : Commit**
 
 ```bash
 git add backend/services/certificateService.js
@@ -120,7 +120,7 @@ git commit -m "fix(certificate): replace new Promise(async) anti-pattern with as
 
 **Problème :** La suppression d'une catégorie tente l'opération SQL puis catch errno 1451. Pattern incohérent avec les ateliers (qui vérifient `internshipCount` AVANT la suppression).
 
-- [ ] **Step 1 : Mettre à jour Category.getById() pour inclure activityCount**
+- [x] **Step 1 : Mettre à jour Category.getById() pour inclure activityCount**
 
 Dans `backend/models/Category.js`, remplacer la méthode `getById` (lignes 28-37) :
 
@@ -151,7 +151,7 @@ getById: async (id) => {
 },
 ```
 
-- [ ] **Step 2 : Mettre à jour categoryService.deleteCategory**
+- [x] **Step 2 : Mettre à jour categoryService.deleteCategory**
 
 Dans `backend/services/categoryService.js`, remplacer `deleteCategory` (lignes 26-37) :
 
@@ -164,7 +164,7 @@ export const deleteCategory = async (id) => {
 };
 ```
 
-- [ ] **Step 3 : Mettre à jour categoryController.deleteCategory**
+- [x] **Step 3 : Mettre à jour categoryController.deleteCategory**
 
 Dans `backend/controllers/categoryController.js`, remplacer le handler `deleteCategory` (lignes 45-54) :
 
@@ -183,11 +183,11 @@ export const deleteCategory = async (req, res) => {
 
 **Note :** Le 204 No Content est cohérent avec le DELETE des autres ressources (internship, activity).
 
-- [ ] **Step 4 : Vérifier updateCategory utilise bien le nouveau getById**
+- [x] **Step 4 : Vérifier updateCategory utilise bien le nouveau getById**
 
 `updateCategory` dans le service fait `Category.getById(id)` et vérifie `!cat`. Le nouveau getById retourne `null` si non trouvé → comportement identique. Aucun changement nécessaire.
 
-- [ ] **Step 5 : Test manuel**
+- [x] **Step 5 : Test manuel**
 
 ```bash
 # Via l'interface : créer une catégorie, l'associer à un atelier, tenter de la supprimer
@@ -195,7 +195,7 @@ export const deleteCategory = async (req, res) => {
 # Vérifier aussi la suppression d'une catégorie sans atelier → doit fonctionner
 ```
 
-- [ ] **Step 6 : Commit**
+- [x] **Step 6 : Commit**
 
 ```bash
 git add backend/models/Category.js backend/services/categoryService.js backend/controllers/categoryController.js
@@ -213,7 +213,7 @@ git commit -m "fix(category): move deletion guard to service level with pre-chec
 
 **Données déjà disponibles :** `activity.internshipCount` et `activity.documentUrl` sont déjà dans chaque objet activité chargé. Aucun appel API supplémentaire.
 
-- [ ] **Step 1 : Ajouter CircleCheck et CircleX aux imports Lucide**
+- [x] **Step 1 : Ajouter CircleCheck et CircleX aux imports Lucide**
 
 Dans `ActivityList.vue`, les imports Lucide sont en ligne 2-9. Ajouter `CircleCheck` et `CircleX` :
 
@@ -230,7 +230,7 @@ import {
 } from 'lucide-vue-next';
 ```
 
-- [ ] **Step 2 : Insérer la rangée de stats dans la section dépliée**
+- [x] **Step 2 : Insérer la rangée de stats dans la section dépliée**
 
 Dans `ActivityList.vue`, la section dépliée commence à la ligne ~341 :
 ```html
@@ -267,7 +267,7 @@ Insérer la rangée de stats **entre** `<div class="pt-3 border-t border-slate-1
 </div>
 ```
 
-- [ ] **Step 3 : Écrire le test E2E**
+- [x] **Step 3 : Écrire le test E2E**
 
 Dans `tests/e2e/tests/sc-activity-enriched.spec.ts`, ajouter à la fin du `describe` block :
 
@@ -286,7 +286,7 @@ test('expanded activity card shows stat cards', async ({ page }) => {
 });
 ```
 
-- [ ] **Step 4 : Lancer les tests**
+- [x] **Step 4 : Lancer les tests**
 
 ```bash
 cd tests/e2e
@@ -295,7 +295,7 @@ npm run test -- --grep "stat cards"
 
 Expected: PASS
 
-- [ ] **Step 5 : Commit**
+- [x] **Step 5 : Commit**
 
 ```bash
 git add frontend/src/views/ActivityList.vue tests/e2e/tests/sc-activity-enriched.spec.ts
@@ -311,7 +311,7 @@ git commit -m "feat(ui): add Card/Stat and Card/StatDoc to expanded activity car
 
 **Problème :** Quand une suppression de catégorie échoue (HTTP 409), le code affiche un `<div>` rouge inline. Le design Pencil montre un modal d'erreur.
 
-- [ ] **Step 1 : Remplacer deleteError ref par cannotDeleteTarget**
+- [x] **Step 1 : Remplacer deleteError ref par cannotDeleteTarget**
 
 Dans `CategoryList.vue`, script section. Remplacer :
 
@@ -325,7 +325,7 @@ par :
 const cannotDeleteTarget = ref(null); // { id, name } | null
 ```
 
-- [ ] **Step 2 : Mettre à jour openCreate et openEdit**
+- [x] **Step 2 : Mettre à jour openCreate et openEdit**
 
 Remplacer toutes les occurrences de `deleteError.value = '';` par `cannotDeleteTarget.value = null;` :
 
@@ -345,7 +345,7 @@ const openEdit = (cat) => {
 };
 ```
 
-- [ ] **Step 3 : Mettre à jour handleDelete**
+- [x] **Step 3 : Mettre à jour handleDelete**
 
 Remplacer la fonction `handleDelete` :
 
@@ -360,7 +360,7 @@ const handleDelete = async (cat) => {
 };
 ```
 
-- [ ] **Step 4 : Remplacer le div rouge inline par un AppDialog dans le template**
+- [x] **Step 4 : Remplacer le div rouge inline par un AppDialog dans le template**
 
 Dans la partie template de `CategoryList.vue`, remplacer le bloc `v-if="deleteError"` :
 
@@ -392,7 +392,7 @@ par ce modal d'erreur (juste avant le grid des cartes) :
 </AppDialog>
 ```
 
-- [ ] **Step 5 : Vérifier que AppDialog accepte un slot #footer**
+- [x] **Step 5 : Vérifier que AppDialog accepte un slot #footer**
 
 Lire `frontend/src/components/AppDialog.vue` et vérifier qu'il a un slot nommé `footer`. Si non, utiliser le contenu sans slot :
 
@@ -415,7 +415,7 @@ Lire `frontend/src/components/AppDialog.vue` et vérifier qu'il a un slot nommé
 </AppDialog>
 ```
 
-- [ ] **Step 6 : Écrire le test E2E**
+- [x] **Step 6 : Écrire le test E2E**
 
 Dans `tests/e2e/tests/sc-category-crud.spec.ts`, ajouter à la fin du `describe` block :
 
@@ -449,7 +449,7 @@ test('cannot delete modal appears when category has linked activities', async ({
 });
 ```
 
-- [ ] **Step 7 : Lancer le test**
+- [x] **Step 7 : Lancer le test**
 
 ```bash
 cd tests/e2e
@@ -458,7 +458,7 @@ npm run test -- --grep "cannot delete modal"
 
 Expected: PASS
 
-- [ ] **Step 8 : Commit**
+- [x] **Step 8 : Commit**
 
 ```bash
 git add frontend/src/views/CategoryList.vue tests/e2e/tests/sc-category-crud.spec.ts
@@ -475,7 +475,7 @@ git commit -m "feat(ui): replace inline delete error with Cannot Delete Modal fo
 
 **Problème :** Le formulaire create/edit de catégorie est inline dans `CategoryList.vue`. Tous les autres formulaires (InternshipFormModal, ActivityFormModal) ont un composant dédié.
 
-- [ ] **Step 1 : Lire AppDialog.vue pour connaître ses props/slots**
+- [x] **Step 1 : Lire AppDialog.vue pour connaître ses props/slots**
 
 ```bash
 cat frontend/src/components/AppDialog.vue
@@ -483,7 +483,7 @@ cat frontend/src/components/AppDialog.vue
 
 Identifier : props `isOpen`, `title` ; émit `close` ; slot default pour le contenu.
 
-- [ ] **Step 2 : Créer CategoryFormModal.vue**
+- [x] **Step 2 : Créer CategoryFormModal.vue**
 
 Créer `frontend/src/components/CategoryFormModal.vue` avec ce contenu exact :
 
@@ -557,7 +557,7 @@ const submit = () => {
 
 **Note :** `computed` doit être importé depuis vue — ajouter à l'import `{ ref, watch, computed }`.
 
-- [ ] **Step 3 : Mettre à jour CategoryList.vue pour utiliser CategoryFormModal**
+- [x] **Step 3 : Mettre à jour CategoryList.vue pour utiliser CategoryFormModal**
 
 **3a.** Ajouter l'import en haut du script :
 ```js
@@ -603,7 +603,7 @@ const handleSaved = async (formData) => {
 />
 ```
 
-- [ ] **Step 4 : Vérifier que create/edit fonctionnent**
+- [x] **Step 4 : Vérifier que create/edit fonctionnent**
 
 ```bash
 # Naviguer vers /categories
@@ -611,7 +611,7 @@ const handleSaved = async (formData) => {
 # Cliquer modifier → modal s'ouvre pré-remplie, modifier → changement visible
 ```
 
-- [ ] **Step 5 : Commit**
+- [x] **Step 5 : Commit**
 
 ```bash
 git add frontend/src/components/CategoryFormModal.vue frontend/src/views/CategoryList.vue
@@ -627,7 +627,7 @@ git commit -m "refactor(ui): extract CategoryFormModal as dedicated component"
 
 **Problème :** Le popover "+ Ajouter une catégorie" dans les cartes activité ne se ferme pas avec Escape ni au clic en dehors.
 
-- [ ] **Step 1 : Ajouter un listener keydown global dans ActivityList.vue**
+- [x] **Step 1 : Ajouter un listener keydown global dans ActivityList.vue**
 
 Dans le `<script setup>`, ajouter après les imports :
 
@@ -653,7 +653,7 @@ onUnmounted(() => {
 
 **Note :** `onUnmounted` doit être ajouté aux imports vue. Supprimer le `onMounted` existant (ligne 163) et le remplacer par celui ci-dessus.
 
-- [ ] **Step 2 : Ajouter un overlay invisible pour clic extérieur**
+- [x] **Step 2 : Ajouter un overlay invisible pour clic extérieur**
 
 Dans le template, le popover est dans :
 ```html
@@ -684,7 +684,7 @@ Ajouter un overlay AVANT le div du popover (dans le `<div class="relative mb-3">
 </div>
 ```
 
-- [ ] **Step 3 : Vérifier**
+- [x] **Step 3 : Vérifier**
 
 ```bash
 # Ouvrir une carte activité, cliquer "+ Ajouter une catégorie"
@@ -692,7 +692,7 @@ Ajouter un overlay AVANT le div du popover (dans le `<div class="relative mb-3">
 # Cliquer en dehors du popover → popover se ferme
 ```
 
-- [ ] **Step 4 : Commit**
+- [x] **Step 4 : Commit**
 
 ```bash
 git add frontend/src/views/ActivityList.vue

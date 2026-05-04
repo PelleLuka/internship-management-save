@@ -10,9 +10,9 @@ import {
   X,
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import ActivityFormModal from '../components/ActivityFormModal.vue';
 import AppButton from '../components/AppButton.vue';
 import AppInput from '../components/AppInput.vue';
+import ActivityFormModal from '../components/activities/ActivityFormModal.vue';
 import { useMediaQuery } from '../composables/useMediaQuery';
 import {
   deleteActivity,

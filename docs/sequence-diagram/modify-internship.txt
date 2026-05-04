@@ -1,0 +1,34 @@
+title Supprimer un stagiaire\n
+
+actor Admin
+participant Frontend
+participant Backend
+database Database
+
+Admin->Frontend:Clique sur le bouton supprimer un stagiaire
+activate Frontend
+
+    Frontend->Backend:GET /internships/{intership-id}
+    activate Backend
+    Backend-->>Frontend:200 OK
+    deactivate Backend
+    
+    Frontend-->>Admin:Afficher confirmation de suppression
+    deactivate Frontend
+    
+    Admin->Frontend:Confirme la suppression
+    activate Frontend
+
+    Frontend->Backend:DELETE /internships/{intership-id}
+    activate Backend
+
+      Backend->Database: Supprime le stagiaire 
+      activate Database
+
+      Database-->>Backend:Validation
+      deactivate Database
+
+    Backend-->>Frontend:204 No Content - {intership-id}
+    deactivate Backend
+Frontend-->>Admin:Affiche la liste de stagiaire
+deactivate Frontend

@@ -1,0 +1,27 @@
+title Créer une activité\n
+
+actor Admin
+participant Frontend
+participant Backend
+database Database
+
+Admin->Frontend:Créer une activité et la soumet
+activate Frontend
+
+    Frontend->Backend:POST /activitys/{activity-id}
+    activate Backend
+
+      Backend->Database: Enregistre les données
+      activate Database
+
+      Database-->>Backend:Validation
+      deactivate Database
+
+    Backend-->>Frontend:200 OK
+    deactivate Backend
+Frontend-->>Admin:Affiche la liste des activités
+deactivate Frontend
+
+
+
+

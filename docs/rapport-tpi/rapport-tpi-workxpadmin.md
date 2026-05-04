@@ -452,7 +452,7 @@ Les besoins de l'administrateur proviennent du cahier des charges.
 | **Quoi** | Supprimer une catégorie du système |
 | **Pourquoi** | Retirer une catégorie inutilisée |
 | **Comment** | Bouton de suppression sur la carte de la catégorie |
-| **Contrainte** | Impossible si la catégorie est liée à au moins un atelier (contrainte FK RESTRICT) |
+| **Contrainte** | Impossible si la catégorie est liée à au moins un atelier. La vérification est effectuée au niveau du service (`HAS_LINKED_ACTIVITIES`) avant tout appel à la base de données. Une modal d'erreur « Suppression impossible » s'affiche si la contrainte est violée. |
 
 **Associer des ateliers à un stage**
 
@@ -758,9 +758,9 @@ avant chaque exécution via le script `tests/setup/restore_db.sql`.
 | CRUD atelier | `sc07-activity-crud.spec.ts` | Création, modification, suppression |
 | Association ateliers | `sc08-internship-association.spec.ts` | Ajout d'un atelier à un stage |
 | Dissociation ateliers | `sc09-internship-dissociation.spec.ts` | Retrait d'un atelier |
-| Ateliers enrichis | `sc-activity-enriched.spec.ts` | Description, catégories, suppression bloquée |
+| Ateliers enrichis | `sc-activity-enriched.spec.ts` | Description, catégories, suppression bloquée, mini-cartes stats dans carte dépliée |
 | Badges de statut | `sc-status-badges.spec.ts` | À venir / En cours / Terminé |
-| CRUD catégories | `sc-category-crud.spec.ts` | Création, modification, contrainte suppression |
+| CRUD catégories | `sc-category-crud.spec.ts` | Création, modification, contrainte suppression, Cannot Delete Modal |
 | Certificat | `sc-certificate-download.spec.ts` | Navigation vers la page de prévisualisation |
 
 #### Tests fonctionnels API — Postman / Newman
@@ -871,7 +871,8 @@ référence tout au long du développement. Les principales décisions de design
 - `AppButton.vue` : bouton avec variantes (primary, danger, ghost)
 - `AppCard.vue` : conteneur carte avec ombre
 - `AppInput.vue` : champ de saisie avec label et message d'erreur
-- `AppDialog.vue` : modal de confirmation
+- `AppDialog.vue` : modal de confirmation et d'erreur (ex : « Suppression impossible »)
+- `CategoryFormModal.vue` : formulaire create/edit de catégorie (mêmes conventions que `ActivityFormModal` et `InternshipFormModal`)
 
 ### 6.4 Gestion des stagiaires
 
@@ -938,8 +939,14 @@ Les ateliers sont gérés via `frontend/src/views/ActivityList.vue` et les endpo
 
 Chaque atelier est affiché sous forme d'une carte. Un clic sur le header déplie la carte
 pour révéler :
-- La zone de gestion des catégories (badges + bouton « Ajouter une catégorie »)
+- Deux mini-cartes de statistiques (`Card/Stat` et `Card/StatDoc`) : nombre de stages
+  utilisant cet atelier (`internshipCount`) et état du document annexe (icône verte
+  « Disponible » ou grise « Aucun document »)
+- La zone de gestion des catégories (badges + popover « Ajouter une catégorie »)
 - La zone documentation (état vide avec drag & drop ou état rempli avec le fichier)
+
+Le popover de sélection de catégories se ferme au clic extérieur (overlay transparent
+`z-40`) et sur la touche Escape (`keydown.escape`).
 
 **Contrainte de suppression (CdC §2.1) :**
 
@@ -977,10 +984,19 @@ Les catégories sont gérées via `frontend/src/views/CategoryList.vue` et les e
 **Interface :** Grille de cartes responsive (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`)
 avec icône Tag, nom, description optionnelle et compteur d'ateliers liés.
 
-**Contrainte de suppression :** La contrainte FK `RESTRICT` sur `activity_category` empêche
-la suppression d'une catégorie liée à des ateliers au niveau base de données. Le controller
-intercepte l'erreur MariaDB (errno 1451) et retourne HTTP 409 avec un message explicite.
-Le bouton de suppression est désactivé côté frontend si `activityCount > 0`.
+**Contrainte de suppression :** La règle métier est appliquée en deux étapes :
+
+1. **Service** : `deleteCategory` récupère d'abord la catégorie via `getById` (qui inclut
+   `activityCount`). Si `activityCount > 0`, le service lève `HAS_LINKED_ACTIVITIES` sans
+   jamais appeler la base de données — identique au pattern `HAS_LINKED_INTERNSHIPS` des ateliers.
+2. **Controller** : intercepte `HAS_LINKED_ACTIVITIES` → HTTP 409. La contrainte FK `RESTRICT`
+   sur `activity_category` reste en place comme filet de sécurité.
+3. **Frontend** : si le DELETE retourne 409, une modal « Suppression impossible » (`AppDialog`)
+   s'affiche avec le nom de la catégorie concernée et un message explicatif.
+
+**Formulaire create/edit :** Extrait dans un composant dédié `CategoryFormModal.vue` (même
+pattern que `ActivityFormModal` et `InternshipFormModal`). Il émet `saved` après succès et
+`close` sur annulation ou après sauvegarde.
 
 ### 6.7 Génération du certificat
 
@@ -1015,6 +1031,11 @@ un template DOCX personnalisable.
 8. Le PDF est renvoyé au frontend comme flux binaire
 9. Vue.js crée un `Blob URL` et l'affiche dans un `<iframe>` avec boutons
    « Imprimer » et « Télécharger PDF »
+
+**Implémentation `generateCertificate` :** La fonction est une `async function` pure
+utilisant `promisify(carbone.render)` (module `node:util`). Ce choix évite l'anti-pattern
+`new Promise(async (resolve, reject) => { await ... })` qui provoque des rejections non
+gérées si un `await` interne lève une exception.
 
 **Prérequis Docker :** LibreOffice est installé dans l'image backend Alpine
 (`apk add --no-cache libreoffice`). Impact : +~300 MB sur l'image.
@@ -1141,6 +1162,15 @@ via `tests/setup/restore_db.sql`.
 > en dehors du survol. Playwright ne pouvait pas les cliquer normalement.
 > Solution : Utilisation de l'option { force: true } dans les appels .click() Playwright
 > pour forcer le clic même sur des éléments techniquement non cliquables.
+>
+> **Problème 4 — Anti-pattern `new Promise(async)` dans la génération du certificat**
+> Contexte : `generateCertificate` utilisait la construction `new Promise(async (resolve, reject) => { await ... })`.
+> Si un `await` interne lève une exception, celle-ci n'est pas transmise au `reject` externe — elle
+> devient une rejection non gérée (« unhandled promise rejection ») et le controller ne reçoit jamais
+> l'erreur.
+> Solution : Réécriture en `async function` pure avec `promisify(carbone.render)` (module `node:util`),
+> qui retourne directement une Promise compatible avec `await`. La fonction est ensuite identique à
+> toutes les autres fonctions de service du projet.
 >
 > **Ajouter ici les autres problèmes rencontrés** durant ton développement.
 

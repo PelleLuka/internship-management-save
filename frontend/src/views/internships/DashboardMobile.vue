@@ -7,7 +7,7 @@ import { Calendar } from 'lucide-vue-next';
 // Components
 import DashboardHeader from '../../components/internships/DashboardHeader.vue';
 import InternshipCard from '../../components/internships/InternshipCard.vue';
-import InternshipFormModal from '../../components/InternshipFormModal.vue';
+import InternshipFormModal from '../../components/internships/InternshipFormModal.vue';
 import InternshipGroupList from '../../components/internships/InternshipGroupList.vue';
 
 // Init Composables
