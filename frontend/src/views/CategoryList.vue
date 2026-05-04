@@ -5,34 +5,32 @@ import { useCategories } from '../composables/useCategories.js';
 import AppButton from '../components/AppButton.vue';
 import AppDialog from '../components/AppDialog.vue';
 import AppInput from '../components/AppInput.vue';
+import CategoryFormModal from '../components/CategoryFormModal.vue';
 
 const { categories, load, create, update, remove } = useCategories();
 onMounted(load);
 
 const showForm = ref(false);
 const editTarget = ref(null);
-const form = ref({ name: '', description: '' });
 const cannotDeleteTarget = ref(null); // { id, name } | null
 
 const openCreate = () => {
   editTarget.value = null;
-  form.value = { name: '', description: '' };
   cannotDeleteTarget.value = null;
   showForm.value = true;
 };
 
 const openEdit = (cat) => {
   editTarget.value = cat;
-  form.value = { name: cat.name, description: cat.description ?? '' };
   cannotDeleteTarget.value = null;
   showForm.value = true;
 };
 
-const submit = async () => {
+const handleSaved = async (formData) => {
   if (editTarget.value) {
-    await update(editTarget.value.id, form.value);
+    await update(editTarget.value.id, formData);
   } else {
-    await create(form.value);
+    await create(formData);
   }
   showForm.value = false;
 };
@@ -129,31 +127,11 @@ const handleDelete = async (cat) => {
       </div>
     </div>
 
-    <AppDialog
+    <CategoryFormModal
       :isOpen="showForm"
+      :category="editTarget"
       @close="showForm = false"
-      :title="editTarget ? 'Modifier la catégorie' : 'Nouvelle catégorie'"
-    >
-      <form @submit.prevent="submit" class="space-y-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-700">Nom *</label>
-          <AppInput v-model="form.name" placeholder="ex: Développement" required />
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-700">Description</label>
-          <textarea
-            v-model="form.description"
-            rows="2"
-            class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm
-                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 resize-none"
-            placeholder="Description optionnelle..."
-          />
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <AppButton type="button" variant="outline" @click="showForm = false">Annuler</AppButton>
-          <AppButton type="submit">{{ editTarget ? 'Enregistrer' : 'Créer' }}</AppButton>
-        </div>
-      </form>
-    </AppDialog>
+      @saved="handleSaved"
+    />
   </div>
 </template>
