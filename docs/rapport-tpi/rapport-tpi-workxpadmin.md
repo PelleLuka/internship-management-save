@@ -267,25 +267,306 @@ heures**. Le dernier délai pour la présentation du projet est fixé au **17 ju
 
 ### 4.1 État initial
 
+Le Centre d'Apprentissage TIC (CA TIC) de la HEIA-FR organise des stages de découverte
+de l'informatique pour les jeunes du cycle d'orientation (CO). Ces stages d'une durée de 1
+à 2 jours accueillent des groupes d'élèves qui réalisent divers ateliers pratiques.
+
+Jusqu'alors, le suivi administratif de ces stages était assuré manuellement via Microsoft
+OneNote. Pour chaque période de stage, une note recensait la liste des participants ainsi
+que les ateliers qu'ils avaient choisi de réaliser. Ce système présentait plusieurs
+limitations :
+
+- Aucune centralisation structurée : les données étaient réparties dans de multiples notes
+  sans lien entre elles
+- Pas de vue d'ensemble sur l'historique des stages par personne
+- Identification du statut des stages (passé, en cours, à venir) laborieuse
+- Génération du certificat de stage entièrement manuelle
+- Risque d'erreurs humaines et de pertes de données
+
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT** : Insérer ici la capture d'écran OneNote fournie
+> dans le CdC pour illustrer l'état initial.
+
+*Figure 1 — Extrait de l'outil OneNote actuel utilisé par le CA TIC (source : CdC)*
+
 ### 4.2 État désiré
 
+Pour répondre à ces problématiques, le CA TIC souhaite disposer d'une application web
+d'administration permettant de centraliser toutes les données relatives aux stages. Cette
+application doit être utilisable par l'équipe du CA TIC sans formation préalable.
+
+L'état désiré se compose des éléments suivants :
+
+**Gestion des stagiaires :**
+Une interface affiche l'ensemble des stages sous forme de cartes avec un indicateur
+visuel de statut calculé automatiquement (À venir / En cours / Terminé). L'administrateur
+peut créer, modifier et supprimer des stagiaires. Une même personne peut effectuer
+plusieurs stages à des périodes distinctes.
+
+**Gestion du catalogue des ateliers :**
+Un catalogue centralisé répertorie tous les ateliers disponibles. Chaque atelier possède
+un titre, une description optionnelle, des catégories associées et un document annexe
+facultatif (documentation de l'atelier). Les ateliers liés à des stages actifs ne peuvent
+pas être supprimés.
+
+**Gestion des catégories :**
+Les ateliers sont classifiés par catégories (ex : Programmation, Web, Systèmes). Les
+catégories sans ateliers peuvent être supprimées.
+
+**Association ateliers ↔ stages :**
+Depuis la fiche d'un stagiaire, l'administrateur peut consulter et modifier la liste des
+ateliers réalisés durant son stage.
+
+**Génération du certificat :**
+Un bouton sur chaque carte de stage permet de générer et prévisualiser le certificat PDF
+correspondant. Le template est personnalisable par l'administrateur via la page Paramètres.
+
+*Figure 2 — Schéma de principe de fonctionnement*
+
+```
+[Administrateur CA TIC] → [Interface Vue.js] → [API Express.js] → [MariaDB]
+                                                      ↓
+                                              [Fichiers uploads]
+                                         (documents ateliers + template certificat)
+```
+
 ### 4.3 Public cible
+
+L'application est destinée exclusivement à l'équipe du Centre d'Apprentissage TIC (CA
+TIC) de la HEIA-FR. Il s'agit d'une interface d'administration interne, sans accès public.
+
+Les utilisateurs sont les formateurs professionnels et les responsables administratifs du
+CA TIC. L'application doit être suffisamment intuitive pour être utilisée sans formation
+préalable ni documentation spécifique.
 
 ### 4.4 Besoins
 
 #### 4.4.1 Cas d'utilisation
 
+Un diagramme de cas d'utilisation représente le comportement fonctionnel du système
+du point de vue de l'utilisateur.
+
+> ⚠️ **À COMPLÉTER PAR LE CANDIDAT** : Insérer ici le diagramme UML de cas
+> d'utilisation. À créer avec Draw.io ou PlantUML. L'acteur unique est
+> « Administrateur CA TIC ». Les cas d'utilisation principaux sont :
+> - Gérer les stagiaires (créer, modifier, supprimer, consulter)
+> - Gérer les ateliers (créer, modifier, supprimer, upload document)
+> - Gérer les catégories (créer, modifier, supprimer)
+> - Associer des ateliers à un stage
+> - Générer le certificat PDF d'un stage
+
+*Figure 3 — Diagramme de cas d'utilisation*
+
+**Explications :**
+
+L'administrateur CA TIC est le seul acteur du système. Il dispose d'un accès complet
+à toutes les fonctionnalités. La base de données est un acteur secondaire qui répond
+aux requêtes du backend.
+
 #### 4.4.2 Description
+
+Les besoins de l'administrateur proviennent du cahier des charges.
+
+**Ajouter un stagiaire**
+
+| | |
+|---|---|
+| **Quoi** | Créer une fiche de stage avec les informations personnelles (prénom, nom, email) et les dates de stage |
+| **Pourquoi** | Enregistrer un nouveau stage dans le système |
+| **Comment** | Formulaire modal accessible depuis la page des stages |
+| **Contrainte** | La date de fin doit être postérieure ou égale à la date de début |
+
+**Modifier un stagiaire**
+
+| | |
+|---|---|
+| **Quoi** | Mettre à jour les informations d'un stage existant |
+| **Pourquoi** | Corriger une erreur ou mettre à jour les données d'un stagiaire |
+| **Comment** | Bouton d'édition sur la carte du stage, ouvre le même formulaire modal pré-rempli |
+
+**Supprimer un stagiaire**
+
+| | |
+|---|---|
+| **Quoi** | Supprimer définitivement un stage et ses associations avec les ateliers |
+| **Pourquoi** | Retirer un stage obsolète ou erroné |
+| **Comment** | Bouton de suppression avec dialog de confirmation |
+| **Remarque** | La suppression d'un stage supprime en cascade ses associations dans `internship_activity` |
+
+**Consulter la liste des stages**
+
+| | |
+|---|---|
+| **Quoi** | Afficher la liste de tous les stages sous forme de cartes avec statut visuel |
+| **Pourquoi** | Permettre à l'administrateur d'avoir une vue d'ensemble des stages |
+| **Comment** | Page principale `/internships` avec cartes desktop et mobile |
+| **Remarque** | Le statut (À venir / En cours / Terminé) est calculé côté frontend à partir des dates |
+
+**Ajouter un atelier**
+
+| | |
+|---|---|
+| **Quoi** | Créer un atelier avec titre, description optionnelle et catégories |
+| **Pourquoi** | Enrichir le catalogue des ateliers disponibles |
+| **Comment** | Formulaire modal accessible depuis la page des ateliers |
+| **Contrainte** | Le titre est obligatoire (max 255 caractères) |
+
+**Modifier un atelier**
+
+| | |
+|---|---|
+| **Quoi** | Mettre à jour le titre, la description, les catégories ou le document d'un atelier |
+| **Pourquoi** | Maintenir le catalogue à jour |
+| **Comment** | Carte dépliable : édition inline des catégories, zone document toujours visible |
+
+**Supprimer un atelier**
+
+| | |
+|---|---|
+| **Quoi** | Supprimer un atelier du catalogue (soft delete : `visible = 0`) |
+| **Pourquoi** | Retirer un atelier obsolète |
+| **Comment** | Bouton de suppression sur la carte |
+| **Contrainte** | Impossible si l'atelier est lié à au moins un stage (HTTP 409 retourné) |
+| **Remarque** | La suppression est un soft delete pour préserver l'intégrité référentielle |
+
+**Uploader un document sur un atelier**
+
+| | |
+|---|---|
+| **Quoi** | Attacher un fichier de documentation à un atelier |
+| **Pourquoi** | Fournir aux stagiaires la documentation associée à l'atelier |
+| **Comment** | Zone drag & drop dans la section « Documentation » de la carte dépliée |
+| **Contrainte** | Formats acceptés : PDF, DOCX, ODT, PPTX, TXT, XLSX, ODS. Taille max : 10 MB |
+
+**Ajouter une catégorie**
+
+| | |
+|---|---|
+| **Quoi** | Créer une nouvelle catégorie pour classifier les ateliers |
+| **Pourquoi** | Organiser le catalogue par domaine (Programmation, Web, Systèmes, etc.) |
+| **Comment** | Bouton « Nouvelle catégorie » sur la page `/categories` |
+
+**Supprimer une catégorie**
+
+| | |
+|---|---|
+| **Quoi** | Supprimer une catégorie du système |
+| **Pourquoi** | Retirer une catégorie inutilisée |
+| **Comment** | Bouton de suppression sur la carte de la catégorie |
+| **Contrainte** | Impossible si la catégorie est liée à au moins un atelier (contrainte FK RESTRICT) |
+
+**Associer des ateliers à un stage**
+
+| | |
+|---|---|
+| **Quoi** | Lier un ou plusieurs ateliers à un stage spécifique |
+| **Pourquoi** | Enregistrer les ateliers réalisés par un stagiaire durant son stage |
+| **Comment** | Popover « Ajouter un atelier » accessible depuis la carte dépliée du stage |
+
+**Générer le certificat PDF d'un stage**
+
+| | |
+|---|---|
+| **Quoi** | Produire un certificat PDF personnalisé pour un stage |
+| **Pourquoi** | Attester officiellement les ateliers réalisés durant le stage |
+| **Comment** | Bouton « Aperçu du certificat » sur la carte du stage → page de prévisualisation |
+| **Contrainte** | Requiert qu'un template DOCX soit uploadé dans la page Paramètres |
+
+**Synthèse**
+
+| Besoin | Administrateur CA TIC |
+|---|---|
+| Gérer les stagiaires (CRUD) | X |
+| Consulter les statuts de stage | X |
+| Gérer les ateliers (CRUD + document) | X |
+| Gérer les catégories (CRUD) | X |
+| Associer ateliers ↔ stages | X |
+| Générer le certificat PDF | X |
+| Configurer le template certificat | X |
 
 ### 4.5 Fonctionnement
 
+Cette section analyse les différentes variantes envisagées pour répondre aux besoins,
+en justifiant les choix retenus.
+
 #### 4.5.1 Architecture de l'application
+
+Plusieurs architectures sont envisageables pour structurer une application web. Voici les
+variantes étudiées :
+
+| Variante | Description | Avantages | Inconvénients |
+|---|---|---|---|
+| **Monolithique** | Frontend et backend dans un seul projet Node.js avec rendu serveur (SSR) | Simple à déployer, un seul processus | Couplage fort, difficile à faire évoluer, technologies imposées mal adaptées |
+| **Architecture 3-tiers séparée** | Frontend SPA Vue.js indépendant + API REST Express.js + MariaDB | Séparation des responsabilités, indépendance de déploiement, technologies imposées parfaitement adaptées | Légèrement plus complexe à configurer |
+
+**Barème des critères de comparaison**
+
+| Critère | 1 : Bas | 2 : Moyen | 3 : Haut |
+|---|---|---|---|
+| Adéquation aux technologies imposées | Mal adaptée | Partiellement | Parfaitement adaptée |
+| Maintenabilité | Difficile | Moyenne | Bonne séparation |
+| Complexité de mise en place | Très complexe | Moyenne | Simple |
+
+**Matrice de comparaison**
+
+| Architecture | Adéquation | Maintenabilité | Complexité | Note* |
+|---|---|---|---|---|
+| Monolithique | 1 | 1 | 3 | 1.6 |
+| **3-tiers séparée** | **3** | **3** | **2** | **2.7** |
+
+*Pondération : Adéquation 40%, Maintenabilité 40%, Complexité 20%*
+
+**Conclusion :** L'architecture 3-tiers séparée est retenue. Elle correspond exactement
+aux technologies imposées (Vue.js frontend, Express.js backend, MariaDB base de données)
+et offre une séparation claire des responsabilités facilitant la maintenance et les
+évolutions futures.
 
 #### 4.5.2 Stockage des documents d'ateliers
 
+Chaque atelier peut avoir un document annexe attaché (PDF, DOCX, etc.).
+
+| Variante | Description | Avantages | Inconvénients |
+|---|---|---|---|
+| **Stockage en base de données (BLOB)** | Le fichier est encodé et stocké directement dans MariaDB | Pas de gestion filesystem | Performances dégradées, taille DB importante, MariaDB mal adapté |
+| **Filesystem + référence en DB** | Le fichier est stocké sur le serveur, son chemin est enregistré en DB | Performances optimales, gestion Docker volume simple, standard industriel | Gestion de la cohérence fichier/DB |
+
+**Conclusion :** Le stockage sur filesystem avec référence en base de données est retenu.
+Les fichiers sont nommés `<uuid>-<nom-sanitisé>.<ext>` pour éviter les collisions et les
+path traversal attacks. Un volume Docker nommé `uploads_data` assure la persistance
+entre les redémarrages.
+
 #### 4.5.3 Format du certificat de stage
 
+Le CdC demande au candidat de proposer un format pour le certificat.
+
+| Variante | Description | Avantages | Inconvénients |
+|---|---|---|---|
+| **HTML → PDF (Puppeteer)** | Génération d'une page HTML puis conversion en PDF via un navigateur headless | Contrôle précis de la mise en page | Dépendance Chromium (~300 MB), template modifiable uniquement par développeur |
+| **DOCX template → PDF (carbone.js)** | Template Word avec balises `{variable}`, injection des données par carbone.js, conversion PDF via LibreOffice | Template modifiable par l'admin dans Word sans toucher au code, standard documentaire | LibreOffice requis dans le conteneur (+300 MB) |
+
+**Conclusion :** La solution carbone.js est retenue. Elle permet à l'administrateur du CA
+TIC de personnaliser le certificat (logo, textes, mise en page) directement dans Microsoft
+Word, sans intervention du développeur. Un template de démonstration est livré avec
+le projet.
+
 ### 4.6 Technologies utilisées
+
+Le tableau ci-dessous recense les technologies du projet avec la justification de leur
+pertinence.
+
+| Technologie | Rôle | Justification |
+|---|---|---|
+| **Vue.js 3** (Composition API) | Framework frontend SPA | Réactivité fine, Composition API modulaire, HMR rapide via Vite. Technologie imposée par le CdC, maîtrisée par le candidat. |
+| **Vite** | Bundler et serveur de développement | Démarrage instantané, Hot Module Replacement ultra-rapide, configuration minimale. |
+| **Express.js** | Framework API REST backend | Minimaliste et flexible, excellent écosystème npm, structure MVC simple. Technologie imposée par le CdC. |
+| **MariaDB** | Base de données relationnelle | Données structurées avec relations N:M, contraintes d'intégrité référentielle (FK RESTRICT/CASCADE). Technologie imposée par le CdC. |
+| **Docker + Docker Compose** | Conteneurisation | Environnement reproductible sur n'importe quelle machine, isolation des services, volumes persistants pour les fichiers uploadés. |
+| **Tailwind CSS** | Framework CSS utilitaire | Cohérence visuelle sans CSS custom à maintenir, classes utilitaires directement dans les templates Vue. |
+| **Biome** | Linter et formatter | Outil tout-en-un remplaçant ESLint + Prettier, ultra-rapide, tri automatique des imports. |
+| **Playwright** | Tests de bout en bout (E2E) | Simulation d'un vrai navigateur, scénarios utilisateurs complets, support multi-navigateurs. |
+| **Postman / Newman** | Tests fonctionnels API | Validation du contrat d'interface de l'API REST, exécution en ligne de commande via Newman. |
+| **carbone.js** | Templating et génération PDF | Injection de données dans un template DOCX Word, conversion en PDF via LibreOffice. Zéro service externe. |
+| **multer** | Upload de fichiers | Middleware Express standard pour la gestion des fichiers multipart/form-data. |
+| **Lucide Vue** | Bibliothèque d'icônes | Icônes SVG légères et cohérentes avec le design. |
 
 ---
 
