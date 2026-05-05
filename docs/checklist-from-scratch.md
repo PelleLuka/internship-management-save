@@ -603,16 +603,343 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
 ## Phase 4 — Infrastructure *(~3h)*
 
-- [ ] Créer `docker/docker-compose.yml` avec 3 services : `frontend` (:8081), `backend` (:3000), `mariadb` (:3306)
-- [ ] Configurer les volumes Docker : `uploads_data`, `mariadb_data`
-- [ ] Créer `docker/backend.Dockerfile` (Node 20 Alpine + `apk add --no-cache libreoffice`)
-- [ ] Créer `docker/frontend.Dockerfile` (Node 20 build Vite → Nginx)
-- [ ] Créer `database/init.sql` avec tous les CREATE TABLE, contraintes FK (CASCADE/RESTRICT) et CHECK (`end_date >= start_date`)
-- [ ] Créer `database/restore_db.sql` avec données minimales reproductibles pour les tests
-- [ ] Créer `.env.example` (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `PORT`)
-- [ ] `docker compose up --build` et vérifier que les 3 services démarrent
-- [ ] Vérifier la connexion MariaDB depuis le conteneur backend
-- [ ] Commit : `chore: add Docker infrastructure and DB schema`
+### Variables d'environnement
+
+- [ ] Créer `.env` à la racine du projet (ne jamais commiter) :
+  ```
+  DB_HOST=localhost
+  DB_USER=user
+  DB_PASSWORD=password
+  DB_NAME=internship_management
+  PORT=3000
+  ```
+- [ ] Créer `.env.example` (version sans valeurs sensibles, à commiter) avec les mêmes clés mais valeurs vides ou factices
+
+### Docker Compose
+
+- [ ] Créer `docker/docker-compose.yml` avec **4 services** : `backend`, `frontend`, `database`, `backup` :
+  ```yaml
+  services:
+    backend:
+      build:
+        context: ..
+        dockerfile: docker/Dockerfile.backend
+      ports:
+        - "3000:3000"
+      volumes:
+        - ../backend:/app/backend
+        - /app/backend/node_modules
+        - uploads_data:/app/backend/uploads
+      command: npm run dev --workspace=backend
+      environment:
+        - DB_HOST=database
+        - DB_USER=user
+        - DB_PASSWORD=password
+        - DB_NAME=internship_management
+        - PORT=3000
+      depends_on:
+        - database
+      networks:
+        - app-network
+
+    frontend:
+      build:
+        context: ..
+        dockerfile: docker/Dockerfile.frontend
+        target: builder
+      ports:
+        - "8081:5173"
+      volumes:
+        - ../frontend:/app/frontend
+        - /app/frontend/node_modules
+      command: npm run dev --workspace=frontend -- --host
+      environment:
+        - VITE_API_TARGET=http://backend:3000
+      depends_on:
+        - backend
+      networks:
+        - app-network
+
+    database:
+      image: mariadb:latest
+      ports:
+        - "3306:3306"
+      environment:
+        - MARIADB_ROOT_PASSWORD=root_password
+        - MARIADB_DATABASE=internship_management
+        - MARIADB_USER=user
+        - MARIADB_PASSWORD=password
+      volumes:
+        - mariadb_data:/var/lib/mysql
+        - ../database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      networks:
+        - app-network
+
+    backup:
+      build:
+        context: ..
+        dockerfile: docker/Dockerfile.backup
+      volumes:
+        - ../backup/data:/data
+        - ../backup/scripts:/scripts
+        - ../backup/config/crontab:/var/spool/cron/crontabs/root
+      depends_on:
+        - database
+      networks:
+        - app-network
+
+  volumes:
+    mariadb_data:
+    uploads_data:
+
+  networks:
+    app-network:
+      driver: bridge
+  ```
+- [ ] Vérifier que `depends_on` est correct : `frontend` attend `backend`, `backend` attend `database`
+
+### Dockerfile backend
+
+- [ ] Créer `docker/Dockerfile.backend` (Node 22 Alpine + LibreOffice pour carbone.js) :
+  ```dockerfile
+  FROM node:22-alpine AS builder
+
+  # LibreOffice pour la conversion PDF via carbone.js
+  RUN apk add --no-cache \
+      libreoffice \
+      openjdk11-jre-headless \
+      font-noto \
+      font-noto-cjk
+
+  WORKDIR /app
+
+  # Copier les manifestes racine et workspace
+  COPY package.json package-lock.json ./
+  COPY frontend/package.json ./frontend/
+  COPY backend/package.json ./backend/
+
+  # Installer uniquement les dépendances de production
+  RUN npm ci --omit=dev
+
+  # Copier le code source backend
+  COPY backend ./backend
+
+  EXPOSE 3000
+
+  CMD ["npm", "run", "start:backend"]
+  ```
+
+### Dockerfile frontend
+
+- [ ] Créer `docker/Dockerfile.frontend` (build multi-stage : Vite → Nginx) :
+  ```dockerfile
+  # Build stage
+  FROM node:22-alpine AS builder
+
+  WORKDIR /app
+
+  COPY package.json package-lock.json ./
+  COPY frontend/package.json ./frontend/
+  COPY backend/package.json ./backend/
+
+  RUN npm ci
+
+  COPY frontend ./frontend
+
+  RUN npm run build:frontend
+
+  # Production stage
+  FROM nginx:alpine
+
+  COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+  COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+  EXPOSE 80
+
+  CMD ["nginx", "-g", "daemon off;"]
+  ```
+- [ ] Créer `docker/nginx.conf` (SPA fallback + proxy API vers le backend) :
+  ```nginx
+  server {
+      listen 80;
+      server_name localhost;
+
+      root /usr/share/nginx/html;
+      index index.html;
+
+      location / {
+          try_files $uri $uri/ /index.html;
+      }
+
+      location /api/ {
+          proxy_pass http://backend:3000/;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection 'upgrade';
+          proxy_set_header Host $host;
+          proxy_cache_bypass $http_upgrade;
+      }
+  }
+  ```
+
+### Dockerfile backup
+
+- [ ] Créer `docker/Dockerfile.backup` (Alpine + mariadb-client + crond pour les sauvegardes automatiques) :
+  ```dockerfile
+  FROM alpine:latest
+
+  RUN apk add --no-cache mariadb-client bash busybox-suid
+
+  RUN mkdir -p /var/log
+
+  CMD ["crond", "-f", "-d", "8"]
+  ```
+
+### Schéma SQL
+
+- [ ] Créer `database/schema.sql` avec les 6 tables dans l'ordre (respecter les dépendances FK) :
+  ```sql
+  CREATE TABLE `person` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `first_name` VARCHAR(80) NOT NULL,
+    `last_name` VARCHAR(80) NOT NULL,
+    `email` VARCHAR(254) NOT NULL
+  );
+
+  CREATE TABLE `internship` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `person_id` INT NOT NULL,
+    `start_date` DATE NOT NULL,
+    `end_date` DATE NOT NULL,
+    CONSTRAINT `chk_internship_dates_valid` CHECK (`end_date` >= `start_date`),
+    CONSTRAINT `fk_internship_person`
+      FOREIGN KEY (`person_id`) REFERENCES `person`(`id`) ON DELETE CASCADE
+  );
+
+  CREATE TABLE `activity` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `title` VARCHAR(255) NOT NULL,
+    `description` TEXT NULL,
+    `document_url` VARCHAR(500) NULL,
+    `visible` BOOLEAN NOT NULL DEFAULT true
+  );
+
+  CREATE TABLE `category` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(100) NOT NULL,
+    `description` TEXT NULL
+  );
+
+  CREATE TABLE `internship_activity` (
+    `internship_id` INT NOT NULL,
+    `activity_id` INT NOT NULL,
+    PRIMARY KEY (`internship_id`, `activity_id`),
+    FOREIGN KEY (`internship_id`) REFERENCES `internship`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`activity_id`) REFERENCES `activity`(`id`) ON DELETE RESTRICT
+  );
+
+  CREATE TABLE `activity_category` (
+    `activity_id` INT NOT NULL,
+    `category_id` INT NOT NULL,
+    PRIMARY KEY (`activity_id`, `category_id`),
+    FOREIGN KEY (`activity_id`) REFERENCES `activity`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`category_id`) REFERENCES `category`(`id`) ON DELETE RESTRICT
+  );
+  ```
+- [ ] Vérifier l'ordre de création : `person` et `activity` et `category` avant les tables de jonction
+
+### Script de restauration DB (pour les tests)
+
+- [ ] Créer `tests/setup/restore_db.sql` avec `TRUNCATE` + données reproductibles :
+  ```sql
+  SET FOREIGN_KEY_CHECKS = 0;
+
+  TRUNCATE TABLE internship_activity;
+  TRUNCATE TABLE activity_category;
+  TRUNCATE TABLE internship;
+  TRUNCATE TABLE person;
+  TRUNCATE TABLE activity;
+  TRUNCATE TABLE category;
+
+  INSERT INTO activity (id, title, visible) VALUES
+    (1, 'Jeu de mémoire lumineux Ordo Lumina (Python)', 1),
+    (2, 'Montage d''un poste de travail PC', 1),
+    -- ... (compléter avec tous les ateliers)
+  ;
+
+  INSERT INTO person (id, first_name, last_name, email) VALUES
+    (1, 'Lucas', 'Martin', 'lucas.martin@example.com'),
+    -- ... (compléter)
+  ;
+
+  INSERT INTO internship (id, person_id, start_date, end_date) VALUES
+    (1, 1, '2024-01-09', '2024-07-09'),
+    -- ... (compléter, inclure des stages À venir, En cours et Terminés)
+  ;
+
+  SET FOREIGN_KEY_CHECKS = 1;
+  ```
+- [ ] Vérifier que le jeu de données inclut des stages avec les 3 statuts possibles (À venir, En cours, Terminé) pour les tests E2E
+- [ ] Créer `tests/setup/restoreDb.js` — script Node.js ESM qui lit `restore_db.sql` et l'exécute via le driver mariadb avec `multipleStatements: true` :
+  ```js
+  import mariadb from 'mariadb';
+  import fs from 'fs';
+  import path from 'path';
+  import { fileURLToPath } from 'url';
+  import dotenv from 'dotenv';
+
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'user',
+    password: process.env.DB_PASSWORD || 'password',
+    database: process.env.DB_NAME || 'internship_management',
+    multipleStatements: true,
+  });
+
+  const sql = fs.readFileSync(path.join(__dirname, 'restore_db.sql'), 'utf8');
+  await conn.query(sql);
+  await conn.end();
+  console.log('DB restaurée.');
+  ```
+
+### Pool MariaDB (backend)
+
+- [ ] Créer `backend/config/db.js` — pool de 5 connexions, lit `.env` depuis la racine du monorepo :
+  ```js
+  import mariadb from 'mariadb';
+  import dotenv from 'dotenv';
+  import path from 'path';
+  import { fileURLToPath } from 'url';
+
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+  const pool = mariadb.createPool({
+    host: process.env.DB_HOST || 'database',
+    user: process.env.DB_USER || 'user',
+    password: process.env.DB_PASSWORD || 'password',
+    database: process.env.DB_NAME || 'internship_management',
+    connectionLimit: 5,
+  });
+
+  export default pool;
+  ```
+
+### Vérification
+
+- [ ] Lancer l'infrastructure : `docker compose -f docker/docker-compose.yml up --build`
+- [ ] Vérifier que les 4 conteneurs démarrent sans erreur dans les logs
+- [ ] Tester l'accès au frontend : ouvrir `http://localhost:8081` dans le navigateur
+- [ ] Tester l'accès à l'API : `curl http://localhost:3000/api/internships` → doit retourner `[]`
+- [ ] Vérifier la connexion MariaDB depuis le conteneur backend :
+  ```bash
+  docker compose exec backend node -e "import('./backend/config/db.js').then(m => m.default.getConnection()).then(c => { console.log('OK'); c.end(); })"
+  ```
+- [ ] Vérifier que le volume `uploads_data` persiste entre les redémarrages : `docker compose down && docker compose up` → le volume existe toujours
+- [ ] Commit : `chore: add Docker infrastructure, Nginx, DB schema and test restore script`
 
 ---
 
