@@ -7,15 +7,138 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 
 ## Phase 0 — Préparation *(~2h)*
 
+### Lecture du cahier des charges
+
 - [ ] Lire le cahier des charges en entier
-- [ ] Identifier les 5 exigences fonctionnelles et les noter
-- [ ] Vérifier que Node.js v20+, Docker Desktop, Git, Postman et VS Code sont installés
-- [ ] Créer le dépôt Git sur GitLab HEIA-FR
-- [ ] `git clone <repo-url>` en local
-- [ ] Créer la structure de dossiers racine : `frontend/`, `backend/`, `database/`, `docker/`, `tests/`, `docs/`, `design/`
-- [ ] Créer `package.json` racine avec `workspaces: ["frontend", "backend"]`
-- [ ] Créer `.gitignore` (`node_modules`, `dist`, `.env`, `backups/`, artifacts Playwright)
-- [ ] Premier commit : `chore: init project structure`
+- [ ] Identifier et noter les 5 exigences fonctionnelles (stagiaires, ateliers, catégories, association, certificat)
+- [ ] Identifier les technologies imposées : Vue.js 3, Express.js, MariaDB
+
+### Vérification de l'environnement
+
+- [ ] Vérifier Node.js v20+ : `node --version` → doit afficher `v20.x.x` ou supérieur
+- [ ] Vérifier npm v10+ : `npm --version`
+- [ ] Vérifier Git : `git --version`
+- [ ] Vérifier Docker Desktop installé et démarré : `docker --version && docker compose version`
+- [ ] Vérifier Postman installé (version desktop)
+- [ ] Vérifier VS Code installé avec les extensions : `Vue - Official` (Volar), `Tailwind CSS IntelliSense`, `Biome`
+
+### Git et dépôt
+
+- [ ] Créer le dépôt sur GitLab HEIA-FR (visibilité privée)
+- [ ] Configurer l'identité Git locale si pas déjà fait :
+  ```bash
+  git config --global user.name "Prénom Nom"
+  git config --global user.email "prenom.nom@edu.hefr.ch"
+  ```
+- [ ] `git clone <repo-url> && cd <repo>`
+
+### Structure des dossiers
+
+- [ ] Créer les dossiers racine :
+  ```bash
+  mkdir -p frontend backend database docker tests/e2e tests/api tests/setup docs design
+  ```
+- [ ] Créer un `.gitkeep` dans les dossiers vides pour les commiter
+
+### npm Workspaces (racine)
+
+- [ ] Créer `package.json` à la racine :
+  ```json
+  {
+    "name": "internship-management",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "workspaces": ["frontend", "backend"]
+  }
+  ```
+
+### Biome — linter et formatter
+
+- [ ] Installer Biome en dépendance de développement racine :
+  ```bash
+  npm install --save-dev @biomejs/biome
+  ```
+- [ ] Initialiser la configuration Biome :
+  ```bash
+  npx biome init
+  ```
+- [ ] Remplacer le contenu de `biome.json` par la configuration du projet :
+  ```json
+  {
+    "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+    "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+    "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2 },
+    "linter": { "enabled": true, "rules": { "recommended": true } },
+    "css": {
+      "parser": { "tailwindDirectives": true },
+      "formatter": { "quoteStyle": "single" }
+    },
+    "javascript": { "formatter": { "quoteStyle": "single" } },
+    "html": {
+      "formatter": { "enabled": true, "bracketSameLine": false, "selfCloseVoidElements": "always" },
+      "experimentalFullSupportEnabled": true
+    },
+    "overrides": [{
+      "includes": ["**/*.vue"],
+      "linter": {
+        "rules": {
+          "style": { "useConst": "off", "useImportType": "off" },
+          "correctness": { "noUnusedVariables": "off", "noUnusedImports": "off" }
+        }
+      }
+    }],
+    "assist": { "enabled": true, "actions": { "source": { "organizeImports": "on" } } }
+  }
+  ```
+- [ ] Vérifier que Biome fonctionne : `npx biome check .`
+
+### Scripts racine
+
+- [ ] Ajouter les scripts dans `package.json` racine :
+  ```json
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "start:backend": "npm run start --workspace=backend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
+    "db:restore": "node tests/setup/restoreDb.js",
+    "test:e2e": "npm run db:restore && cd tests/e2e && npx playwright test",
+    "test:api": "npm run db:restore && bash tests/api/run_tests.sh"
+  }
+  ```
+
+### Newman
+
+- [ ] Installer Newman pour exécuter les tests API en ligne de commande :
+  ```bash
+  npm install --save-dev newman newman-reporter-htmlextra
+  ```
+
+### .gitignore
+
+- [ ] Créer `.gitignore` à la racine :
+  ```
+  node_modules
+  dist
+  dist-ssr
+  *.local
+  .env
+  backups/
+  backup/data/*.sql
+  tests/e2e/playwright-report/
+  tests/e2e/test-results/
+  design/screens/
+  design/screenshots/
+  design/validation-report.html
+  ```
+
+### Premier commit
+
+- [ ] `git add . && git commit -m "chore: init project structure with Biome and npm workspaces"`
 
 ---
 
