@@ -1266,61 +1266,280 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
 ## Phase 6 — Frontend + tests E2E *(~3 jours)*
 
-### Setup
+### Setup Vite + Vue
 
-- [ ] `npm create vite@latest frontend -- --template vue`
-- [ ] Installer : `vue-router@4`, `axios`, `tailwindcss`, `lucide-vue-next`, `@biomejs/biome`
-- [ ] Configurer Tailwind CSS (`tailwind.config.js`, import dans `src/main.css`)
-- [ ] Créer `biome.json` : `organizeImports: "on"`, indentation 2 espaces, guillemets doubles
-- [ ] Créer `src/tokens.css` avec les variables CSS de couleurs (palette bleue + statuts)
-- [ ] Créer `src/router.js` avec 5 routes : `/internships`, `/activities`, `/categories`, `/settings`, `/certificate/:id`
-- [ ] Créer `src/layouts/Sidebar.vue` (navigation + responsive collapse via `useMediaQuery`)
-- [ ] Créer `src/App.vue` avec `<RouterView>` et layout sidebar
+- [ ] Scaffolder le projet frontend :
+  ```bash
+  npm create vite@latest frontend -- --template vue
+  ```
+- [ ] Installer les dépendances frontend :
+  ```bash
+  cd frontend && npm install vue-router@4 axios tailwindcss lucide-vue-next date-fns
+  npm install --save-dev @vitejs/plugin-vue autoprefixer postcss
+  ```
+- [ ] Configurer `frontend/vite.config.js` — alias `@` vers `src/` + proxy `/api` vers le backend :
+  ```js
+  import { fileURLToPath, URL } from 'node:url';
+  import vue from '@vitejs/plugin-vue';
+  import { defineConfig } from 'vite';
+
+  export default defineConfig({
+    plugins: [vue()],
+    resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+    server: {
+      proxy: {
+        '/api': {
+          target: process.env.VITE_API_TARGET || 'http://localhost:3000',
+          changeOrigin: true,
+        },
+      },
+    },
+  });
+  ```
+  > Le proxy évite les problèmes CORS en dev : les requêtes `/api/...` sont redirigées vers le backend Express sans passer par le navigateur.
+
+- [ ] Configurer Tailwind CSS — créer `frontend/tailwind.config.js` :
+  ```js
+  export default {
+    content: ['./index.html', './src/**/*.{vue,js,ts}'],
+    theme: { extend: {} },
+    plugins: [],
+  };
+  ```
+- [ ] Créer `frontend/postcss.config.js` :
+  ```js
+  export default { plugins: { tailwindcss: {}, autoprefixer: {} } };
+  ```
+- [ ] Ajouter dans `frontend/src/main.css` :
+  ```css
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+  ```
+
+### Design tokens
+
+- [ ] Créer `frontend/src/tokens.css` avec les variables CSS du design (palette bleue, fonds, textes, sidebar, danger, rayons, ombres) :
+  ```css
+  :root {
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+    --color-primary-light: #eff6ff;
+    --color-primary-border: #dbeafe;
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-border: #e2e8f0;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #64748b;
+    --color-text-tertiary: #94a3b8;
+    --color-sidebar-bg: #0f172a;
+    --color-sidebar-hover: #1e293b;
+    --color-danger: #dc2626;
+    --color-danger-light: #fef2f2;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --shadow-card: 0 1px 3px 0 rgba(0,0,0,.1), 0 1px 2px -1px rgba(0,0,0,.1);
+    --shadow-card-hover: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
+  }
+  ```
+- [ ] Importer `tokens.css` dans `main.js` avant `main.css`
+
+### Router et point d'entrée
+
+- [ ] Créer `frontend/src/router.js` — 5 routes avec lazy loading + redirect `/` → `/internships` :
+  ```js
+  import { createRouter, createWebHistory } from 'vue-router';
+
+  const router = createRouter({
+    history: createWebHistory(import.meta.env.BASE_URL),
+    routes: [
+      { path: '/', redirect: '/internships' },
+      { path: '/internships', name: 'internships', component: () => import('./views/InternshipDashboard.vue') },
+      { path: '/activities',  name: 'activities',  component: () => import('./views/ActivityList.vue') },
+      { path: '/categories',  name: 'categories',  component: () => import('./views/CategoryList.vue') },
+      { path: '/settings',    name: 'settings',    component: () => import('./views/SettingsView.vue') },
+      { path: '/certificate/:id', name: 'certificate', component: () => import('./views/CertificateView.vue') },
+    ],
+  });
+
+  export default router;
+  ```
+- [ ] Mettre à jour `frontend/src/main.js` pour monter le router et importer les CSS
+- [ ] Créer `frontend/src/App.vue` — délègue tout au `MainLayout` :
+  ```vue
+  <script setup lang="ts">
+  import MainLayout from './layouts/MainLayout.vue';
+  </script>
+  <template><MainLayout /></template>
+  ```
+
+### Layout responsive
+
+- [ ] Créer `frontend/src/composables/useMediaQuery.js` — reactive `matchMedia` avec `onScopeDispose` pour le cleanup :
+  ```js
+  import { onScopeDispose, ref } from 'vue';
+
+  export function useMediaQuery(query) {
+    const matches = ref(false);
+    if (typeof window !== 'undefined') {
+      const media = window.matchMedia(query);
+      matches.value = media.matches;
+      const onChange = () => { matches.value = media.matches; };
+      media.addEventListener('change', onChange);
+      onScopeDispose(() => media.removeEventListener('change', onChange));
+    }
+    return matches;
+  }
+  ```
+
+- [ ] Créer `frontend/src/layouts/MainLayout.vue` — flex layout avec sidebar + `<RouterView>`, breakpoint 890px :
+  - Mobile (< 891px) : header fixe en haut + drawer sidebar + padding `pt-16`
+  - Desktop (≥ 891px) : sidebar fixe à gauche + `padding: p-8`
+  - Émet `@open-menu` vers `TheMobileHeader`, reçoit `@close` de `Sidebar`
+
+- [ ] Créer `frontend/src/layouts/TheMobileHeader.vue` — header fixe mobile avec bouton hamburger + titre de l'app
+- [ ] Créer `frontend/src/layouts/Sidebar.vue` — navigation avec liens (Stagiaires, Activités, Catégories, Paramètres), collapse sur mobile via `is-open` prop
+- [ ] Créer `frontend/src/components/nav/SidebarNavigation.vue` — liste des liens `<RouterLink>` avec icônes Lucide
 
 ### Composants partagés
 
-- [ ] Créer `AppButton.vue` (variantes primary/secondary/danger/ghost/outline, sizes sm/md/lg/icon, prop `disabled`)
-- [ ] Créer `AppInput.vue` (`v-model`, label, message d'erreur)
-- [ ] Créer `AppDialog.vue` (prop `isOpen`, slot contenu, émit `@close`)
+- [ ] Créer `frontend/src/components/AppButton.vue` — 5 variantes × 4 tailles, prop `disabled` :
+  - `variant` : `primary` | `secondary` | `danger` | `ghost` | `outline`
+  - `size` : `sm` (h-8 px-3) | `md` (h-10 px-4) | `lg` (h-12 px-6) | `icon` (h-10 w-10 p-2)
+  - Classes de base : `inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50`
+
+- [ ] Créer `frontend/src/components/AppInput.vue` — `v-model`, label optionnel, slot message d'erreur
+
+- [ ] Créer `frontend/src/components/AppDialog.vue` — modal avec backdrop, prop `isOpen`, slot contenu, émit `@close` sur clic extérieur ou touche Escape
+
+- [ ] Créer `frontend/src/components/AppCard.vue` — conteneur blanc avec ombre et bord
 
 ### Module stagiaires
 
-- [ ] Créer `src/services/internshipService.js` (appels Axios vers `/api/internships`)
-- [ ] Créer `src/composables/useInternships.js` (`ref` list, `load`, `create`, `update`, `remove`)
-- [ ] Créer `views/InternshipDashboard.vue` (switcher mobile/desktop via `useMediaQuery` breakpoint 890px)
-- [ ] Créer `views/internships/DashboardDesktop.vue` + `DashboardMobile.vue`
-- [ ] Créer `components/internships/InternshipCardDesktop.vue` (badges statut, `parseLocalDate` avec `String(str).slice(0,10).split('-')` pour gérer les ISO datetime MariaDB)
-- [ ] Créer `components/internships/InternshipCardMobile.vue`
-- [ ] Créer `components/internships/InternshipFormModal.vue`
-- [ ] Initialiser Playwright : `npm init playwright@latest` dans `tests/e2e/`
-- [ ] Écrire `sc01-navigation.spec.ts`, `sc03` à `sc06` (CRUD stagiaires + validation)
-- [ ] Run Playwright → verts
+- [ ] Créer `frontend/src/services/internshipService.js` — appels Axios avec pagination et recherche côté serveur :
+  ```js
+  export const getInternships = async (page = 1, limit = 20, search = '') => {
+    const params = new URLSearchParams({ page, limit });
+    if (search) params.append('search', search);
+    const res = await axios.get(`/api/internships?${params}`);
+    return res.data;  // { data: [], total: N }
+  };
+  ```
+
+- [ ] Créer `frontend/src/composables/useInternships.js` — logique complète du dashboard :
+  - `internships`, `searchTerm`, `sortBy`, `expandedCards` (Set), `page`, `total`, `isLoading`
+  - `loadInternships(reset)` — pagination infinie, reset sur changement de recherche
+  - `loadNextBatch()` — charge la page suivante si `internships.length < total`
+  - `toggleCard(id)` — déplier/replier une carte, charge les ateliers liés au dépliage
+  - `handleDelete(id)` — confirmation + reload
+  - `removeActivity(internshipId, activityId)` — confirmation + update local
+  - `sortedInternships` (computed) — tri client : `dateDesc` | `dateAsc` | `firstName` | `lastName`
+  - `groupedInternships` (computed) — structure `[[year, [[month, [interns...]]...]...]...]` avec `date-fns/locale/fr`
+  - `hasMore` (computed) — `internships.length < total`
+  > ⚠️ Mutation d'un `Set` ne déclenche pas de re-render : toujours remplacer la référence (`expandedCards.value = new Set(modified)`)
+
+- [ ] Créer `frontend/src/views/InternshipDashboard.vue` — switcher `<DashboardDesktop v-else>` / `<DashboardMobile v-if="isMobile">` via `useMediaQuery('(max-width: 890px)')`
+- [ ] Créer `frontend/src/views/internships/DashboardDesktop.vue` — layout desktop avec sidebar de navigation par année/mois
+- [ ] Créer `frontend/src/views/internships/DashboardMobile.vue` — layout mobile avec navigation horizontale
+
+- [ ] Créer `frontend/src/components/internships/card/InternshipCardDesktop.vue` :
+  - `parseLocalDate(str)` — **obligatoire** : `String(str).slice(0,10).split('-').map(Number)` → `new Date(y, m-1, d)`
+    > Pourquoi `slice(0,10)` ? MariaDB retourne les dates en ISO datetime complet (`2026-05-04T00:00:00.000Z`). `new Date("2026-05-04")` parse comme UTC minuit → en UTC+2, c'est 02h00 local → les comparaisons de statut sont fausses. Le `slice` normalise les deux formats.
+  - Calcul du statut :
+    ```js
+    const status = computed(() => {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const start = parseLocalDate(props.internship.startDate);
+      const end   = parseLocalDate(props.internship.endDate);
+      if (today < start) return 'upcoming';
+      if (today > end)   return 'done';
+      return 'active';
+    });
+    ```
+  - Badge statut : `upcoming` → `bg-amber-100 text-amber-600` | `active` → `bg-green-100 text-green-600` | `done` → `bg-blue-100 text-blue-600`
+  - Section dépliée : liste des ateliers liés avec bouton retirer, popover ajout d'atelier, bouton « Aperçu du certificat »
+
+- [ ] Créer `frontend/src/components/internships/card/InternshipCardMobile.vue` — même logique statut, layout colonne
+- [ ] Créer `frontend/src/components/internships/InternshipFormModal.vue` — formulaire create/edit (prénom, nom, email, dates), validation client (dates cohérentes, email format), émit `@saved` / `@close`
+- [ ] Créer `frontend/src/components/internships/InternshipGroupList.vue` — rendu de la liste groupée par mois/année
+
+**Tests E2E — stagiaires :**
+- [ ] Initialiser Playwright dans `tests/e2e/` :
+  ```bash
+  cd tests/e2e && npm init playwright@latest
+  ```
+- [ ] Configurer `tests/e2e/playwright.config.ts` — `baseURL: 'http://localhost:8081'`, `testDir: './tests'`, `retries: 2`, projet `chromium`
+- [ ] Écrire `sc01-navigation.spec.ts` — redirection `/` → `/internships`, navigation sidebar entre pages
+- [ ] Écrire `sc03-internship-creation.spec.ts` — créer un stagiaire valide, vérifier l'apparition de la carte
+- [ ] Écrire `sc04-internship-validation.spec.ts` — date fin < début, champs vides → messages d'erreur
+- [ ] Écrire `sc05-internship-modification.spec.ts` — modifier un stagiaire, vérifier la persistance
+- [ ] Écrire `sc06-internship-deletion.spec.ts` — supprimer un stagiaire, vérifier la disparition
+- [ ] Run : `npm run test:e2e` → tous verts
 
 ### Module ateliers
 
-- [ ] Créer `src/services/activityService.js`
-- [ ] Créer `src/composables/useActivities.js`
-- [ ] Créer `views/ActivityList.vue` (cartes dépliables, tags catégories supprimables au hover, upload document drag & drop, popover catégories avec fermeture Escape + clic extérieur)
-- [ ] Créer `components/activities/ActivityFormModal.vue`
-- [ ] Écrire `sc07-activity-crud.spec.ts`, `sc08-internship-association.spec.ts`, `sc09-internship-dissociation.spec.ts`, `sc-activity-enriched.spec.ts`
-- [ ] Run Playwright → verts
+- [ ] Créer `frontend/src/services/activityService.js` — `getActivityIds()`, `getActivityById(id)`, `createActivity(data)`, `updateActivity(id, data)`, `deleteActivity(id)`, `uploadDocument(id, file)`, `deleteDocument(id)`
+- [ ] Créer `frontend/src/composables/useActivities.js` — `activities` (liste enrichie), `load`, `create`, `update`, `remove`, `addCategory(actId, catId)`, `removeCategory(actId, catId)`, `uploadDoc`, `deleteDoc`
+
+- [ ] Créer `frontend/src/views/ActivityList.vue` — fonctionnalités :
+  - Cartes dépliables : clic sur le header déplie la carte (état local par ID)
+  - Mini-cartes statistiques dépliées : `internshipCount` + état document (Disponible / Aucun)
+  - Section catégories : badges colorés `bg-blue-50 text-blue-600`, supprimables au hover (groupe `group/cat`, bouton `×` avec `opacity-0 group-hover/cat:opacity-100`)
+  - Popover d'ajout de catégorie : fermeture sur Escape (`@keydown.escape`) et clic extérieur (overlay transparent `z-40`)
+  - Zone document : état vide avec drag & drop (`@dragover.prevent`, `@drop.prevent`) ou état rempli avec nom du fichier + bouton supprimer
+
+- [ ] Créer `frontend/src/components/activities/ActivityFormModal.vue` — formulaire titre + description, émit `@saved` / `@close`
+
+**Tests E2E — ateliers :**
+- [ ] Écrire `sc07-activity-crud.spec.ts` — créer, modifier, supprimer un atelier
+- [ ] Écrire `sc08-internship-association.spec.ts` — associer un atelier à un stage depuis la carte dépliée
+- [ ] Écrire `sc09-internship-dissociation.spec.ts` — retirer un atelier d'un stage
+- [ ] Écrire `sc-activity-enriched.spec.ts` — description visible, tags catégories, suppression bloquée (bouton désactivé), mini-cartes stats
+- [ ] Run : `npm run test:e2e` → tous verts
 
 ### Module catégories
 
-- [ ] Créer `src/services/categoryService.js`
-- [ ] Créer `src/composables/useCategories.js`
-- [ ] Créer `views/CategoryList.vue` (grille responsive, barre de recherche, Cannot Delete Modal via `AppDialog`)
-- [ ] Créer `components/categories/CategoryFormModal.vue`
-- [ ] Écrire `sc-category-crud.spec.ts`
-- [ ] Run Playwright → verts
+- [ ] Créer `frontend/src/services/categoryService.js` — `getCategories()`, `createCategory(data)`, `updateCategory(id, data)`, `deleteCategory(id)`
+- [ ] Créer `frontend/src/composables/useCategories.js` — `categories`, `load`, `create`, `update`, `remove` (attrape le 409 et le remonte)
 
-### Certificat + Paramètres
+- [ ] Créer `frontend/src/views/CategoryList.vue` — fonctionnalités :
+  - Grille responsive (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`)
+  - Barre de recherche : `searchQuery` ref + `filteredCategories` computed (`name` + `description`)
+  - Bouton supprimer désactivé si `activityCount > 0`
+  - Si `DELETE` retourne 409 : afficher `AppDialog` « Suppression impossible » avec le nom de la catégorie
 
-- [ ] Créer `views/CertificateView.vue` (`<iframe>` avec Blob URL PDF, boutons Imprimer / Télécharger)
-- [ ] Créer `views/SettingsView.vue` (upload template DOCX, drag & drop, statut template actuel)
-- [ ] Écrire `sc-certificate-download.spec.ts`, `sc-status-badges.spec.ts`
-- [ ] Run Playwright complet → tous verts
-- [ ] Commit : `feat(frontend): complete UI with all modules`
+- [ ] Créer `frontend/src/components/categories/CategoryFormModal.vue` — formulaire nom + description optionnelle, émit `@saved` / `@close`
+
+**Tests E2E — catégories :**
+- [ ] Écrire `sc-category-crud.spec.ts` — créer, modifier une catégorie ; tentative de suppression d'une catégorie liée → Cannot Delete Modal visible
+- [ ] Run : `npm run test:e2e` → tous verts
+
+### Badges de statut
+
+**Tests E2E :**
+- [ ] Écrire `sc-status-badges.spec.ts` — vérifier que les badges À venir / En cours / Terminé s'affichent correctement selon les dates du jeu de données `restore_db.sql`
+  > Les données de test doivent contenir des stages avec les 3 statuts pour que ce scénario soit valide
+- [ ] Run : `npm run test:e2e` → verts
+
+### Certificat et Paramètres
+
+- [ ] Créer `frontend/src/services/certificateService.js` — `getCertificate(id)` retourne un Blob PDF, `uploadTemplate(file)`, `getTemplateStatus()`
+
+- [ ] Créer `frontend/src/views/CertificateView.vue` :
+  - `onMounted` → `GET /api/internships/:id/certificate` → `response.blob()` → `URL.createObjectURL(blob)` → affecter à `<iframe :src>`
+  - Bouton « Imprimer » : `iframe.contentWindow.print()`
+  - Bouton « Télécharger PDF » : créer `<a>` avec `href = blobUrl` + `download = "certificat.pdf"`
+
+- [ ] Créer `frontend/src/views/SettingsView.vue` :
+  - Zone d'upload drag & drop pour le template DOCX
+  - Affiche le statut actuel : template présent (nom + bouton remplacer) ou absent (invitation à uploader)
+  - `POST /api/certificate/template` avec `FormData`
+
+**Tests E2E — certificat :**
+- [ ] Écrire `sc-certificate-download.spec.ts` — cliquer sur « Aperçu du certificat » depuis une carte, vérifier la navigation vers `/certificate/:id`
+- [ ] Run Playwright complet : `npm run test:e2e` → tous verts
+- [ ] Commit : `feat(frontend): complete UI with all modules and E2E tests`
 
 ---
 
