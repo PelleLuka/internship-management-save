@@ -1545,14 +1545,146 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
 ## Phase 7 — Vérification des tests *(~4h)*
 
-- [ ] Restaurer la base de données de test : `mysql -u root -p < tests/setup/restore_db.sql`
-- [ ] Run `npm run test:api` (Newman complet) → noter les résultats
-- [ ] Run `npm run test:e2e` (Playwright complet) → noter les résultats
-- [ ] Corriger les régressions identifiées
-- [ ] Re-run après corrections → tous verts
-- [ ] Remplir la table de tests manuels du rapport §7 (T01–T16) : colonnes "Résultat obtenu" et "Statut" ✅/❌
-- [ ] Faire signer la table de tests par le chef de projet
-- [ ] Commit : `test: all E2E and API tests passing`
+### Préconditions
+
+- [ ] Vérifier que l'application tourne complètement : `docker compose -f docker/docker-compose.yml up -d`
+- [ ] Vérifier que le frontend répond : ouvrir `http://localhost:8081` dans le navigateur
+- [ ] Vérifier que le backend répond : `curl http://localhost:3000/api/health` → `{ "status": "ok" }`
+- [ ] Vérifier que MariaDB est accessible depuis le backend (logs Docker sans erreur de connexion)
+
+### Restauration de la base de données de test
+
+- [ ] Lancer la restauration via le script npm racine :
+  ```bash
+  npm run db:restore
+  ```
+  > Ce script exécute `tests/setup/restoreDb.js` qui : (1) se connecte à MariaDB via le pool, (2) lit `tests/setup/restore_db.sql`, (3) exécute le SQL avec `multipleStatements: true` — TRUNCATE de toutes les tables puis INSERT des données de test
+- [ ] Vérifier le résultat attendu après restauration :
+  - **60 stagiaires** dans la table `internship` (+ personnes associées dans `person`)
+  - **15 activités** dans la table `activity` (12 visibles, 3 avec `visible = 0`)
+  - **Stagiaire ID 60** : Joël Dacobeau avec les activités 14 et 15 associées
+  - Stages couvrant les 3 statuts : passés (dates 2024), en cours (dates encadrant aujourd'hui), à venir (dates futures)
+
+### Sanity check — intégrité des données
+
+- [ ] Lancer le sanity check Playwright (vérifie que la restauration est correcte avant de lancer les vrais tests) :
+  ```bash
+  npm run test:e2e:sanity
+  ```
+  > Exécute `tests/e2e/tests/technical/sanity-db-check.spec.ts` via l'API Playwright `request` (pas de navigateur) : vérifie `total = 60` stagiaires, `length = 12` activités visibles, stagiaire ID 60 = Joël Dacobeau, activités 14 et 15 associées
+- [ ] Si le sanity check échoue → vérifier la connexion DB et relancer `npm run db:restore`
+
+### Tests API — Newman
+
+- [ ] Lancer les tests API complets :
+  ```bash
+  npm run test:api
+  ```
+  > Ce script exécute `tests/api/run_tests.sh` qui :
+  > 1. Restaure la DB (`npm run db:restore`)
+  > 2. Lance le sanity check Postman (`sanity_check.postman_collection.json`) — si KO, arrête
+  > 3. Lance la collection principale (`test_internship_management.postman_collection.json`)
+  > 4. Génère un rapport HTML dans `test-results/api/report.html`
+  > 5. Logs dans `tests/api/postman.log`
+
+- [ ] Vérifier la couverture de la collection Postman — doit couvrir :
+
+  | Module | Requêtes testées |
+  |---|---|
+  | Stagiaires | GET liste (pagination), GET détail, POST (valide), POST (dates invalides → 400), PUT, DELETE, GET activities, POST association, DELETE dissociation |
+  | Ateliers | GET ids, GET détail, POST (valide), POST (titre manquant → 422), PATCH, DELETE (sans stage → 204), DELETE (avec stage → 409), POST document, GET document, DELETE document |
+  | Catégories | GET liste, POST, PUT, DELETE (sans atelier → 204), DELETE (avec atelier → 409) |
+  | Certificat | GET template status, POST template (DOCX), GET generate |
+
+- [ ] Lire le rapport HTML généré : `open test-results/api/report.html`
+- [ ] Si des tests échouent → identifier la cause (bug backend, données de test incorrectes, mauvais endpoint)
+- [ ] Corriger les bugs identifiés → relancer `npm run test:api` → tous verts
+
+### Tests E2E — Playwright
+
+- [ ] Lancer tous les tests E2E :
+  ```bash
+  npm run test:e2e
+  ```
+  > Ce script : (1) restaure la DB, (2) lance le sanity check E2E, (3) lance tous les specs hors sanity
+
+- [ ] Vérifier que les **25 scénarios** passent tous — liste complète :
+
+  | Fichier | Ce qui est testé |
+  |---|---|
+  | `sc01-navigation.spec.ts` | Redirection `/` → `/internships`, navigation sidebar |
+  | `sc03-internship-creation.spec.ts` | Créer stagiaire valide, carte visible |
+  | `sc04-internship-validation.spec.ts` | Date fin < début, champs vides → erreurs |
+  | `sc05-internship-modification.spec.ts` | Modifier stagiaire, persistance des données |
+  | `sc06-internship-deletion.spec.ts` | Supprimer stagiaire, disparition de la carte |
+  | `sc07-activity-crud.spec.ts` | Créer, modifier, supprimer atelier |
+  | `sc08-internship-association.spec.ts` | Associer atelier à un stage |
+  | `sc09-internship-dissociation.spec.ts` | Retirer atelier d'un stage |
+  | `sc10-internship-search.spec.ts` | Recherche par nom/prénom |
+  | `sc11-network-error.spec.ts` | Comportement lors d'erreur réseau |
+  | `sc12-sorting-grouping.spec.ts` | Tri et groupement par date |
+  | `sc13-form-state.spec.ts` | État du formulaire (reset, pré-remplissage) |
+  | `sc14-keyboard-nav.spec.ts` | Navigation clavier, fermeture Escape |
+  | `sc15-duplicate-check.spec.ts` | Gestion des doublons |
+  | `sc16-xss-security.spec.ts` | Injection XSS dans les champs texte |
+  | `sc17-boundary-tests.spec.ts` | Valeurs limites (255 caractères, email max) |
+  | `sc18-grouping-logic.spec.ts` | Logique de groupement année/mois |
+  | `sc19-exhaustive-validation.spec.ts` | Validation exhaustive du formulaire |
+  | `sc20-date-validation.spec.ts` | Parsing des dates ISO datetime MariaDB |
+  | `sc21-update-expanded.spec.ts` | Mise à jour d'une carte dépliée |
+  | `sc-activity-enriched.spec.ts` | Description, catégories, suppression bloquée, stats |
+  | `sc-category-crud.spec.ts` | CRUD catégories, Cannot Delete Modal |
+  | `sc-certificate-download.spec.ts` | Navigation vers page certificat |
+  | `sc-status-badges.spec.ts` | Badges À venir / En cours / Terminé selon les dates |
+  | `technical/sanity-db-check.spec.ts` | Intégrité des données après restauration |
+
+- [ ] En cas d'échec : ouvrir le rapport HTML Playwright :
+  ```bash
+  cd tests/e2e && npx playwright show-report
+  ```
+- [ ] Pour déboguer un scénario en mode visuel :
+  ```bash
+  cd tests/e2e && npx playwright test tests/sc03-internship-creation.spec.ts --headed
+  ```
+- [ ] Identifier les causes d'échec : sélecteur périmé, timing (ajouter `waitForResponse`), données de test manquantes
+- [ ] Corriger → relancer → tous verts
+
+### Lint — vérification du code
+
+- [ ] Lancer la vérification Biome sur tout le projet :
+  ```bash
+  npm run check
+  ```
+  > `biome check --write .` : formate et corrige automatiquement les imports non triés, les guillemets, l'indentation
+- [ ] Vérifier qu'il n'y a **aucun warning ni erreur** restant après le check
+- [ ] Si des erreurs persistent (ex : règles `correctness` sur du code Vue) → les corriger manuellement
+
+### Tests manuels — table du rapport §7
+
+- [ ] Exécuter chaque scénario manuellement dans le navigateur (l'app doit tourner avec la DB restaurée)
+- [ ] Remplir les colonnes **« Résultat obtenu »** et **« Statut »** (✅ / ❌) pour les 16 tests :
+
+  | N° | Scénario | Préconditions | Résultat attendu |
+  |---|---|---|---|
+  | T01 | Créer un stagiaire valide | App lancée, DB restaurée | Carte apparaît, statut calculé correct |
+  | T02 | Créer avec date fin < début | App lancée | Message d'erreur, aucun enregistrement |
+  | T03 | Modifier un stagiaire | Stagiaire T01 créé | Nouvelles données affichées |
+  | T04 | Supprimer un stagiaire | Stagiaire sans ateliers | Carte disparaît |
+  | T05 | Badge « À venir » | Stage avec startDate future | Badge amber visible |
+  | T06 | Badge « Terminé » | Stage avec endDate passée | Badge bleu visible |
+  | T07 | Créer atelier avec catégories | Catégories existantes | Badges catégories visibles |
+  | T08 | Supprimer atelier lié à stage | Atelier associé | Bouton désactivé, message impossible |
+  | T09 | Supprimer atelier sans stage | Atelier non associé | Atelier disparu |
+  | T10 | Upload document sur atelier | Atelier existant | Zone document affiche le fichier |
+  | T11 | Upload fichier > 10 MB | — | Erreur rejetée |
+  | T12 | Créer une catégorie | — | Catégorie dans la grille |
+  | T13 | Supprimer catégorie liée | Catégorie avec ateliers | Bouton désactivé |
+  | T14 | Associer atelier à un stage | Stage + atelier existants | Atelier dans la liste du stage |
+  | T15 | Générer le certificat PDF | Template uploadé, stage avec ateliers | PDF affiché dans l'iframe |
+  | T16 | Générer sans template | Aucun template | Message d'erreur explicite |
+
+- [ ] Faire signer la table de tests par le chef de projet (Joël Dacomo)
+- [ ] Commit : `test: all E2E and API tests passing, manual test table completed`
 
 ---
 
