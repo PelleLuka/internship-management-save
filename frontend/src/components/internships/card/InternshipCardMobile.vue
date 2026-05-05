@@ -2,8 +2,7 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Calendar, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { useInternshipStatus } from '../../../composables/useInternshipStatus';
 import AppButton from '../../AppButton.vue';
 
 const props = defineProps({
@@ -20,36 +19,11 @@ const emit = defineEmits([
   'toggle-activity-selection', 'save-activities'
 ]);
 
-const parseLocalDate = (str) => {
-  const [y, m, d] = String(str).slice(0, 10).split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
-
-const status = computed(() => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const start = parseLocalDate(props.internship.startDate)
-  const end = parseLocalDate(props.internship.endDate)
-  if (today < start) return 'upcoming'
-  if (today > end) return 'done'
-  return 'active'
-})
-
-const statusConfig = computed(() => ({
-  upcoming: { label: 'À venir',  classes: 'bg-amber-100 text-amber-600' },
-  active:   { label: 'En cours', classes: 'bg-green-100 text-green-600' },
-  done:     { label: 'Terminé',  classes: 'bg-blue-100  text-blue-600'  },
-}[status.value]))
-
-const formatDate = (dateStr) => {
-  try {
-    return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
-  } catch {
-    return dateStr;
-  }
-};
-
 const router = useRouter();
+
+const internshipRef = computed(() => props.internship);
+const { statusConfig, formatDate } = useInternshipStatus(internshipRef);
+
 const handleCertificate = () => router.push(`/certificate/${props.internship.id}`);
 </script>
 

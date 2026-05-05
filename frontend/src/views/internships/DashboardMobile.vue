@@ -1,6 +1,8 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useInternships } from '../../composables/useInternships';
+import { useInternshipActivities } from '../../composables/useInternshipActivities';
+import { useInternshipGrouping } from '../../composables/useInternshipGrouping';
 import { useActivities } from '../../composables/useActivities';
 import { Calendar } from 'lucide-vue-next';
 
@@ -12,18 +14,21 @@ import InternshipGroupList from '../../components/internships/InternshipGroupLis
 
 // Init Composables
 const {
-  internships, 
+  internships,
   searchTerm,
-  sortBy,
-  expandedCards,
   loadInternships,
   handleDelete,
-  removeActivity,
-  toggleCard,
-  groupedInternships,
-  updateInternshipActivities,
-  loadNextBatch
+  loadNextBatch,
 } = useInternships();
+
+const {
+  expandedCards,
+  toggleCard,
+  removeActivity,
+  updateInternshipActivities,
+} = useInternshipActivities(internships);
+
+const { sortBy, groupedInternships } = useInternshipGrouping(internships);
 
 const {
   activities,
