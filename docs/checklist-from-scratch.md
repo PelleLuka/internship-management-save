@@ -355,7 +355,19 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 
 ### Diagrammes de séquence (rapport §5.2)
 
-- [ ] Ouvrir PlantUML (plantuml.com/plantuml ou extension VS Code) et créer **Séquence 1 — Création d'un stagiaire** :
+Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` par séquence, générer le PNG, sauvegarder dans `docs/sequence-diagram/`.
+
+**Stagiaires — 5 séquences**
+
+- [ ] **Afficher la liste des stagiaires** → `GET /internships` → liste retournée → affichage
+  - Évènements perturbateurs : backend indisponible, DB indisponible, aucun stagiaire, erreur de récupération
+  - Export → `docs/sequence-diagram/display-internship.png`
+
+- [ ] **Consulter les informations détaillées d'un stagiaire** → sélectionne une carte → `GET /internships/:id` → détails + ateliers associés retournés
+  - Évènements perturbateurs : stagiaire non trouvé, backend/DB indisponible
+  - Export → `docs/sequence-diagram/consult-internship-detail.png`
+
+- [ ] **Créer un stagiaire** :
   ```plantuml
   @startuml
   actor Administrateur
@@ -365,7 +377,7 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 
   Administrateur -> Vue : Remplit le formulaire et clique "Enregistrer"
   Vue -> API : POST /api/internships\n{firstName, lastName, email, startDate, endDate}
-  API -> API : Valide les données\n(dates cohérentes, champs obligatoires)
+  API -> API : Valide (dates cohérentes, champs obligatoires)
   API -> DB : INSERT INTO person
   DB --> API : insertId (person)
   API -> DB : INSERT INTO internship
@@ -375,9 +387,51 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
   Vue --> Administrateur : Modal fermée, carte ajoutée
   @enduml
   ```
-- [ ] Exporter Figure 5 → `docs/sequence-diagram/create-internship.png`
+  - Export → `docs/sequence-diagram/create-internship.png`
 
-- [ ] Créer **Séquence 2 — Upload d'un document sur un atelier** :
+- [ ] **Modifier un stagiaire** → bouton édition → formulaire pré-rempli → `PUT /api/internships/:id` → `200 OK` → carte mise à jour
+  - Export → `docs/sequence-diagram/modify-internship.png`
+
+- [ ] **Supprimer un stagiaire** → bouton suppression → dialog de confirmation → `DELETE /api/internships/:id` → `204 No Content` → carte retirée de la liste
+  - Export → `docs/sequence-diagram/delete-internship.png`
+
+**Ateliers — 4 séquences**
+
+- [ ] **Consulter la liste des ateliers** → `GET /api/activities` (IDs) → pour chaque ID `GET /api/activities/:id` → liste de cartes affichée
+  - Évènements perturbateurs : backend/DB indisponible, aucune activité
+  - Export → `docs/sequence-diagram/consult-activity.png`
+
+- [ ] **Créer une activité** → formulaire modal → `POST /api/activities` → `201 Created` → carte ajoutée
+  - Export → `docs/sequence-diagram/create-activity.png`
+
+- [ ] **Modifier une activité** → bouton édition → formulaire pré-rempli → `PATCH /api/activities/:id` → `200 OK` → carte mise à jour
+  - Export → `docs/sequence-diagram/modify-activity.png`
+
+- [ ] **Supprimer une activité** → bouton suppression → vérifie `internshipCount` → si `> 0` : bouton désactivé (HTTP 409) / si `= 0` : `DELETE /api/activities/:id` → soft delete (`visible = 0`) → carte retirée
+  - Export → `docs/sequence-diagram/delete-activity.png`
+
+**Catégories — 3 séquences**
+
+- [ ] **Créer une catégorie** → formulaire modal → `POST /api/categories` → `201 Created` → carte ajoutée à la grille
+  - Export → `docs/sequence-diagram/create-category.png`
+
+- [ ] **Modifier une catégorie** → bouton édition → formulaire pré-rempli → `PUT /api/categories/:id` → `200 OK` → carte mise à jour
+  - Export → `docs/sequence-diagram/modify-category.png`
+
+- [ ] **Supprimer une catégorie** → bouton suppression → service vérifie `activityCount` → si `> 0` : HTTP 409 → modal « Suppression impossible » / si `= 0` : `DELETE /api/categories/:id` → `204 No Content` → carte retirée
+  - Export → `docs/sequence-diagram/delete-category.png`
+
+**Associations — 2 séquences**
+
+- [ ] **Associer un atelier à un stagiaire** → popover « Ajouter un atelier » → sélectionne atelier → `POST /api/internships/:id/activities/:actId` → `201 Created` → tag atelier apparaît sur la carte du stage
+  - Export → `docs/sequence-diagram/manage-internship-activity.png`
+
+- [ ] **Associer une catégorie à un atelier** → popover « Ajouter une catégorie » dans la carte dépliée → sélectionne catégorie → `POST /api/activities/:id/categories/:catId` → `201 Created` → badge catégorie apparaît sur la carte atelier
+  - Export → `docs/sequence-diagram/manage-activity-category.png`
+
+**Certificat et document — 2 séquences**
+
+- [ ] **Upload d'un document sur un atelier** :
   ```plantuml
   @startuml
   actor Administrateur
@@ -387,7 +441,7 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
   collections "Filesystem\n/app/uploads" as FS
 
   Administrateur -> Vue : Glisse un fichier dans la zone upload
-  Vue -> API : POST /api/activities/:id/document\n(multipart/form-data)
+  Vue -> API : POST /api/activities/:id/document (multipart/form-data)
   API -> API : Valide type MIME et taille (max 10 MB)
   API -> FS : Stocke <uuid>-<nom>.<ext>
   API -> DB : UPDATE activity SET document_url = ?
@@ -396,9 +450,9 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
   Vue --> Administrateur : Zone document mise à jour
   @enduml
   ```
-- [ ] Exporter Figure 6 → `docs/sequence-diagram/upload-document.png`
+  - Export → `docs/sequence-diagram/upload-document.png`
 
-- [ ] Créer **Séquence 3 — Génération du certificat PDF** :
+- [ ] **Génération du certificat PDF** :
   ```plantuml
   @startuml
   actor Administrateur
@@ -414,14 +468,15 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
   DB --> API : {prenom, nom, ateliers[], ...}
   API -> FS : Lit template.docx
   API -> API : carbone.js injecte les données
-  API -> API : LibreOffice convertit DOCX → PDF
+  API -> API : LibreOffice convertit DOCX en PDF
   API --> Vue : Stream binaire PDF
-  Vue -> Vue : Crée Blob URL → affiche dans <iframe>
-  Vue --> Administrateur : PDF visible + boutons Imprimer/Télécharger
+  Vue -> Vue : Crée Blob URL, affiche dans <iframe>
+  Vue --> Administrateur : PDF + boutons Imprimer/Télécharger
   @enduml
   ```
-- [ ] Exporter Figure 7 → `docs/sequence-diagram/generate-certificate.png`
-- [ ] Insérer Figures 5–7 dans §5.2 du rapport
+  - Export → `docs/sequence-diagram/generate-certificate.png`
+
+- [ ] Insérer les 14 diagrammes de séquence dans §5.2 du rapport avec leur titre et leurs évènements perturbateurs
 
 ### Base de données (rapport §5.3)
 
