@@ -947,50 +947,320 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
 ### Setup Express
 
-- [ ] `cd backend && npm init -y`
-- [ ] Installer : `express`, `mariadb`, `multer`, `carbone`, `cors`, `dotenv`, `uuid`
-- [ ] Créer `server.js` (Express, CORS, JSON middleware, montage routes, port via `.env`)
-- [ ] Créer `config/db.js` (pool MariaDB avec `getConnection()` + `finally conn.end()`)
-- [ ] Créer la structure des dossiers : `routes/`, `controllers/`, `services/`, `models/`, `middleware/`
-- [ ] Créer `middleware/upload.js` (multer, validation MIME, limite 10 MB, nommage `<uuid>-<sanitized>.<ext>`)
+- [ ] Créer `backend/package.json` :
+  ```json
+  {
+    "name": "backend",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+      "start": "node server.js",
+      "dev": "node --watch server.js"
+    }
+  }
+  ```
+  > `node --watch` remplace nodemon (natif Node.js 18+, pas de dépendance supplémentaire)
+
+- [ ] Installer les dépendances backend :
+  ```bash
+  cd backend && npm install express mariadb multer carbone cors dotenv winston date-fns
+  ```
+  > Pas de `uuid` — utiliser `crypto.randomUUID()` natif de Node.js
+
+- [ ] Créer la structure des dossiers :
+  ```
+  backend/
+  ├── config/
+  │   ├── db.js          ← pool MariaDB
+  │   └── logger.js      ← winston logger
+  ├── controllers/
+  ├── middleware/
+  ├── models/
+  ├── routes/
+  ├── services/
+  ├── uploads/
+  │   ├── activities/    ← documents des ateliers
+  │   └── certificate/   ← template DOCX
+  └── server.js
+  ```
+
+- [ ] Créer `backend/config/logger.js` — winston avec transports fichier (`error.log`, `combined.log`) + console en dev :
+  ```js
+  import winston from 'winston';
+  import path from 'path';
+  import { fileURLToPath } from 'url';
+
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const logDir = path.join(__dirname, '..', 'logs');
+
+  const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+      winston.format.errors({ stack: true }),
+      winston.format.json()
+    ),
+    defaultMeta: { service: 'internship-service' },
+    transports: [
+      new winston.transports.File({ filename: path.join(logDir, 'error.log'), level: 'error' }),
+      new winston.transports.File({ filename: path.join(logDir, 'combined.log') }),
+    ],
+  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    logger.add(new winston.transports.Console({
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
+    }));
+  }
+
+  export default logger;
+  ```
+
+- [ ] Créer `backend/middleware/requestLogger.js` — log chaque requête HTTP entrante via winston
+
+- [ ] Créer `backend/server.js` — point d'entrée Express avec CORS, JSON, requestLogger, 5 routes montées :
+  ```js
+  import cors from 'cors';
+  import dotenv from 'dotenv';
+  import express from 'express';
+  import path from 'path';
+  import { fileURLToPath } from 'url';
+  import logger from './config/logger.js';
+  import requestLogger from './middleware/requestLogger.js';
+  import healthRoutes from './routes/healthRoutes.js';
+  import internshipRoutes from './routes/internshipRoutes.js';
+  import activityRoutes from './routes/activityRoutes.js';
+  import categoryRoutes from './routes/categoryRoutes.js';
+  import certificateRoutes from './routes/certificateRoutes.js';
+
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+  const app = express();
+  const PORT = process.env.PORT || 3000;
+
+  app.use(cors());
+  app.use(express.json());
+  app.use(requestLogger);
+
+  app.use('/api/health', healthRoutes);
+  app.use('/api/internships', internshipRoutes);
+  app.use('/api/activities', activityRoutes);
+  app.use('/api/categories', categoryRoutes);
+  app.use('/api/certificate', certificateRoutes);
+
+  app.use((err, _req, res, _next) => {
+    logger.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
+  });
+
+  app.listen(PORT, () => logger.info(`Backend running on http://localhost:${PORT}`));
+  ```
+
+- [ ] Créer `backend/routes/healthRoutes.js` → `GET /api/health` retourne `{ status: 'ok' }`
+- [ ] Tester : `curl http://localhost:3000/api/health` → `{ "status": "ok" }`
+
+### Middleware upload
+
+- [ ] Créer `backend/middleware/upload.js` — deux configurations multer distinctes :
+  ```js
+  import multer from 'multer';
+  import path from 'path';
+  import { randomUUID } from 'crypto';       // natif Node.js, pas de dépendance
+  import { fileURLToPath } from 'url';
+
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+  const ALLOWED_MIME_TYPES = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+    'application/vnd.oasis.opendocument.text',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.oasis.opendocument.spreadsheet',
+  ];
+
+  const activityStorage = multer.diskStorage({
+    destination: path.join(__dirname, '../uploads/activities'),
+    filename: (_req, file, cb) => {
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      cb(null, `${randomUUID()}-${safeName}`);
+    },
+  });
+
+  const certificateStorage = multer.diskStorage({
+    destination: path.join(__dirname, '../uploads/certificate'),
+    filename: (_req, _file, cb) => cb(null, 'template.docx'),  // nom fixe
+  });
+
+  export const uploadActivityDocument = multer({
+    storage: activityStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },  // 10 MB
+    fileFilter: (_req, file, cb) => {
+      if (ALLOWED_MIME_TYPES.includes(file.mimetype)) return cb(null, true);
+      cb(new Error('INVALID_FILE_TYPE'));
+    },
+  }).single('document');
+
+  export const uploadCertificateTemplate = multer({
+    storage: certificateStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const docxMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      if (file.mimetype === docxMime) return cb(null, true);
+      cb(new Error('INVALID_FILE_TYPE'));
+    },
+  }).single('template');
+  ```
 
 ### Module stagiaires
 
-- [ ] Créer `models/Person.js` (getAll, getById, create, update, delete)
-- [ ] Créer `models/Internship.js` (getAll avec JOIN person, getById, create, update, delete, getActivities, addActivity, removeActivity)
-- [ ] Créer `services/internshipService.js` (erreurs nommées : `NOT_FOUND`, `INVALID_DATES`, `MISSING_FIELD`)
-- [ ] Créer `controllers/internshipController.js` (codes HTTP 200/201/204/404/422)
-- [ ] Créer `routes/internships.js` (9 endpoints : CRUD + activities + certificate)
-- [ ] Tester CRUD complet dans Postman + cas d'erreur (dates invalides, champ manquant)
-- [ ] Ajouter toutes les requêtes à la collection Postman
+**Principes du pattern Model → Service → Controller → Route :**
+- **Model** : requêtes SQL uniquement, `let conn; try { ... } finally { if (conn) conn.end(); }`
+- **Service** : logique métier, lève des erreurs nommées (`throw new Error('NOT_FOUND')`)
+- **Controller** : parse les params HTTP, appelle le service, construit la réponse HTTP
+- **Route** : définit les URLs et verbes HTTP, importe les controllers
+
+- [ ] Créer `backend/models/Person.js` — CRUD sur la table `person` (`create`, `update`, `delete`)
+- [ ] Créer `backend/models/Internship.js` — `getAll(limit, offset, search)`, `count(search)`, `getById`, `create`, `update`, `delete`, `getActivities`, `addActivity` (INSERT IGNORE), `removeActivity`
+  > `getAll` supporte la pagination (`LIMIT ? OFFSET ?`) et la recherche (`WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?`)
+- [ ] Créer `backend/services/internshipService.js` — erreurs nommées : `NOT_FOUND`, `VALIDATION_ERROR:first_name required`, `VALIDATION_ERROR:invalid email`, `VALIDATION_ERROR:end_date before start_date`
+  > Helpers internes : `isValidEmail(email)` (regex), `isValidDate(str)` (format YYYY-MM-DD + date valide)
+- [ ] Créer `backend/controllers/internshipController.js` — parse `Number.parseInt(req.params.id, 10)`, codes HTTP :
+  - `200` GET liste/détail, `201` création, `204` suppression, `404` NOT_FOUND, `400` validation, `500` erreur serveur
+- [ ] Créer `backend/routes/internshipRoutes.js` — 9 endpoints :
+  ```js
+  router.get('/', getInternships);                                          // GET  /api/internships
+  router.post('/', createInternship);                                       // POST /api/internships
+  router.get('/:id', getInternshipById);                                    // GET  /api/internships/:id
+  router.put('/:id', updateInternship);                                     // PUT  /api/internships/:id
+  router.delete('/:id', deleteInternship);                                  // DEL  /api/internships/:id
+  router.get('/:id/activities', getInternshipActivities);                   // GET  /api/internships/:id/activities
+  router.post('/:internshipId/activities/:activityId', addActivity);        // POST /api/internships/:iid/activities/:aid
+  router.delete('/:internshipId/activities/:activityId', removeActivity);   // DEL  /api/internships/:iid/activities/:aid
+  router.get('/:id/certificate', generateCertificate);                      // GET  /api/internships/:id/certificate
+  ```
+- [ ] Tester dans Postman : CRUD complet, dates invalides (400), stagiaire inexistant (404), association atelier
+- [ ] Ajouter toutes les requêtes à la collection `test_internship_management.postman_collection.json`
 
 ### Module ateliers
 
-- [ ] Créer `models/Activity.js` (soft delete via `visible=0`, `internshipCount` via COUNT JOIN)
-- [ ] Créer `services/activityService.js` (guard `HAS_LINKED_INTERNSHIPS` si `internshipCount > 0`)
-- [ ] Créer `controllers/activityController.js` (HTTP 409 sur `HAS_LINKED_INTERNSHIPS`)
-- [ ] Créer `routes/activities.js` (8 endpoints : CRUD + upload/download/delete document)
-- [ ] Tester dans Postman (suppression bloquée HTTP 409, upload > 10 MB HTTP 400) + ajouter à collection
+- [ ] Créer `backend/models/Activity.js` :
+  - `getAllIds()` → liste des IDs visibles (`WHERE visible = 1`)
+  - `getById(id)` → détails + `internshipCount` via COUNT JOIN + catégories liées
+  - `create(data)` → INSERT + association `categoryIds` dans `activity_category`
+  - `update(id, data)` → PATCH partiel + mise à jour des catégories
+  - `delete(id)` → soft delete `UPDATE activity SET visible = 0`
+- [ ] Créer `backend/services/activityService.js` :
+  - `deleteActivity` : `getById` → si `internshipCount > 0` → `throw new Error('HAS_LINKED_INTERNSHIPS')` → sinon soft delete
+  - Erreurs : `NOT_FOUND`, `MISSING_TITLE`, `TITLE_TOO_LONG`, `HAS_LINKED_INTERNSHIPS`, `INVALID_INPUT`
+- [ ] Créer `backend/controllers/activityController.js` — `409` sur `HAS_LINKED_INTERNSHIPS`, `400` sur upload invalide
+- [ ] Créer `backend/routes/activityRoutes.js` — 8 endpoints :
+  ```js
+  router.get('/', getActivityIds);                                  // GET  /api/activities
+  router.post('/', createActivity);                                 // POST /api/activities
+  router.get('/:id', getActivityById);                              // GET  /api/activities/:id
+  router.patch('/:id', updateActivity);                             // PATCH /api/activities/:id
+  router.delete('/:id', deleteActivity);                            // DEL  /api/activities/:id
+  router.post('/:id/document', uploadActivityDocument, uploadDoc);  // POST /api/activities/:id/document
+  router.get('/:id/document', downloadDoc);                         // GET  /api/activities/:id/document
+  router.delete('/:id/document', deleteDoc);                        // DEL  /api/activities/:id/document
+  ```
+- [ ] Tester dans Postman : suppression bloquée (409), upload fichier > 10 MB (400), upload type invalide (400)
+- [ ] Ajouter à la collection Postman
 
 ### Module catégories
 
-- [ ] Créer `models/Category.js` (`activityCount` via COUNT JOIN)
-- [ ] Créer `services/categoryService.js` (guard `HAS_LINKED_ACTIVITIES`)
-- [ ] Créer `controllers/categoryController.js`
-- [ ] Créer `routes/categories.js` (4 endpoints : CRUD)
-- [ ] Tester dans Postman + ajouter à collection
+- [ ] Créer `backend/models/Category.js` :
+  - `getAll()` → liste avec `activityCount` via COUNT JOIN
+  - `getById(id)` → détail avec `activityCount`
+  - `create`, `update`, `delete`
+- [ ] Créer `backend/services/categoryService.js` :
+  - `deleteCategory` : `getById` → si `activityCount > 0` → `throw new Error('HAS_LINKED_ACTIVITIES')` → sinon DELETE
+- [ ] Créer `backend/controllers/categoryController.js` — `409` sur `HAS_LINKED_ACTIVITIES`
+- [ ] Créer `backend/routes/categoryRoutes.js` — 4 endpoints :
+  ```js
+  router.get('/', getCategories);        // GET  /api/categories
+  router.post('/', createCategory);      // POST /api/categories
+  router.put('/:id', updateCategory);    // PUT  /api/categories/:id
+  router.delete('/:id', deleteCategory); // DEL  /api/categories/:id
+  ```
+- [ ] Tester dans Postman : suppression bloquée si ateliers liés (409)
+- [ ] Ajouter à la collection Postman
 
 ### Module certificat
 
-- [ ] Créer `services/certificateService.js` (`async function` pure avec `promisify(carbone.render)` — éviter l'anti-pattern `new Promise(async)`)
-- [ ] Créer `controllers/certificateController.js` (stream PDF binaire, `Content-Type: application/pdf`)
-- [ ] Créer `routes/certificate.js` (GET status template, POST upload template, GET generate)
-- [ ] Créer le template DOCX de démonstration avec balises carbone : `{prenom}`, `{nom}`, `{email}`, `{date_debut}`, `{date_fin}`, `{#ateliers}`, `{titre}`, `{categories}`, `{/ateliers}`, `{date_emission}`
+- [ ] Créer `backend/services/certificateService.js` — **`async function` pure** avec `promisify(carbone.render)` :
+  ```js
+  import carbone from 'carbone';
+  import { promisify } from 'node:util';
+  import { format } from 'date-fns';
+  import { fr } from 'date-fns/locale';
+  // ...
+
+  const carboneRender = promisify(carbone.render);  // évite l'anti-pattern new Promise(async)
+
+  export const generateCertificate = async (internshipId) => {
+    const internship = await Internship.getById(internshipId);
+    if (!internship) throw new Error('NOT_FOUND');
+    if (!fs.existsSync(TEMPLATE_PATH)) throw new Error('NO_TEMPLATE');
+
+    const activities = await Internship.getActivities(internshipId);
+    const data = {
+      prenom: internship.firstName,
+      nom: internship.lastName,
+      email: internship.email,
+      date_debut: format(new Date(internship.startDate), 'dd MMMM yyyy', { locale: fr }),
+      date_fin: format(new Date(internship.endDate), 'dd MMMM yyyy', { locale: fr }),
+      date_emission: format(new Date(), 'dd MMMM yyyy', { locale: fr }),
+      ateliers: activities.map(a => ({
+        titre: a.title,
+        categories: a.categories?.map(c => c.name).join(', ') ?? '',
+      })),
+    };
+    return carboneRender(TEMPLATE_PATH, data, { convertTo: 'pdf' });
+  };
+  ```
+  > **Pourquoi `promisify` ?** `new Promise(async (resolve, reject) => { await ... })` ne transmet pas les exceptions internes au `reject` — elles deviennent des rejections non gérées. `promisify` retourne une vraie Promise compatible `await`.
+
+- [ ] Créer `backend/controllers/certificateController.js` — stream PDF avec `res.setHeader('Content-Type', 'application/pdf')`
+- [ ] Créer `backend/routes/certificateRoutes.js` — 3 endpoints :
+  ```js
+  router.get('/template', getTemplateStatus);          // GET  /api/certificate/template
+  router.post('/template', uploadCertificateTemplate, uploadTemplate);  // POST /api/certificate/template
+  router.get('/:id', generateCertificate);             // ← monté sur /api/internships/:id/certificate via internshipRoutes
+  ```
+- [ ] Créer le template DOCX de démonstration avec les balises carbone :
+  - `{prenom}`, `{nom}`, `{email}`, `{date_debut}`, `{date_fin}`, `{date_emission}`
+  - Boucle ateliers : `{#ateliers}` ... `{titre}` ... `{categories}` ... `{/ateliers}`
 - [ ] Placer le template dans `backend/uploads/certificate/template.docx`
-- [ ] Tester la génération PDF dans Postman + ajouter à collection
-- [ ] Installer Newman : `npm install -g newman`
-- [ ] Run `newman run collection.json` → vérifier que tout passe
-- [ ] Commit : `feat(backend): complete REST API with all modules`
+- [ ] Tester dans Postman : génération PDF (200 + binaire), sans template (404/500)
+- [ ] Ajouter à la collection Postman
+
+### Collection Postman et Newman
+
+- [ ] Organiser la collection Postman en 4 dossiers : `Internships`, `Activities`, `Categories`, `Certificate`
+- [ ] Pour chaque requête, ajouter des **tests Postman** (onglet Tests) :
+  ```js
+  pm.test("Status 200", () => pm.response.to.have.status(200));
+  pm.test("Has id", () => pm.expect(pm.response.json()).to.have.property('id'));
+  ```
+- [ ] Créer `tests/api/postman_environment.json` avec les variables `baseUrl`, `internshipId`, `activityId`, `categoryId`
+- [ ] Créer `tests/api/run_tests.sh` :
+  ```bash
+  #!/bin/bash
+  newman run tests/api/test_internship_management.postman_collection.json \
+    --environment tests/api/postman_environment.json \
+    --reporters cli,htmlextra \
+    --reporter-htmlextra-export report_output.json
+  ```
+- [ ] Run `npm run test:api` → vérifier que tous les tests passent
+- [ ] Commit : `feat(backend): complete REST API with all modules and Postman tests`
 
 ---
 
