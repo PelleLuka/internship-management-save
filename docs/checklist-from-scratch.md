@@ -144,13 +144,73 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 
 ## Phase 1 — Planification *(~3h)*
 
-- [ ] Lister toutes les tâches du projet avec durée estimée (tableau)
-- [ ] Créer le diagramme de Gantt dans Excel/Google Sheets (granularité demi-journée)
-- [ ] Définir les 6 phases : Administratif, Analyse, Conception, Réalisation, Tests, Documentation
-- [ ] Fixer les jalons clés (fin analyse, fin conception, fin backend, fin frontend, remise)
-- [ ] Sauvegarder le Gantt initial (screenshot pour le rapport)
-- [ ] Ouvrir le fichier rapport TPI, remplir l'en-tête et la section §2.4 Planification
-- [ ] Commencer le journal de bord : entrée Jour 1
+### Décomposition des tâches du CdC
+
+- [ ] Reprendre les 7 exigences du CdC et noter leur durée estimée officielle :
+
+  | Exigence | Priorité | Durée estimée |
+  |---|---|---|
+  | Gestion des stagiaires | Haute | 2 jours |
+  | Gestion des ateliers | Haute | 2 jours |
+  | Association ateliers ↔ stages | Haute | 1.5 jour |
+  | Automatisation des tests | Moyenne | 1.5 jour |
+  | Gestion des catégories | Moyenne | 1 jour |
+  | Génération du certificat | Basse | 1 jour |
+  | Gestion de projet | Haute | 1 jour |
+
+- [ ] Décomposer chaque exigence en sous-tâches (analyse, conception, implémentation, tests, doc)
+- [ ] Estimer la durée personnelle de chaque sous-tâche (en demi-journées)
+- [ ] Vérifier que le total correspond à la durée totale du TPI (11 jours ouvrables)
+
+### Diagramme de Gantt
+
+- [ ] Ouvrir Excel ou Google Sheets, créer un nouveau fichier `Gantt-WorkXPAdmin.xlsx`
+- [ ] Structurer les colonnes : colonne A = Tâche, colonne B = Durée, colonnes suivantes = jours (1 colonne = 1 demi-journée)
+- [ ] Créer 6 groupes de lignes correspondant aux 6 phases :
+  - **Administratif** (Jour 1 matin : lecture CdC, setup, Gantt)
+  - **Analyse** (Jour 1 après-midi → Jour 2 : besoins, diagrammes UML, choix techniques)
+  - **Conception** (Jour 2 après-midi → Jour 3 : mockups Pencil, MCD, architecture, séquences)
+  - **Réalisation** (Jour 3 après-midi → Jour 8 : infrastructure, backend, frontend)
+  - **Tests** (Jour 7 → Jour 9 : intégrés à la réalisation + vérification finale)
+  - **Documentation** (continu + Jour 9 → Jour 10 : finalisation rapport)
+- [ ] Colorier chaque phase avec une couleur distincte (ex : bleu = réalisation, orange = tests, vert = doc)
+- [ ] Ajouter une ligne "Gantt réel" sous chaque ligne "Gantt prévu" (laisser vide pour l'instant, à remplir en phase 8)
+- [ ] Fixer les jalons clés (cellules marquées ◆) :
+  - Fin analyse → Jour 2 soir
+  - Fin conception → Jour 3 soir
+  - Fin backend → Jour 6 soir
+  - Fin frontend → Jour 8 soir
+  - Remise finale → **2 juin 2026 à 17h00**
+- [ ] Sauvegarder le Gantt et faire un screenshot du tableau pour le rapport (Figure §2.4)
+
+### Rapport TPI — initialisation
+
+- [ ] Ouvrir `docs/rapport-tpi/rapport-tpi-workxpadmin.md`
+- [ ] Remplir l'en-tête :
+  - **Date de création** : date du Jour 1
+  - **Dernière édition** : laisser vide (à remplir à la remise)
+- [ ] Remplir §2.2 Organisation : candidat, chef de projet (Joël Dacomo), experts (à compléter dès que connus)
+- [ ] Remplir §2.3 Matériel : machine utilisée (modèle exact + OS + version)
+- [ ] Remplir §2.3 Logiciels : versions exactes de tous les outils installés
+- [ ] Insérer le screenshot du Gantt dans §2.4 Planification
+
+### Journal de bord — initialisation
+
+- [ ] Créer `docs/journal-de-bord.md` avec la structure suivante pour chaque journée :
+  ```markdown
+  ## Jour 1 — [date]
+  **Heures travaillées :** 8h (08h00–12h00 / 13h00–17h00)
+  **Tâches réalisées :**
+  - ...
+  **Problèmes rencontrés :**
+  - ...
+  **Solutions apportées :**
+  - ...
+  **Prévu pour demain :**
+  - ...
+  ```
+- [ ] Remplir l'entrée Jour 1 avec les tâches de la journée (lecture CdC, setup, Gantt)
+- [ ] Commit : `docs: add initial Gantt planning and start TPI journal`
 
 ---
 
