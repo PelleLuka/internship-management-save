@@ -319,14 +319,230 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 
 ## Phase 3 — Conception *(~1 jour)*
 
-- [ ] Créer le fichier Pencil `WorkXPAdmin.pen` et dessiner les mockups des 5 écrans principaux (stages, ateliers repliés, ateliers dépliés, catégories, paramètres)
-- [ ] Définir le schéma SQL complet : 5 tables (`person`, `internship`, `activity`, `category`, `internship_activity`, `activity_category`) avec FK et CHECK
-- [ ] Créer le MCD/MLD (DbDiagram.io ou Draw.io)
-- [ ] Créer le diagramme d'architecture 3-tiers Draw.io (3 boîtes + volume `uploads_data` + flèches HTTP/SQL)
-- [ ] Créer 3 diagrammes de séquence (PlantUML) : création stagiaire, upload document, génération certificat
-- [ ] Définir le contrat API : tableau méthode/route/description pour chaque module
-- [ ] Insérer tous les diagrammes dans le rapport (§5.1 à §5.4)
-- [ ] Journal de bord
+### Mockups Pencil (rapport §5.4)
+
+- [ ] Ouvrir Pencil et créer un nouveau fichier `WorkXPAdmin.pen`
+- [ ] Dessiner l'écran **Liste des stages** (Figure 9) :
+  - Sidebar de navigation à gauche (liens : Stages, Ateliers, Catégories, Paramètres)
+  - Header avec titre « Stages » + bouton « + Nouveau stage »
+  - Grille de cartes : chaque carte affiche prénom, nom, email, dates, badge statut coloré (À venir / En cours / Terminé)
+- [ ] Dessiner l'écran **Liste des ateliers repliée** (Figure 10a) :
+  - Même sidebar
+  - Header avec titre « Ateliers » + bouton « + Nouvel atelier »
+  - Liste de cartes compactes : titre, badges catégories, bouton déplier
+- [ ] Dessiner l'écran **Liste des ateliers dépliée** (Figure 10b) :
+  - Même carte mais étendue : mini-cartes stats (nombre de stages, état document), section catégories avec popover, zone document drag & drop
+- [ ] Dessiner l'écran **Catégories** (Figure 11) :
+  - Grille de cartes : icône Tag, nom, description, compteur d'ateliers liés, boutons Modifier/Supprimer
+  - Barre de recherche dans le header
+- [ ] Dessiner l'écran **Paramètres** (Figure 12) :
+  - Zone upload template DOCX pour le certificat
+  - Statut du template actuel (nom du fichier ou « Aucun template »)
+- [ ] Faire des captures d'écran de chaque écran Pencil → sauvegarder dans `docs/mockup/`
+- [ ] Insérer les captures dans §5.4 du rapport (Figures 9–12)
+
+### Schéma d'architecture (rapport §5.1)
+
+- [ ] Ouvrir Draw.io et créer un nouveau diagramme
+- [ ] Dessiner 3 boîtes principales :
+  - **Frontend** : « Vue.js 3 + Vite » sur le port `:8081`
+  - **Backend** : « Node.js + Express.js » sur le port `:3000`
+  - **Base de données** : « MariaDB » sur le port `:3306`
+- [ ] Ajouter le volume Docker `uploads_data` (cylindre) relié au backend
+- [ ] Ajouter les flèches étiquetées : `HTTP/JSON` (navigateur → frontend), `REST API` (frontend → backend), `SQL` (backend → MariaDB), `R/W` (backend → uploads_data)
+- [ ] Exporter en PNG → `docs/architecture/architecture-3tiers.png`
+- [ ] Insérer dans §5.1 du rapport (Figure 4)
+
+### Diagrammes de séquence (rapport §5.2)
+
+- [ ] Ouvrir PlantUML (plantuml.com/plantuml ou extension VS Code) et créer **Séquence 1 — Création d'un stagiaire** :
+  ```plantuml
+  @startuml
+  actor Administrateur
+  participant "Vue.js" as Vue
+  participant "Express API" as API
+  database "MariaDB" as DB
+
+  Administrateur -> Vue : Remplit le formulaire et clique "Enregistrer"
+  Vue -> API : POST /api/internships\n{firstName, lastName, email, startDate, endDate}
+  API -> API : Valide les données\n(dates cohérentes, champs obligatoires)
+  API -> DB : INSERT INTO person
+  DB --> API : insertId (person)
+  API -> DB : INSERT INTO internship
+  DB --> API : insertId (internship)
+  API --> Vue : 201 Created {id, firstName, ...}
+  Vue -> Vue : Recharge la liste
+  Vue --> Administrateur : Modal fermée, carte ajoutée
+  @enduml
+  ```
+- [ ] Exporter Figure 5 → `docs/sequence-diagram/create-internship.png`
+
+- [ ] Créer **Séquence 2 — Upload d'un document sur un atelier** :
+  ```plantuml
+  @startuml
+  actor Administrateur
+  participant "Vue.js" as Vue
+  participant "Express + multer" as API
+  database "MariaDB" as DB
+  collections "Filesystem\n/app/uploads" as FS
+
+  Administrateur -> Vue : Glisse un fichier dans la zone upload
+  Vue -> API : POST /api/activities/:id/document\n(multipart/form-data)
+  API -> API : Valide type MIME et taille (max 10 MB)
+  API -> FS : Stocke <uuid>-<nom>.<ext>
+  API -> DB : UPDATE activity SET document_url = ?
+  DB --> API : OK
+  API --> Vue : 200 OK {documentUrl: "..."}
+  Vue --> Administrateur : Zone document mise à jour
+  @enduml
+  ```
+- [ ] Exporter Figure 6 → `docs/sequence-diagram/upload-document.png`
+
+- [ ] Créer **Séquence 3 — Génération du certificat PDF** :
+  ```plantuml
+  @startuml
+  actor Administrateur
+  participant "Vue.js" as Vue
+  participant "Express API" as API
+  database "MariaDB" as DB
+  collections "Filesystem" as FS
+
+  Administrateur -> Vue : Clique "Aperçu du certificat"
+  Vue -> Vue : Navigue vers /certificate/:id
+  Vue -> API : GET /api/internships/:id/certificate
+  API -> DB : SELECT stage + ateliers associés
+  DB --> API : {prenom, nom, ateliers[], ...}
+  API -> FS : Lit template.docx
+  API -> API : carbone.js injecte les données
+  API -> API : LibreOffice convertit DOCX → PDF
+  API --> Vue : Stream binaire PDF
+  Vue -> Vue : Crée Blob URL → affiche dans <iframe>
+  Vue --> Administrateur : PDF visible + boutons Imprimer/Télécharger
+  @enduml
+  ```
+- [ ] Exporter Figure 7 → `docs/sequence-diagram/generate-certificate.png`
+- [ ] Insérer Figures 5–7 dans §5.2 du rapport
+
+### Base de données (rapport §5.3)
+
+- [ ] Créer le schéma MCD/MLD sur DbDiagram.io avec les 5 tables et leurs relations → exporter en PNG → `docs/database-diagram/db-diagram.png`
+- [ ] Rédiger le schéma SQL complet dans `database/init.sql` :
+  ```sql
+  CREATE TABLE person (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(80) NOT NULL,
+    last_name VARCHAR(80) NOT NULL,
+    email VARCHAR(254) NOT NULL
+  );
+
+  CREATE TABLE internship (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    person_id INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    CONSTRAINT chk_dates CHECK (end_date >= start_date),
+    FOREIGN KEY (person_id) REFERENCES person(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE activity (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    document_url VARCHAR(500),
+    visible BOOLEAN NOT NULL DEFAULT TRUE
+  );
+
+  CREATE TABLE category (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT
+  );
+
+  CREATE TABLE internship_activity (
+    internship_id INT NOT NULL,
+    activity_id INT NOT NULL,
+    PRIMARY KEY (internship_id, activity_id),
+    FOREIGN KEY (internship_id) REFERENCES internship(id) ON DELETE CASCADE,
+    FOREIGN KEY (activity_id) REFERENCES activity(id) ON DELETE RESTRICT
+  );
+
+  CREATE TABLE activity_category (
+    activity_id INT NOT NULL,
+    category_id INT NOT NULL,
+    PRIMARY KEY (activity_id, category_id),
+    FOREIGN KEY (activity_id) REFERENCES activity(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE RESTRICT
+  );
+  ```
+- [ ] Vérifier les contraintes FK : CASCADE sur suppression de personne/stage, RESTRICT sur suppression d'atelier/catégorie lié
+- [ ] Insérer Figure 8 (MCD/MLD) dans §5.3 du rapport
+
+### Contrat API
+
+- [ ] Définir le tableau complet des endpoints par module :
+
+  **Stagiaires**
+
+  | Méthode | Route | Description |
+  |---|---|---|
+  | GET | `/api/internships` | Liste tous les stages |
+  | POST | `/api/internships` | Crée un stage |
+  | GET | `/api/internships/:id` | Détails d'un stage |
+  | PUT | `/api/internships/:id` | Modifie un stage |
+  | DELETE | `/api/internships/:id` | Supprime un stage |
+  | GET | `/api/internships/:id/activities` | Ateliers liés au stage |
+  | POST | `/api/internships/:id/activities/:actId` | Associe un atelier |
+  | DELETE | `/api/internships/:id/activities/:actId` | Dissocie un atelier |
+  | GET | `/api/internships/:id/certificate` | Génère le PDF |
+
+  **Ateliers**
+
+  | Méthode | Route | Description |
+  |---|---|---|
+  | GET | `/api/activities` | Liste les IDs visibles |
+  | GET | `/api/activities/:id` | Détails + catégories + internshipCount |
+  | POST | `/api/activities` | Crée un atelier |
+  | PATCH | `/api/activities/:id` | Modifie partiellement |
+  | DELETE | `/api/activities/:id` | Soft delete (visible = 0) |
+  | POST | `/api/activities/:id/document` | Upload document |
+  | GET | `/api/activities/:id/document` | Télécharge document |
+  | DELETE | `/api/activities/:id/document` | Supprime document |
+
+  **Catégories**
+
+  | Méthode | Route | Description |
+  |---|---|---|
+  | GET | `/api/categories` | Liste avec activityCount |
+  | POST | `/api/categories` | Crée une catégorie |
+  | PUT | `/api/categories/:id` | Modifie une catégorie |
+  | DELETE | `/api/categories/:id` | Supprime (bloqué si ateliers liés) |
+
+  **Certificat**
+
+  | Méthode | Route | Description |
+  |---|---|---|
+  | GET | `/api/certificate/template` | Statut du template |
+  | POST | `/api/certificate/template` | Upload template DOCX |
+
+### Stratégie de tests (rapport §5.5)
+
+- [ ] Décider des deux types de tests à mettre en place : **Playwright E2E** + **Postman/Newman API**
+- [ ] Lister les scénarios E2E à écrire (un par fonctionnalité principale) :
+  - Navigation entre les pages
+  - CRUD stagiaires (création, validation, modification, suppression)
+  - Badges de statut (À venir / En cours / Terminé)
+  - CRUD ateliers (avec contrainte suppression bloquée)
+  - CRUD catégories (avec Cannot Delete Modal)
+  - Association ateliers ↔ stages
+  - Navigation vers la page certificat
+- [ ] Décider du jeu de données de test : créer `tests/setup/restore_db.sql` avec des données minimales reproductibles
+- [ ] Rédiger §5.5 dans le rapport (tableau scénarios Playwright + description collection Postman)
+
+### Rapport et journal
+
+- [ ] Vérifier que §5.1 à §5.5 sont entièrement remplis dans le rapport
+- [ ] Commit : `docs: add architecture diagram, sequence diagrams, DB schema and API contract`
+- [ ] Journal de bord : remplir les entrées de chaque journée de la phase 3
 
 ---
 
