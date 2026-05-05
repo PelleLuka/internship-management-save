@@ -165,7 +165,7 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 ### Diagramme de Gantt
 
 - [ ] Ouvrir Excel ou Google Sheets, créer un nouveau fichier `Gantt-WorkXPAdmin.xlsx`
-- [ ] Structurer les colonnes : colonne A = Tâche, colonne B = Durée, colonnes suivantes = jours (1 colonne = 1 demi-journée)
+- [ ] Structurer les colonnes : colonne A = Tâche, colonne B = Durée, colonnes suivantes = jours (1 colonne = 1 heure)
 - [ ] Créer 6 groupes de lignes correspondant aux 6 phases :
   - **Administratif** (Jour 1 matin : lecture CdC, setup, Gantt)
   - **Analyse** (Jour 1 après-midi → Jour 2 : besoins, diagrammes UML, choix techniques)
@@ -216,16 +216,104 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 
 ## Phase 2 — Analyse *(~1 jour)*
 
-- [ ] Identifier l'acteur unique du système : Administrateur CA TIC
-- [ ] Lister les 5 cas d'utilisation principaux (CRUD stagiaires, CRUD ateliers, CRUD catégories, association ateliers↔stages, génération certificat)
-- [ ] Rédiger les descriptions des besoins (tableau Quoi/Pourquoi/Comment/Contrainte pour chaque action)
-- [ ] Créer le diagramme UML de cas d'utilisation (Draw.io ou PlantUML)
-- [ ] Étudier variante d'architecture : Monolithique vs 3-tiers → créer matrice de comparaison
-- [ ] Étudier variante stockage documents : BLOB en DB vs Filesystem → décision
-- [ ] Étudier variante génération PDF : Puppeteer vs carbone.js → décision
-- [ ] Documenter les choix dans le rapport §4.5 (avec matrice et conclusion)
-- [ ] Remplir §4.6 : tableau technologies retenues avec justification
-- [ ] Journal de bord : entrées journalières
+### État initial (rapport §4.1)
+
+- [ ] Décrire le système existant : suivi des stages dans Microsoft OneNote (notes non structurées)
+- [ ] Lister les 5 limitations du système actuel :
+  - Aucune centralisation structurée des données
+  - Pas de vue d'ensemble sur l'historique des stages par personne
+  - Identification du statut (passé / en cours / à venir) laborieuse
+  - Génération du certificat entièrement manuelle
+  - Risque d'erreurs humaines et de pertes de données
+- [ ] Insérer la capture d'écran OneNote fournie dans le CdC (Figure 1) dans §4.1
+
+### État désiré (rapport §4.2)
+
+- [ ] Décrire les 5 modules fonctionnels souhaités :
+  - Gestion des stagiaires avec calcul automatique du statut (À venir / En cours / Terminé)
+  - Catalogue centralisé des ateliers (titre, description, catégories, document annexe)
+  - Gestion des catégories (classification des ateliers)
+  - Association ateliers ↔ stages (depuis la fiche du stagiaire)
+  - Génération du certificat PDF depuis un template DOCX personnalisable
+- [ ] Rédiger le schéma de principe de fonctionnement dans §4.2 :
+  ```
+  [Administrateur CA TIC] → [Interface Vue.js] → [API Express.js] → [MariaDB]
+                                                        ↓
+                                                [Fichiers uploads]
+  ```
+
+### Public cible (rapport §4.3)
+
+- [ ] Identifier l'unique type d'utilisateur : équipe CA TIC (formateurs + responsables administratifs)
+- [ ] Confirmer qu'il n'y a pas d'accès public ni de gestion de rôles pour cette version
+- [ ] Rédiger §4.3 dans le rapport
+
+### Besoins et cas d'utilisation (rapport §4.4)
+
+- [ ] Identifier l'acteur unique du système : **Administrateur CA TIC**
+- [ ] Lister les 5 cas d'utilisation principaux :
+  - Gérer les stagiaires (créer, modifier, supprimer, consulter)
+  - Gérer les ateliers (créer, modifier, supprimer, upload document)
+  - Gérer les catégories (créer, modifier, supprimer)
+  - Associer des ateliers à un stage
+  - Générer le certificat PDF d'un stage
+- [ ] Créer le diagramme UML de cas d'utilisation avec Draw.io ou PlantUML :
+  - Un acteur à gauche : « Administrateur CA TIC »
+  - 5 bulles de cas d'utilisation reliées par des flèches
+  - Exporter en PNG → sauvegarder dans `docs/use-case/use-case.png`
+  - Insérer dans §4.4.1 (Figure 3)
+- [ ] Rédiger les descriptions des besoins dans §4.4.2 — tableau Quoi/Pourquoi/Comment/Contrainte pour chaque action :
+  - Ajouter / Modifier / Supprimer / Consulter un stagiaire
+  - Ajouter / Modifier / Supprimer un atelier + upload document
+  - Ajouter / Modifier / Supprimer une catégorie
+  - Associer un atelier à un stage
+  - Générer le certificat PDF
+- [ ] Remplir le tableau de synthèse des besoins par acteur (§4.4.2)
+
+### Variantes techniques (rapport §4.5)
+
+**Architecture :**
+- [ ] Étudier 2 variantes : Monolithique (SSR Node.js) vs Architecture 3-tiers séparée (SPA + API REST + DB)
+- [ ] Créer la matrice de comparaison (critères : adéquation technologies imposées 40%, maintenabilité 40%, complexité 20%) :
+
+  | Architecture | Adéquation | Maintenabilité | Complexité | Note |
+  |---|---|---|---|---|
+  | Monolithique | 1 | 1 | 3 | 1.6 |
+  | **3-tiers séparée** | **3** | **3** | **2** | **2.7** |
+
+- [ ] Conclure : **3-tiers retenue** — correspond aux technologies imposées, séparation claire des responsabilités
+
+**Stockage des documents :**
+- [ ] Étudier 2 variantes : BLOB en base de données vs Filesystem + référence en DB
+- [ ] Conclure : **Filesystem retenu** — performances optimales, nommage `<uuid>-<nom-sanitisé>.<ext>`, volume Docker `uploads_data`
+
+**Génération du certificat :**
+- [ ] Étudier 2 variantes : HTML → PDF via Puppeteer vs DOCX template → PDF via carbone.js + LibreOffice
+- [ ] Conclure : **carbone.js retenu** — template Word modifiable par l'admin sans intervention du développeur
+
+### Technologies (rapport §4.6)
+
+- [ ] Remplir le tableau des technologies retenues dans §4.6 :
+
+  | Technologie | Rôle | Justification |
+  |---|---|---|
+  | Vue.js 3 (Composition API) | Frontend SPA | Imposé par le CdC, réactivité fine |
+  | Vite | Bundler | HMR ultra-rapide, configuration minimale |
+  | Express.js | API REST | Imposé par le CdC, minimaliste et flexible |
+  | MariaDB | Base de données | Imposé par le CdC, contraintes FK natives |
+  | Docker + Docker Compose | Conteneurisation | Environnement reproductible, volumes persistants |
+  | Tailwind CSS | Framework CSS | Cohérence visuelle sans CSS custom |
+  | Biome | Linter + formatter | Remplace ESLint + Prettier, tri auto des imports |
+  | Playwright | Tests E2E | Simulation navigateur réel, multi-navigateurs |
+  | Postman / Newman | Tests API | Validation contrat REST, exécutable en CLI |
+  | carbone.js | Génération PDF | Injection données dans DOCX, conversion LibreOffice |
+  | multer | Upload fichiers | Middleware Express standard multipart/form-data |
+  | Lucide Vue | Icônes | SVG légers et cohérents avec le design |
+
+### Rapport et journal
+
+- [ ] Vérifier que §4.1 à §4.6 sont entièrement remplis dans le rapport
+- [ ] Journal de bord : remplir les entrées de chaque journée de la phase 2
 
 ---
 
