@@ -605,15 +605,22 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
 ### Variables d'environnement
 
-- [ ] Créer `.env` à la racine du projet (ne jamais commiter) :
+- [ ] Ajouter `.env` au `.gitignore` **avant** de créer le fichier (avec exception `!.env.example`) :
+  ```
+  # Environment variables
+  .env
+  !.env.example
+  ```
+- [ ] Créer `.env.example` (à commiter, valeurs vides pour les secrets) :
   ```
   DB_HOST=localhost
   DB_USER=user
-  DB_PASSWORD=password
+  DB_PASSWORD=
   DB_NAME=internship_management
   PORT=3000
   ```
-- [ ] Créer `.env.example` (version sans valeurs sensibles, à commiter) avec les mêmes clés mais valeurs vides ou factices
+- [ ] Créer `.env` à la racine en copiant `.env.example` et en remplissant les valeurs (jamais commité)
+  > ⚠️ **Vérifier** : `git ls-files | grep .env` ne doit jamais retourner `.env` seul. Si oui : `git rm --cached .env` immédiatement.
 
 ### Docker Compose
 
@@ -1129,9 +1136,15 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 - [ ] Créer `backend/models/Person.js` — CRUD sur la table `person` (`create`, `update`, `delete`)
 - [ ] Créer `backend/models/Internship.js` — `getAll(limit, offset, search)`, `count(search)`, `getById`, `create`, `update`, `delete`, `getActivities`, `addActivity` (INSERT IGNORE), `removeActivity`
   > `getAll` supporte la pagination (`LIMIT ? OFFSET ?`) et la recherche (`WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?`)
-- [ ] Créer `backend/services/internshipService.js` — erreurs nommées : `NOT_FOUND`, `VALIDATION_ERROR:first_name required`, `VALIDATION_ERROR:invalid email`, `VALIDATION_ERROR:end_date before start_date`
+- [ ] Créer `backend/services/internshipService.js` — erreurs nommées **alignées avec le controller** :
+  - `NOT_FOUND`, `MISSING_FIELDS`, `NAME_TOO_LONG`, `EMAIL_TOO_LONG`, `INVALID_EMAIL`, `INVALID_DATE_FORMAT`, `END_DATE_BEFORE_START`
+  - Helper `validateFields(data, { partial })` mutualisé entre `createInternship` et `updateInternship`
+  - `createInternship` retourne **l'objet complet** via `Internship.getById(insertedId)` (pas juste l'ID)
+  - `updateInternship` retourne **l'objet mis à jour** via `Internship.getById(id)` (jamais `undefined`)
   > Helpers internes : `isValidEmail(email)` (regex), `isValidDate(str)` (format YYYY-MM-DD + date valide)
+  > ⚠️ **Piège classique** : si le service throw `VALIDATION_ERROR:*` mais que le controller catch `MISSING_FIELDS`, les erreurs 400 deviennent des 500. Toujours utiliser **les mêmes codes** des deux côtés.
 - [ ] Créer `backend/controllers/internshipController.js` — parse `Number.parseInt(req.params.id, 10)`, codes HTTP :
+  - Helper `replyValidationError(err, res)` avec table `VALIDATION_ERRORS` mappant chaque code → `[status, message]`
   - `200` GET liste/détail, `201` création, `204` suppression, `404` NOT_FOUND, `400` validation, `500` erreur serveur
 - [ ] Créer `backend/routes/internshipRoutes.js` — 9 endpoints :
   ```js
@@ -1197,6 +1210,7 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
 - [ ] Créer `backend/services/certificateService.js` — **`async function` pure** avec `promisify(carbone.render)` :
   ```js
+  import { execSync } from 'node:child_process';
   import carbone from 'carbone';
   import { promisify } from 'node:util';
   import { format } from 'date-fns';
@@ -1205,30 +1219,30 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
   const carboneRender = promisify(carbone.render);  // évite l'anti-pattern new Promise(async)
 
+  // Detect LibreOffice presence (required by carbone for DOCX → PDF conversion)
+  const isLibreOfficeAvailable = () => {
+    try {
+      execSync('which soffice || which libreoffice', { stdio: 'ignore' });
+      return true;
+    } catch { return false; }
+  };
+
   export const generateCertificate = async (internshipId) => {
     const internship = await Internship.getById(internshipId);
     if (!internship) throw new Error('NOT_FOUND');
     if (!fs.existsSync(TEMPLATE_PATH)) throw new Error('NO_TEMPLATE');
+    if (!isLibreOfficeAvailable()) throw new Error('NO_LIBREOFFICE');
 
     const activities = await Internship.getActivities(internshipId);
-    const data = {
-      prenom: internship.firstName,
-      nom: internship.lastName,
-      email: internship.email,
-      date_debut: format(new Date(internship.startDate), 'dd MMMM yyyy', { locale: fr }),
-      date_fin: format(new Date(internship.endDate), 'dd MMMM yyyy', { locale: fr }),
-      date_emission: format(new Date(), 'dd MMMM yyyy', { locale: fr }),
-      ateliers: activities.map(a => ({
-        titre: a.title,
-        categories: a.categories?.map(c => c.name).join(', ') ?? '',
-      })),
-    };
+    // ... build data object ...
     return carboneRender(TEMPLATE_PATH, data, { convertTo: 'pdf' });
   };
   ```
   > **Pourquoi `promisify` ?** `new Promise(async (resolve, reject) => { await ... })` ne transmet pas les exceptions internes au `reject` — elles deviennent des rejections non gérées. `promisify` retourne une vraie Promise compatible `await`.
+  > ⚠️ **LibreOffice est requis** : `carbone.render({ convertTo: 'pdf' })` lance LibreOffice headless. Sans `soffice` dans le PATH, l'erreur est cryptique. Le check `isLibreOfficeAvailable()` permet de retourner un message clair (`NO_LIBREOFFICE` → 503) au lieu d'un 500 générique.
+  > **En local** : si tu lances le backend hors Docker, le certificat échoue car LibreOffice n'est pas installé sur la machine hôte. **Toujours utiliser Docker pour tester le certificat** (LibreOffice est dans `Dockerfile.backend`).
 
-- [ ] Créer `backend/controllers/certificateController.js` — stream PDF avec `res.setHeader('Content-Type', 'application/pdf')`
+- [ ] Créer `backend/controllers/certificateController.js` — stream PDF avec `res.setHeader('Content-Type', 'application/pdf')`, mappe `NO_LIBREOFFICE → 503` avec message explicite
 - [ ] Créer `backend/routes/certificateRoutes.js` — 3 endpoints :
   ```js
   router.get('/template', getTemplateStatus);          // GET  /api/certificate/template

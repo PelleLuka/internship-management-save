@@ -61,19 +61,30 @@ export const getInternshipActivities = async (id) => {
     return await Internship.getActivities(id);
 };
 
+const validateFields = (data, { partial = false } = {}) => {
+  const fn = data.firstName?.trim();
+  const ln = data.lastName?.trim();
+  const em = data.email?.trim();
+
+  if (!partial) {
+    if (!fn || !ln || !em || !data.startDate || !data.endDate) throw new Error('MISSING_FIELDS');
+  }
+  if ((fn && fn.length > 80) || (ln && ln.length > 80)) throw new Error('NAME_TOO_LONG');
+  if (em && em.length > 254) throw new Error('EMAIL_TOO_LONG');
+  if (em && !isValidEmail(em)) throw new Error('INVALID_EMAIL');
+  if (data.startDate && !isValidDate(data.startDate)) throw new Error('INVALID_DATE_FORMAT');
+  if (data.endDate && !isValidDate(data.endDate)) throw new Error('INVALID_DATE_FORMAT');
+};
+
 /**
  * Create a new Internship
  * @param {Object} data - { firstName, lastName, email, startDate, endDate }
  * @returns {Promise<Object>} Created internship object
- * @throws {Error} If validation fails
+ * @throws {Error} MISSING_FIELDS | NAME_TOO_LONG | EMAIL_TOO_LONG | INVALID_EMAIL | INVALID_DATE_FORMAT | END_DATE_BEFORE_START
  */
 export const createInternship = async (data) => {
-  if (!data.firstName?.trim()) throw new Error('VALIDATION_ERROR:first_name required');
-  if (!data.lastName?.trim()) throw new Error('VALIDATION_ERROR:last_name required');
-  if (!isValidEmail(data.email)) throw new Error('VALIDATION_ERROR:invalid email');
-  if (!isValidDate(data.startDate)) throw new Error('VALIDATION_ERROR:invalid start_date');
-  if (!isValidDate(data.endDate)) throw new Error('VALIDATION_ERROR:invalid end_date');
-  if (data.startDate > data.endDate) throw new Error('VALIDATION_ERROR:end_date before start_date');
+  validateFields(data);
+  if (data.startDate > data.endDate) throw new Error('END_DATE_BEFORE_START');
 
   const personId = await Person.create({
     firstName: data.firstName.trim(),
@@ -85,7 +96,7 @@ export const createInternship = async (data) => {
     startDate: data.startDate,
     endDate: data.endDate,
   });
-  return internshipId;
+  return await Internship.getById(internshipId);
 };
 
 /**
@@ -93,18 +104,16 @@ export const createInternship = async (data) => {
  * @param {number} id - Internship ID
  * @param {Object} data - { firstName, lastName, email, startDate, endDate }
  * @returns {Promise<Object>} Updated internship object
- * @throws {Error} If validation fails or internship not found
+ * @throws {Error} NOT_FOUND | NAME_TOO_LONG | EMAIL_TOO_LONG | INVALID_EMAIL | INVALID_DATE_FORMAT | END_DATE_BEFORE_START
  */
 export const updateInternship = async (id, data) => {
   const internship = await Internship.getById(id);
   if (!internship) throw new Error('NOT_FOUND');
 
-  if (data.email && !isValidEmail(data.email)) throw new Error('VALIDATION_ERROR:invalid email');
-  if (data.startDate && !isValidDate(data.startDate)) throw new Error('VALIDATION_ERROR:invalid start_date');
-  if (data.endDate && !isValidDate(data.endDate)) throw new Error('VALIDATION_ERROR:invalid end_date');
+  validateFields(data, { partial: true });
   const start = data.startDate ?? internship.startDate;
   const end = data.endDate ?? internship.endDate;
-  if (start > end) throw new Error('VALIDATION_ERROR:end_date before start_date');
+  if (start > end) throw new Error('END_DATE_BEFORE_START');
 
   await Person.update(internship.personId, {
     firstName: data.firstName?.trim(),
@@ -115,6 +124,8 @@ export const updateInternship = async (id, data) => {
     startDate: data.startDate,
     endDate: data.endDate,
   });
+
+  return await Internship.getById(id);
 };
 
 /**

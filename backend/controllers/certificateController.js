@@ -1,6 +1,6 @@
-import * as certificateService from '../services/certificateService.js';
-import { uploadCertificateTemplate } from '../middleware/upload.js';
 import logger from '../config/logger.js';
+import { uploadCertificateTemplate } from '../middleware/upload.js';
+import * as certificateService from '../services/certificateService.js';
 
 export const generateCertificate = async (req, res) => {
   try {
@@ -13,6 +13,11 @@ export const generateCertificate = async (req, res) => {
   } catch (err) {
     if (err.message === 'NOT_FOUND') return res.status(404).json({ error: 'Internship not found' });
     if (err.message === 'NO_TEMPLATE') return res.status(400).json({ error: 'No certificate template uploaded yet' });
+    if (err.message === 'NO_LIBREOFFICE') {
+      return res.status(503).json({
+        error: 'LibreOffice is required to generate PDFs. Run the backend via Docker (it is preinstalled in the container).',
+      });
+    }
     logger.error(err);
     res.status(500).json({ error: 'Certificate generation failed' });
   }
