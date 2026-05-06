@@ -35,7 +35,23 @@ INSERT INTO person (id, first_name, last_name, email) VALUES
   (8,'Manon','Durand','manon.durand@example.com'),
   (9,'Raphaël','Leroy','raphael.leroy@example.com'),
   (10,'Jade','Moreau','jade.moreau@example.com'),
-  (60,'Joël','Dacobeau','lej.dacobeau@example.cn');
+  (60,'Joël','Dacobeau','lej.dacobeau@example.cn'),
+  -- Recent stagiaires used for status testing (April / May / June 2026)
+  (100,'Lucie','Bernard','lucie.bernard@example.com'),
+  (101,'Antoine','Lefebvre','antoine.lefebvre@example.com'),
+  (102,'Sophie','Mercier','sophie.mercier@example.com'),
+  (103,'Hugo','Garnier','hugo.garnier@example.com'),
+  (104,'Camille','Roux','camille.roux@example.com'),
+  (105,'Nathan','Faure','nathan.faure@example.com'),
+  (106,'Inès','Vincent','ines.vincent@example.com'),
+  (107,'Maxime','Henry','maxime.henry@example.com'),
+  (108,'Clara','Roussel','clara.roussel@example.com'),
+  (109,'Ethan','Mathieu','ethan.mathieu@example.com'),
+  (110,'Zoé','Rolland','zoe.rolland@example.com'),
+  (111,'Samuel','Carpentier','samuel.carpentier@example.com'),
+  (112,'Noémie','Baron','noemie.baron@example.com'),
+  (113,'Théo','Schmitt','theo.schmitt@example.com'),
+  (114,'Emma','Lopez','emma.lopez@example.com');
 
 INSERT INTO internship (id, person_id, start_date, end_date) VALUES
   (1, 1, '2024-01-09', '2024-07-09'),
@@ -48,11 +64,34 @@ INSERT INTO internship (id, person_id, start_date, end_date) VALUES
   (8, 8, '2024-02-10', '2024-08-10'),
   (9, 9, '2024-02-11', '2024-08-11'),
   (10, 10, '2024-02-12', '2024-08-12'),
-  (60, 60, '2025-09-01', '2025-09-02');
+  (60, 60, '2025-09-01', '2025-09-02'),
+  -- Terminé : ended in April 2026 (today is 2026-05-06)
+  (100, 100, '2026-04-06', '2026-04-17'),
+  (101, 101, '2026-04-06', '2026-04-17'),
+  (102, 102, '2026-04-13', '2026-04-24'),
+  (103, 103, '2026-04-20', '2026-04-30'),
+  (104, 104, '2026-04-20', '2026-04-30'),
+  -- En cours : straddling 2026-05-06
+  (105, 105, '2026-05-04', '2026-05-15'),
+  (106, 106, '2026-05-04', '2026-05-15'),
+  (107, 107, '2026-05-04', '2026-05-15'),
+  (108, 108, '2026-05-06', '2026-05-22'),
+  (109, 109, '2026-05-06', '2026-05-22'),
+  -- À venir : starting in June 2026
+  (110, 110, '2026-06-01', '2026-06-12'),
+  (111, 111, '2026-06-01', '2026-06-12'),
+  (112, 112, '2026-06-15', '2026-06-26'),
+  (113, 113, '2026-06-15', '2026-06-26'),
+  (114, 114, '2026-06-22', '2026-07-03');
 
 INSERT INTO internship_activity (internship_id, activity_id) VALUES
   (1,1),(1,2),(2,3),(2,4),(3,5),(3,6),(4,7),(4,8),(5,9),(5,10),
-  (6,11),(6,12),(7,13),(7,14),(8,15),(8,1),(9,2),(9,3),(10,4),(10,5);
+  (6,11),(6,12),(7,13),(7,14),(8,15),(8,1),(9,2),(9,3),(10,4),(10,5),
+  -- Plausible activity assignments for the 15 new stagiaires
+  (100,1),(100,4),(101,2),(101,3),(102,5),(102,6),(103,7),(103,8),
+  (104,9),(105,1),(105,4),(106,2),(106,11),(107,5),(108,8),(108,9),
+  (109,12),(110,1),(110,4),(111,2),(111,3),(112,11),(112,13),(113,7),
+  (114,5),(114,6),(114,8);
 
 -- Descriptions on all visible activities (aligned with the Pencil design / problem4.png)
 UPDATE activity SET description = 'Création d\'un jeu de mémoire lumineux avec Python et un Raspberry Pi Pico.' WHERE id = 1;

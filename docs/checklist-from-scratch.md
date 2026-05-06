@@ -1721,11 +1721,16 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   ```
   > Ce script exécute `tests/setup/restoreDb.js` qui : (1) se connecte à MariaDB via le pool, (2) lit `tests/setup/restore_db.sql`, (3) exécute le SQL avec `multipleStatements: true` — TRUNCATE de toutes les tables puis INSERT des données de test
 - [ ] Vérifier le résultat attendu après restauration :
-  - **60 stagiaires** dans la table `internship` (+ personnes associées dans `person`)
+  - **26 stagiaires** dans la table `internship` (+ personnes associées dans `person`) :
+    - 11 historiques (ids 1-10, 60) — tous **Terminé** (2024-2025)
+    - 15 récents (ids 100-114) répartis sur 3 mois pour tester les statuts :
+      - **5 Terminé** en avril 2026 (ids 100-104)
+      - **5 En cours** en mai 2026 encadrant la date du jour (ids 105-109)
+      - **5 À venir** en juin 2026 (ids 110-114)
   - **15 activités** dans la table `activity` (13 visibles dont les 13 de problem4.png, 2 avec `visible = 0` pour tester le soft-delete)
   - **6 catégories** par défaut : Développement (7 ateliers), Système (2), Réseau (1), Hardware (2), Graphisme (1), Modélisation 3D (1)
   - **Stagiaire ID 60** : Joël Dacobeau (utilisé par certains scénarios manuels)
-  - Stages couvrant les 3 statuts : passés (dates 2024), en cours (dates encadrant aujourd'hui), à venir (dates futures)
+  > ⚠️ Les dates 2026-04 / 2026-05 / 2026-06 sont **hardcodées par rapport à la date du projet**. Si la DB est restaurée bien après cette période, tous les statuts deviendront « Terminé ». Mettre à jour les dates du seed si on rejoue les tests dans le futur.
 
 ### Sanity check — intégrité des données
 
