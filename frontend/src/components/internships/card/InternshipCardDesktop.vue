@@ -38,75 +38,69 @@ const handleCertificate = () =>
   <div
     class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 group relative"
   >
+    <!-- Top-right action buttons. Reserved space (pr-28 on the title row)
+         keeps long names from sliding under the buttons even when they are
+         hidden. Visible only when the card is hovered or expanded. -->
+    <div
+      class="absolute top-4 right-4 flex gap-1 transition-opacity shrink-0 z-10"
+      :class="[
+        expanded
+          ? 'opacity-100 pointer-events-auto'
+          : 'opacity-0 pointer-events-none [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto'
+      ]"
+    >
+      <button
+        @click.stop="handleCertificate"
+        class="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 transition-colors"
+        title="Aperçu du certificat"
+      >
+        <Printer class="w-4 h-4" />
+      </button>
+      <button
+        @click.stop="emit('edit', internship)"
+        class="p-1.5 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
+        :aria-label="'Modifier ' + internship.firstName + ' ' + internship.lastName"
+      >
+        <Pencil class="w-4 h-4" />
+      </button>
+      <button
+        @click.stop="emit('delete', internship.id)"
+        class="p-1.5 hover:bg-red-50 text-red-600 rounded-md transition-colors"
+        :aria-label="'Supprimer ' + internship.firstName + ' ' + internship.lastName"
+      >
+        <Trash2 class="w-4 h-4" />
+      </button>
+    </div>
+
     <!-- Card Header -->
     <div
       class="p-5 cursor-pointer rounded-t-xl flex-1"
       @click="emit('toggle', internship.id)"
     >
-      <div class="flex justify-between items-start gap-4">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center justify-between gap-2">
-            <h3
-              class="font-semibold text-lg transition-colors"
-              :class="[
-                expanded ? 'text-blue-600 whitespace-normal break-words' : 'text-slate-900 [@media(hover:hover)]:group-hover:text-blue-600 truncate'
-              ]"
-            >
-              {{ internship.firstName }}
-              {{ internship.lastName }}
-            </h3>
-            <span
-              :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full shrink-0 text-xs font-semibold whitespace-nowrap', statusConfig.classes]"
-            >
-              <span class="w-2 h-2 rounded-full bg-current shrink-0"></span>
-              {{ statusConfig.label }}
-            </span>
-          </div>
-          <div
-            class="flex items-center gap-2 text-sm text-slate-500 mt-2"
-            :class="{ 'sm:truncate': !expanded }"
-          >
-            <Mail class="w-3 h-3 shrink-0" />
-            <span
-              :class="[expanded ? 'whitespace-normal break-all' : 'truncate']"
-              >{{ internship.email }}</span
-            >
-          </div>
-        </div>
-
-        <!-- Desktop Hover Actions -->
-        <!-- Actions (Edit/Delete) only appear when hovering the card group. -->
-        <div
-          class="flex gap-1 transition-opacity shrink-0"
-          :class="[
-            expanded 
-              ? 'opacity-100 pointer-events-auto' 
-              : 'opacity-0 pointer-events-none [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto'
-          ]"
+      <h3
+        class="font-semibold text-lg transition-colors pr-28"
+        :class="[
+          expanded ? 'text-blue-600 whitespace-normal break-words' : 'text-slate-900 [@media(hover:hover)]:group-hover:text-blue-600 truncate'
+        ]"
+      >
+        {{ internship.firstName }}
+        {{ internship.lastName }}
+      </h3>
+      <div
+        class="flex items-center gap-2 text-sm text-slate-500 mt-2"
+        :class="{ 'sm:truncate': !expanded }"
+      >
+        <Mail class="w-3 h-3 shrink-0" />
+        <span :class="[expanded ? 'whitespace-normal break-all' : 'truncate']"
+          >{{ internship.email }}</span
         >
-          <button
-            @click.stop="handleCertificate"
-            class="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 transition-colors"
-            title="Aperçu du certificat"
-          >
-            <Printer class="w-4 h-4" />
-          </button>
-          <button
-            @click.stop="emit('edit', internship)"
-            class="p-1.5 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
-            :aria-label="'Modifier ' + internship.firstName + ' ' + internship.lastName"
-          >
-            <Pencil class="w-4 h-4" />
-          </button>
-          <button
-            @click.stop="emit('delete', internship.id)"
-            class="p-1.5 hover:bg-red-50 text-red-600 rounded-md transition-colors"
-            :aria-label="'Supprimer ' + internship.firstName + ' ' + internship.lastName"
-          >
-            <Trash2 class="w-4 h-4" />
-          </button>
-        </div>
       </div>
+      <span
+        :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full shrink-0 text-xs font-semibold whitespace-nowrap mt-3', statusConfig.classes]"
+      >
+        <span class="w-2 h-2 rounded-full bg-current shrink-0"></span>
+        {{ statusConfig.label }}
+      </span>
 
       <div class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">

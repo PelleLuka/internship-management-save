@@ -35,33 +35,55 @@ const handleCertificate = () =>
 
 <template>
   <div class="bg-white rounded-xl border border-slate-200 shadow-sm relative">
+    <!-- Top-right action buttons (always visible on mobile — no hover).
+         The title row reserves space via pr-32 so the name never slides
+         under the buttons. -->
+    <div class="absolute top-3 right-3 flex gap-2 z-10">
+      <button
+        @click.stop="handleCertificate"
+        class="p-2 bg-slate-50 text-slate-600 rounded-lg active:scale-95 transition-transform"
+        title="Aperçu du certificat"
+        :aria-label="'Aperçu du certificat'"
+      >
+        <Printer class="w-4 h-4" />
+      </button>
+      <button
+        @click.stop="emit('edit', internship)"
+        class="p-2 bg-blue-50 text-blue-600 rounded-lg active:scale-95 transition-transform"
+        :aria-label="'Modifier ' + internship.firstName"
+      >
+        <Pencil class="w-4 h-4" />
+      </button>
+      <button
+        @click.stop="emit('delete', internship.id)"
+        class="p-2 bg-red-50 text-red-600 rounded-lg active:scale-95 transition-transform"
+        :aria-label="'Supprimer ' + internship.firstName"
+      >
+        <Trash2 class="w-4 h-4" />
+      </button>
+    </div>
+
     <!-- Card Header -->
     <div
       class="p-4 cursor-pointer rounded-t-xl"
       @click="emit('toggle', internship.id)"
     >
-      <div class="flex justify-between items-start gap-4">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center justify-between gap-2">
-            <h3
-              class="font-semibold text-base transition-colors truncate"
-              :class="[expanded ? 'text-blue-600' : 'text-slate-900']"
-            >
-              {{ internship.firstName }}
-              {{ internship.lastName }}
-            </h3>
-            <span
-              :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full shrink-0 text-xs font-semibold whitespace-nowrap', statusConfig.classes]"
-            >
-              <span class="w-2 h-2 rounded-full bg-current shrink-0"></span>
-              {{ statusConfig.label }}
-            </span>
-          </div>
-          <div class="text-xs text-slate-500 mt-2 break-all">
-            {{ internship.email }}
-          </div>
-        </div>
+      <h3
+        class="font-semibold text-base transition-colors truncate pr-32"
+        :class="[expanded ? 'text-blue-600' : 'text-slate-900']"
+      >
+        {{ internship.firstName }}
+        {{ internship.lastName }}
+      </h3>
+      <div class="text-xs text-slate-500 mt-2 break-all">
+        {{ internship.email }}
       </div>
+      <span
+        :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full shrink-0 text-xs font-semibold whitespace-nowrap mt-2', statusConfig.classes]"
+      >
+        <span class="w-2 h-2 rounded-full bg-current shrink-0"></span>
+        {{ statusConfig.label }}
+      </span>
 
       <div class="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
         <div class="flex flex-col gap-1">
@@ -88,33 +110,6 @@ const handleCertificate = () =>
             <span>{{ formatDate(internship.endDate) }}</span>
           </div>
         </div>
-      </div>
-
-      <!-- Mobile Actions (Always Visible Below) -->
-      <!-- On mobile, hover interactions don't exist, so actions are placed in a dedicated row. -->
-      <div class="mt-3 flex justify-end gap-2">
-        <button
-          @click.stop="handleCertificate"
-          class="p-2 bg-slate-50 text-slate-600 rounded-lg active:scale-95 transition-transform"
-          title="Aperçu du certificat"
-          :aria-label="'Aperçu du certificat'"
-        >
-          <Printer class="w-4 h-4" />
-        </button>
-        <button
-          @click.stop="emit('edit', internship)"
-          class="p-2 bg-blue-50 text-blue-600 rounded-lg active:scale-95 transition-transform"
-          :aria-label="'Modifier ' + internship.firstName"
-        >
-          <Pencil class="w-4 h-4" />
-        </button>
-        <button
-          @click.stop="emit('delete', internship.id)"
-          class="p-2 bg-red-50 text-red-600 rounded-lg active:scale-95 transition-transform"
-          :aria-label="'Supprimer ' + internship.firstName"
-        >
-          <Trash2 class="w-4 h-4" />
-        </button>
       </div>
     </div>
 

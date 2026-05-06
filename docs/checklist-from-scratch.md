@@ -1526,14 +1526,21 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 - [ ] Créer `frontend/src/components/internships/card/InternshipCardDesktop.vue` :
   - Utilise `useInternshipStatus(internshipRef)` — **ne pas dupliquer** `parseLocalDate` ni le calcul de statut inline
   - `internshipRef = computed(() => props.internship)` — wrapper computed requis par le composable
+  - **Layout de la carte** (du haut vers le bas) :
+    1. Boutons Certificat / Modifier / Supprimer en `position: absolute top-4 right-4` (au-dessus du nom mais à droite). Visibles uniquement au hover desktop ou quand la carte est dépliée (`opacity-0 → opacity-100` + `pointer-events-*`).
+    2. Titre `Prénom Nom` avec `pr-28` pour réserver la place des boutons et éviter qu'un nom long se chevauche
+    3. Email avec icône `Mail`
+    4. **Badge statut** (En cours / Terminé / À venir) **sous l'email** avec `mt-3`
+    5. Séparateur + grille 2 colonnes Date début / Date fin
   - Badge statut : `upcoming` → `bg-amber-100 text-amber-600` | `active` → `bg-green-100 text-green-600` | `done` → `bg-blue-100 text-blue-600`
   - Section dépliée : liste des ateliers liés avec bouton retirer, bouton « Aperçu du certificat »
   - Utilise `<InternshipActivityPopover>` — **ne pas redupliquer** le bloc popover inline
-  - Actions Edit/Delete visibles au hover (desktop)
 
-- [ ] Créer `frontend/src/components/internships/card/InternshipCardMobile.vue` — même architecture que Desktop :
+- [ ] Créer `frontend/src/components/internships/card/InternshipCardMobile.vue` — même structure que Desktop :
   - Utilise `useInternshipStatus(internshipRef)` (même composable partagé)
-  - Layout colonne, actions toujours visibles (pas de hover sur mobile)
+  - Boutons en `absolute top-3 right-3` **toujours visibles** (pas de hover sur mobile), couleurs de fond plus prononcées (`bg-slate-50`, `bg-blue-50`, `bg-red-50`) pour le tap
+  - `pr-32` sur le titre (3 boutons plus grands qu'en desktop)
+  - Badge statut sous l'email, dates dessous
 - [ ] Créer `frontend/src/composables/useInternshipForm.js` — logique du formulaire stagiaire extraite du modal :
   - `formData`, `errors`, `isLoading`, `isEditing` (computed)
   - `watch(isOpen)` → charge les données existantes ou reset + focus sur le premier champ
