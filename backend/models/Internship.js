@@ -1,5 +1,15 @@
 import pool from '../config/db.js';
 
+const mapRow = (row) => ({
+  id: row.id,
+  personId: Number(row.person_id),
+  firstName: row.first_name,
+  lastName: row.last_name,
+  email: row.email,
+  startDate: row.start_date,
+  endDate: row.end_date,
+});
+
 const Internship = {
   /**
    * Retrieves all internship IDs from the database.
@@ -33,15 +43,7 @@ getAll: async (limit, offset, search = '') => {
     query += ' ORDER BY i.start_date DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
     const rows = await conn.query(query, params);
-    return rows.map(row => ({
-      id: row.id,
-      personId: Number(row.person_id),
-      firstName: row.first_name,
-      lastName: row.last_name,
-      email: row.email,
-      startDate: row.start_date,
-      endDate: row.end_date,
-    }));
+    return rows.map(mapRow);
   } finally {
     if (conn) conn.end();
   }
@@ -88,15 +90,7 @@ count: async (search = '') => {
         WHERE i.id = ?
       `, [id]);
       if (!rows[0]) return null;
-      return {
-        id: rows[0].id,
-        personId: Number(rows[0].person_id),
-        firstName: rows[0].first_name,
-        lastName: rows[0].last_name,
-        email: rows[0].email,
-        startDate: rows[0].start_date,
-        endDate: rows[0].end_date,
-      };
+      return mapRow(rows[0]);
     } finally {
       if (conn) conn.end();
     }
@@ -122,8 +116,6 @@ count: async (search = '') => {
       `;
       const rows = await conn.query(query, [internshipId]);
       return rows;
-    } catch (err) {
-      throw err;
     } finally {
       if (conn) conn.end();
     }
@@ -170,8 +162,6 @@ count: async (search = '') => {
         [internshipId, activityId]
       );
       return res.affectedRows >= 0; // Return true if successful (even if already existed)
-    } catch (err) {
-      throw err;
     } finally {
       if (conn) conn.end();
     }
@@ -193,8 +183,6 @@ count: async (search = '') => {
         [internshipId, activityId]
       );
       return res.affectedRows > 0;
-    } catch (err) {
-      throw err;
     } finally {
       if (conn) conn.end();
     }

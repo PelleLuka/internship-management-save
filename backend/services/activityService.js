@@ -1,4 +1,9 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Activity from '../models/Activity.js';
+
+const UPLOADS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '../uploads/activities');
 
 /**
  * Service: Activity
@@ -108,4 +113,31 @@ export const deleteActivity = async (id) => {
     if (existing.internshipCount > 0) throw new Error('HAS_LINKED_INTERNSHIPS');
 
     await Activity.delete(id);
+};
+
+export const uploadActivityDocument = async (id, filename) => {
+    const activity = await Activity.getById(id);
+    if (!activity) throw new Error('NOT_FOUND');
+    if (activity.documentUrl) {
+        const oldPath = path.join(UPLOADS_DIR, activity.documentUrl);
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    await Activity.update(id, { documentUrl: filename });
+    return filename;
+};
+
+export const getActivityDocumentPath = async (id) => {
+    const activity = await Activity.getById(id);
+    if (!activity?.documentUrl) throw new Error('NO_DOCUMENT');
+    const filePath = path.join(UPLOADS_DIR, activity.documentUrl);
+    if (!fs.existsSync(filePath)) throw new Error('FILE_NOT_FOUND');
+    return filePath;
+};
+
+export const deleteActivityDocument = async (id) => {
+    const activity = await Activity.getById(id);
+    if (!activity?.documentUrl) throw new Error('NO_DOCUMENT');
+    const filePath = path.join(UPLOADS_DIR, activity.documentUrl);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    await Activity.update(id, { documentUrl: null });
 };

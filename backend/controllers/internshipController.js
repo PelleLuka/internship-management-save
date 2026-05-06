@@ -1,5 +1,20 @@
-import * as internshipService from '../services/internshipService.js';
 import logger from '../config/logger.js';
+import * as internshipService from '../services/internshipService.js';
+
+const VALIDATION_ERRORS = {
+  MISSING_FIELDS:        [400, 'Missing required fields'],
+  NAME_TOO_LONG:         [400, 'First name and last name cannot exceed 80 characters'],
+  INVALID_DATE_FORMAT:   [400, 'Dates must be in YYYY-MM-DD format and must be valid dates'],
+  END_DATE_BEFORE_START: [400, 'End date must be after start date'],
+  EMAIL_TOO_LONG:        [400, 'Email cannot exceed 254 characters'],
+  INVALID_EMAIL:         [400, 'Invalid email format'],
+};
+
+const replyValidationError = (err, res) => {
+  const entry = VALIDATION_ERRORS[err.message];
+  if (entry) return res.status(entry[0]).json({ error: entry[1] });
+  return null;
+};
 
 /**
  * Controller: Get Internships (Paginated with Search)
@@ -62,24 +77,7 @@ export const createInternship = async (req, res) => {
         const newInternship = await internshipService.createInternship(req.body);
         res.status(201).json(newInternship);
     } catch (err) {
-        if (err.message === 'MISSING_FIELDS') {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-        if (err.message === 'NAME_TOO_LONG') {
-            return res.status(400).json({ error: 'First name and last name cannot exceed 80 characters' });
-        }
-        if (err.message === 'INVALID_DATE_FORMAT') {
-            return res.status(400).json({ error: 'Dates must be in YYYY-MM-DD format and must be valid dates' });
-        }
-        if (err.message === 'END_DATE_BEFORE_START') {
-            return res.status(400).json({ error: 'End date must be after start date' });
-        }
-        if (err.message === 'EMAIL_TOO_LONG') {
-            return res.status(400).json({ error: 'Email cannot exceed 254 characters' });
-        }
-        if (err.message === 'INVALID_EMAIL') {
-            return res.status(400).json({ error: 'Invalid email format' });
-        }
+        if (replyValidationError(err, res)) return;
         logger.error('Error creating internship:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -98,24 +96,7 @@ export const updateInternship = async (req, res) => {
         if (err.message === 'NOT_FOUND') {
             return res.status(404).json({ error: 'Internship not found' });
         }
-        if (err.message === 'MISSING_FIELDS') {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-        if (err.message === 'NAME_TOO_LONG') {
-            return res.status(400).json({ error: 'First name and last name cannot exceed 80 characters' });
-        }
-        if (err.message === 'INVALID_DATE_FORMAT') {
-             return res.status(400).json({ error: 'Dates must be in YYYY-MM-DD format and must be valid dates' });
-        }
-        if (err.message === 'END_DATE_BEFORE_START') {
-             return res.status(400).json({ error: 'End date must be after start date' });
-        }
-        if (err.message === 'EMAIL_TOO_LONG') {
-            return res.status(400).json({ error: 'Email cannot exceed 254 characters' });
-        }
-        if (err.message === 'INVALID_EMAIL') {
-            return res.status(400).json({ error: 'Invalid email format' });
-        }
+        if (replyValidationError(err, res)) return;
         logger.error('Error updating internship:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
