@@ -1427,41 +1427,69 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   };
   ```
 
-- [ ] Créer `frontend/src/composables/useInternships.js` — logique complète du dashboard :
-  - `internships`, `searchTerm`, `sortBy`, `expandedCards` (Set), `page`, `total`, `isLoading`
+- [ ] Créer `frontend/src/composables/useInternships.js` — pagination, recherche, chargement et suppression :
+  - `internships`, `searchTerm`, `page`, `total`, `isLoading`, `hasMore`
   - `loadInternships(reset)` — pagination infinie, reset sur changement de recherche
   - `loadNextBatch()` — charge la page suivante si `internships.length < total`
-  - `toggleCard(id)` — déplier/replier une carte, charge les ateliers liés au dépliage
   - `handleDelete(id)` — confirmation + reload
-  - `removeActivity(internshipId, activityId)` — confirmation + update local
-  - `sortedInternships` (computed) — tri client : `dateDesc` | `dateAsc` | `firstName` | `lastName`
-  - `groupedInternships` (computed) — structure `[[year, [[month, [interns...]]...]...]...]` avec `date-fns/locale/fr`
-  - `hasMore` (computed) — `internships.length < total`
+  - `watch(searchTerm, () => loadInternships(true))`
+
+- [ ] Créer `frontend/src/composables/useInternshipActivities.js` — gestion des ateliers liés et cartes dépliées :
+  - Prend `internships` ref en paramètre pour partager l'état réactif
+  - `expandedCards` (Set) — ensemble des IDs de cartes dépliées
+  - `toggleCard(id)` — déplier/replier une carte
+  - `removeActivity(internshipId, activityId)` — confirmation + update local dans `internships`
+  - `updateInternshipActivities(internshipId, newIds, allActivities)` — synchronise `activityIds` et `linkedActivities`
   > ⚠️ Mutation d'un `Set` ne déclenche pas de re-render : toujours remplacer la référence (`expandedCards.value = new Set(modified)`)
 
-- [ ] Créer `frontend/src/views/InternshipDashboard.vue` — switcher `<DashboardDesktop v-else>` / `<DashboardMobile v-if="isMobile">` via `useMediaQuery('(max-width: 890px)')`
-- [ ] Créer `frontend/src/views/internships/DashboardDesktop.vue` — layout desktop avec sidebar de navigation par année/mois
-- [ ] Créer `frontend/src/views/internships/DashboardMobile.vue` — layout mobile avec navigation horizontale
+- [ ] Créer `frontend/src/composables/useInternshipGrouping.js` — tri et regroupement par mois/année :
+  - Prend `internships` ref en paramètre
+  - `sortBy` — ref : `dateDesc` | `dateAsc` | `firstName` | `lastName`
+  - `sortedInternships` (computed) — tri client selon `sortBy`
+  - `groupedInternships` (computed) — structure `[[year, [[month, [interns...]]...]...]...]` avec `date-fns/locale/fr`
 
-- [ ] Créer `frontend/src/components/internships/card/InternshipCardDesktop.vue` :
+- [ ] Créer `frontend/src/composables/useInternshipStatus.js` — calcul de statut partagé entre les deux variantes de carte :
   - `parseLocalDate(str)` — **obligatoire** : `String(str).slice(0,10).split('-').map(Number)` → `new Date(y, m-1, d)`
     > Pourquoi `slice(0,10)` ? MariaDB retourne les dates en ISO datetime complet (`2026-05-04T00:00:00.000Z`). `new Date("2026-05-04")` parse comme UTC minuit → en UTC+2, c'est 02h00 local → les comparaisons de statut sont fausses. Le `slice` normalise les deux formats.
-  - Calcul du statut :
-    ```js
-    const status = computed(() => {
-      const today = new Date(); today.setHours(0,0,0,0);
-      const start = parseLocalDate(props.internship.startDate);
-      const end   = parseLocalDate(props.internship.endDate);
-      if (today < start) return 'upcoming';
-      if (today > end)   return 'done';
-      return 'active';
-    });
-    ```
-  - Badge statut : `upcoming` → `bg-amber-100 text-amber-600` | `active` → `bg-green-100 text-green-600` | `done` → `bg-blue-100 text-blue-600`
-  - Section dépliée : liste des ateliers liés avec bouton retirer, popover ajout d'atelier, bouton « Aperçu du certificat »
+  - `status` (computed) — compare `today` (avec `setHours(0,0,0,0)`) aux dates du stage
+  - `statusConfig` (computed) — `{ label, classes }` pour les 3 états : `upcoming` → amber, `active` → green, `done` → blue
+  - `formatDate(dateStr)` — `format(new Date(dateStr), 'dd MMM yyyy', { locale: fr })`
+  - Prend `internship` (computed ref) en paramètre
 
-- [ ] Créer `frontend/src/components/internships/card/InternshipCardMobile.vue` — même logique statut, layout colonne
-- [ ] Créer `frontend/src/components/internships/InternshipFormModal.vue` — formulaire create/edit (prénom, nom, email, dates), validation client (dates cohérentes, email format), émit `@saved` / `@close`
+- [ ] Créer `frontend/src/views/InternshipDashboard.vue` — switcher `<DashboardDesktop v-else>` / `<DashboardMobile v-if="isMobile">` via `useMediaQuery('(max-width: 890px)')`
+- [ ] Créer `frontend/src/views/internships/DashboardDesktop.vue` — layout desktop avec sidebar de navigation par année/mois :
+  - Importe et orchestre **3 composables séparés** : `useInternships()`, `useInternshipActivities(internships)`, `useInternshipGrouping(internships)`
+  - Sidebar `SidebarNavigation` avec tree année/mois via `groupedInternships`
+- [ ] Créer `frontend/src/views/internships/DashboardMobile.vue` — layout mobile avec navigation horizontale :
+  - Même 3 composables que Desktop
+  - Navigation horizontale scrollable par année/mois (collapsible via `isNavOpen`)
+
+- [ ] Créer `frontend/src/components/internships/card/InternshipActivityPopover.vue` — popover d'ajout d'activité (desktop) :
+  - Props : `activityMenuOpen`, `activities`, `internship`, `tempSelectedActivityIds`
+  - Emits : `close-activity-menu`, `toggle-activity-selection`, `save-activities`
+  - `availableActivities` (computed) — filtre les activités déjà liées via `internship.activityIds`
+  - Dropdown absolute z-50 + boutons Annuler/Ajouter (N)
+
+- [ ] Créer `frontend/src/components/internships/card/InternshipCardDesktop.vue` :
+  - Utilise `useInternshipStatus(internshipRef)` — **ne pas dupliquer** `parseLocalDate` ni le calcul de statut inline
+  - `internshipRef = computed(() => props.internship)` — wrapper computed requis par le composable
+  - Badge statut : `upcoming` → `bg-amber-100 text-amber-600` | `active` → `bg-green-100 text-green-600` | `done` → `bg-blue-100 text-blue-600`
+  - Section dépliée : liste des ateliers liés avec bouton retirer, bouton « Aperçu du certificat »
+  - Utilise `<InternshipActivityPopover>` — **ne pas redupliquer** le bloc popover inline
+  - Actions Edit/Delete visibles au hover (desktop)
+
+- [ ] Créer `frontend/src/components/internships/card/InternshipCardMobile.vue` — même architecture que Desktop :
+  - Utilise `useInternshipStatus(internshipRef)` (même composable partagé)
+  - Layout colonne, actions toujours visibles (pas de hover sur mobile)
+- [ ] Créer `frontend/src/composables/useInternshipForm.js` — logique du formulaire stagiaire extraite du modal :
+  - `formData`, `errors`, `isLoading`, `isEditing` (computed)
+  - `watch(isOpen)` → charge les données existantes ou reset + focus sur le premier champ
+  - `validate()` — 6 règles : prénom/nom (1-50 chars), email (regex), dates requises, fin ≥ début
+  - `handleSubmit(isEditing, internshipId, emit)` — appelle `createInternship` ou `updateInternship`
+  - Prend `props`, `emit`, `firstInputRef` en paramètres
+- [ ] Créer `frontend/src/components/internships/InternshipFormModal.vue` — orchestrateur du formulaire :
+  - Script ~12 lignes : instancie `useInternshipForm`, expose `handleSubmit`
+  - Template inchangé (5 champs + boutons Annuler/Créer)
 - [ ] Créer `frontend/src/components/internships/InternshipGroupList.vue` — rendu de la liste groupée par mois/année
 
 **Tests E2E — stagiaires :**
@@ -1480,16 +1508,59 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 ### Module ateliers
 
 - [ ] Créer `frontend/src/services/activityService.js` — `getActivityIds()`, `getActivityById(id)`, `createActivity(data)`, `updateActivity(id, data)`, `deleteActivity(id)`, `uploadDocument(id, file)`, `deleteDocument(id)`
-- [ ] Créer `frontend/src/composables/useActivities.js` — `activities` (liste enrichie), `load`, `create`, `update`, `remove`, `addCategory(actId, catId)`, `removeCategory(actId, catId)`, `uploadDoc`, `deleteDoc`
+- [ ] Créer `frontend/src/composables/useActivities.js` — gestion du menu d'ajout d'atelier depuis les cartes stagiaire :
+  - `activities`, `activityMenuOpenId`, `tempSelectedActivityIds`
+  - `loadActivities()`, `openActivityMenu(internship)`, `closeActivityMenu()`
+  - `toggleActivitySelection(activityId)`, `saveActivities(internshipId, internships, updateInternshipActivities)`
 
-- [ ] Créer `frontend/src/views/ActivityList.vue` — fonctionnalités :
-  - Cartes dépliables : clic sur le header déplie la carte (état local par ID)
-  - Mini-cartes statistiques dépliées : `internshipCount` + état document (Disponible / Aucun)
-  - Section catégories : badges colorés `bg-blue-50 text-blue-600`, supprimables au hover (groupe `group/cat`, bouton `×` avec `opacity-0 group-hover/cat:opacity-100`)
-  - Popover d'ajout de catégorie : fermeture sur Escape (`@keydown.escape`) et clic extérieur (overlay transparent `z-40`)
-  - Zone document : état vide avec drag & drop (`@dragover.prevent`, `@drop.prevent`) ou état rempli avec nom du fichier + bouton supprimer
+- [ ] Créer `frontend/src/composables/useActivityList.js` — données, CRUD et filtre pour la vue ActivityList :
+  - `activities`, `allCategories`, `searchQuery`, `isModalOpen`, `editingId`, `isSearchOpen`, `expandedId`
+  - `loadActivities()` — enrichit chaque activité avec ses catégories
+  - `handleDelete(id)`, `handleUploadDocument(id, file)`, `handleDeleteDocument(id)`
+  - `filteredActivities` (computed) — filtre sur le titre
 
-- [ ] Créer `frontend/src/components/activities/ActivityFormModal.vue` — formulaire titre + description, émit `@saved` / `@close`
+- [ ] Créer `frontend/src/composables/useCategoryMenu.js` — état et opérations du popover de catégorie :
+  - Prend `loadActivities` et `allCategories` en paramètres
+  - `categoryMenuActivityId`, `tempCategoryIds` (Set)
+  - `availableCategories(activity)`, `openCategoryMenu(activity)`, `closeCategoryMenu()`
+  - `toggleCategorySelection(catId)`, `saveCategories(activityId)`, `removeCategoryFromActivity(actId, catId)`
+  - `onMounted`/`onUnmounted` pour listener Escape
+  > ⚠️ `tempCategoryIds` est un `Set` — toujours remplacer la référence pour déclencher la réactivité Vue
+
+- [ ] Créer `frontend/src/components/activities/ActivityCategoryBadge.vue` — badge déletable d'une catégorie :
+  - Props : `category`
+  - Emits : `remove(categoryId)`
+  - Span avec nom + bouton X qui apparaît au hover (`group/cat` + `opacity-0 group-hover/cat:opacity-100`)
+  > ⚠️ Source unique de vérité — utilisé deux fois dans `ActivityCard.vue` (header + section dépliée)
+
+- [ ] Créer `frontend/src/components/activities/ActivityCategoryPopover.vue` — popover d'ajout de catégorie extrait de `ActivityCard` :
+  - Props : `categoryMenuOpen`, `availableCategories`, `tempCategoryIds`
+  - Emits : `close-category-menu`, `toggle-category-selection`, `save-categories`
+  - Overlay transparent (z-40) + dropdown (z-50) avec liste filtrée et boutons Annuler/Ajouter
+
+- [ ] Créer `frontend/src/components/activities/ActivityCard.vue` — rendu d'une seule carte atelier :
+  - Props : `activity`, `isExpanded`, `categoryMenuOpen`, `tempCategoryIds`, `availableCategories`
+  - Emits : `toggle`, `edit`, `delete`, `remove-category`, `open-category-menu`, `close-category-menu`, `toggle-category-selection`, `save-categories`, `upload-document`, `delete-document`
+  - Header cliquable, section dépliée (stats + badges catégories), zone document toujours visible
+  - Utilise `<ActivityCategoryBadge>` (header + section dépliée) et `<ActivityCategoryPopover>` — **ne pas redupliquer** ces blocs
+
+- [ ] Créer `frontend/src/views/ActivityList.vue` — orchestrateur léger (~110 lignes) :
+  - Importe `useActivityList()` + `useCategoryMenu(loadActivities, allCategories)`
+  - `toggleExpand(id)` local : ferme le menu de catégorie avant de changer de carte dépliée
+  - Rend une grille d'`ActivityCard` via `v-for filteredActivities`
+
+- [ ] Créer `frontend/src/composables/useActivityForm.js` — logique du formulaire atelier extraite du modal :
+  - `formData` (title, visible), `description`, `selectedCategoryIds`, `categories`, `errors`, `loading`
+  - `onMounted` → `loadCategories()` (charge la liste des catégories disponibles)
+  - `toggleCategory(id)` — ajoute/retire un id dans `selectedCategoryIds`
+  - `watch(activityId)` → charge ou reset le formulaire (`{ immediate: true }`)
+  - `validate()` — règle titre (3-100 chars)
+  - `handleSubmit()` — appelle `createActivity` ou `updateActivity` puis émet `success` + `close`
+  - Prend `props` + `emit` en paramètres
+
+- [ ] Créer `frontend/src/components/activities/ActivityFormModal.vue` — orchestrateur du formulaire atelier :
+  - Script ~10 lignes : instancie `useActivityForm`, expose le state et `handleSubmit`
+  - Template : titre + description (textarea) + chips catégories cliquables + boutons Annuler/Enregistrer
 
 **Tests E2E — ateliers :**
 - [ ] Écrire `sc07-activity-crud.spec.ts` — créer, modifier, supprimer un atelier
@@ -1503,12 +1574,14 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 - [ ] Créer `frontend/src/services/categoryService.js` — `getCategories()`, `createCategory(data)`, `updateCategory(id, data)`, `deleteCategory(id)`
 - [ ] Créer `frontend/src/composables/useCategories.js` — `categories`, `load`, `create`, `update`, `remove` (attrape le 409 et le remonte)
 
-- [ ] Créer `frontend/src/views/CategoryList.vue` — fonctionnalités :
-  - Grille responsive (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`)
+- [ ] Créer `frontend/src/components/categories/CategoryCard.vue` — rendu d'une carte catégorie :
+  - Props : `category`
+  - Emits : `edit`, `delete`
+  - Icône + boutons Modifier/Supprimer (désactivé si `activityCount > 0`) + compteur ateliers liés
+- [ ] Créer `frontend/src/views/CategoryList.vue` — orchestrateur de la liste :
+  - Grille responsive (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`) avec `<CategoryCard v-for>`
   - Barre de recherche : `searchQuery` ref + `filteredCategories` computed (`name` + `description`)
-  - Bouton supprimer désactivé si `activityCount > 0`
-  - Si `DELETE` retourne 409 : afficher `AppDialog` « Suppression impossible » avec le nom de la catégorie
-
+  - `AppDialog` « Suppression impossible » si la catégorie a des ateliers liés
 - [ ] Créer `frontend/src/components/categories/CategoryFormModal.vue` — formulaire nom + description optionnelle, émit `@saved` / `@close`
 
 **Tests E2E — catégories :**
