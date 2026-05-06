@@ -8,7 +8,11 @@ defineProps({
   tempCategoryIds: { type: Object, default: () => new Set() },
 });
 
-const emit = defineEmits(['close-category-menu', 'toggle-category-selection', 'save-categories']);
+const emit = defineEmits([
+  'close-category-menu',
+  'toggle-category-selection',
+  'save-categories',
+]);
 </script>
 
 <template>
@@ -17,10 +21,15 @@ const emit = defineEmits(['close-category-menu', 'toggle-category-selection', 's
     <div class="fixed inset-0 z-40" @click="emit('close-category-menu')" />
 
     <!-- Popover -->
-    <div class="absolute z-50 mt-2 w-72 bg-white rounded-lg shadow-xl border border-slate-200 p-4 left-0 top-full">
+    <div
+      class="absolute z-50 mt-2 w-72 bg-white rounded-lg shadow-xl border border-slate-200 p-4 left-0 top-full"
+    >
       <div class="flex justify-between items-center mb-3">
         <h4 class="font-semibold text-sm">Ajouter des catégories</h4>
-        <button @click.stop="emit('close-category-menu')" class="text-slate-400 hover:text-slate-600">
+        <button
+          @click.stop="emit('close-category-menu')"
+          class="text-slate-400 hover:text-slate-600"
+        >
           <X class="w-4 h-4" />
         </button>
       </div>
@@ -48,7 +57,11 @@ const emit = defineEmits(['close-category-menu', 'toggle-category-selection', 's
       </div>
 
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <AppButton variant="outline" size="sm" @click.stop="emit('close-category-menu')">
+        <AppButton
+          variant="outline"
+          size="sm"
+          @click.stop="emit('close-category-menu')"
+        >
           Annuler
         </AppButton>
         <AppButton

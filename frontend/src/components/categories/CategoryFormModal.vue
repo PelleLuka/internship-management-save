@@ -1,8 +1,8 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import AppButton from './AppButton.vue';
-import AppDialog from './AppDialog.vue';
-import AppInput from './AppInput.vue';
+import AppButton from '../AppButton.vue';
+import AppDialog from '../AppDialog.vue';
+import AppInput from '../AppInput.vue';
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
@@ -38,7 +38,9 @@ const submit = () => {
   <AppDialog :isOpen="isOpen" :title="title" @close="emit('close')">
     <form @submit.prevent="submit" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Nom *</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">
+          Nom *
+        </label>
         <AppInput
           v-model="form.name"
           placeholder="ex: Développement"
@@ -46,7 +48,9 @@ const submit = () => {
         />
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">
+          Description
+        </label>
         <textarea
           v-model="form.description"
           rows="3"
@@ -55,7 +59,9 @@ const submit = () => {
         />
       </div>
       <div class="flex justify-end gap-2 pt-2">
-        <AppButton type="button" variant="outline" @click="emit('close')">Annuler</AppButton>
+        <AppButton type="button" variant="outline" @click="emit('close')">
+          Annuler
+        </AppButton>
         <AppButton type="submit">
           {{ category ? 'Enregistrer' : 'Créer' }}
         </AppButton>

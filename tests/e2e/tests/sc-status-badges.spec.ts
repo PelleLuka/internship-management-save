@@ -1,10 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Internship Status Badges', () => {
   test('past internships show Terminé badge', async ({ page }) => {
     await page.goto('/internships');
     // Seed data has internships ending in 2024 — all past
-    await expect(page.locator('span').filter({ hasText: 'Terminé' }).first()).toBeVisible();
+    await expect(
+      page.locator('span').filter({ hasText: 'Terminé' }).first(),
+    ).toBeVisible();
   });
 
   test('future internship shows À venir badge', async ({ page }) => {
@@ -16,11 +18,13 @@ test.describe('Internship Status Badges', () => {
         email: 'future.test@example.com',
         startDate: '2027-01-01',
         endDate: '2027-01-02',
-      }
+      },
     });
     expect(res.ok()).toBeTruthy();
     await page.goto('/internships');
-    await expect(page.locator('span').filter({ hasText: 'À venir' }).first()).toBeVisible();
+    await expect(
+      page.locator('span').filter({ hasText: 'À venir' }).first(),
+    ).toBeVisible();
   });
 
   test('internship starting today shows En cours badge', async ({ page }) => {
@@ -35,18 +39,20 @@ test.describe('Internship Status Badges', () => {
         email: 'today.active@example.com',
         startDate: fmt(today),
         endDate: fmt(tomorrow),
-      }
+      },
     });
     expect(res.ok()).toBeTruthy();
     await page.goto('/internships');
-    await expect(page.locator('span').filter({ hasText: 'En cours' }).first()).toBeVisible();
+    await expect(
+      page.locator('span').filter({ hasText: 'En cours' }).first(),
+    ).toBeVisible();
   });
 
   test('status badge is visible on each card', async ({ page }) => {
     await page.goto('/internships');
     // At least one badge of any status type should be visible
     const badges = page.locator('span').filter({
-      hasText: /^(Terminé|En cours|À venir)$/
+      hasText: /^(Terminé|En cours|À venir)$/,
     });
     await expect(badges.first()).toBeVisible();
   });

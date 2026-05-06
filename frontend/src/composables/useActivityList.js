@@ -20,7 +20,9 @@ export function useActivityList() {
   const loadActivities = async () => {
     try {
       const idList = await getActivities();
-      activities.value = await Promise.all(idList.map((item) => getActivityById(item.id)));
+      activities.value = await Promise.all(
+        idList.map((item) => getActivityById(item.id)),
+      );
     } catch (error) {
       console.error('Failed to load activities', error);
     }
@@ -33,7 +35,9 @@ export function useActivityList() {
       await loadActivities();
     } catch (error) {
       if (error.response?.status === 409) {
-        alert('Impossible de supprimer cet atelier : il est lié à des stagiaires.');
+        alert(
+          'Impossible de supprimer cet atelier : il est lié à des stagiaires.',
+        );
       } else {
         console.error('Failed to delete activity', error);
         alert("Erreur lors de la suppression de l'activité.");
@@ -49,7 +53,9 @@ export function useActivityList() {
       await loadActivities();
     } catch (error) {
       console.error('Failed to upload document', error);
-      alert("Erreur lors de l'upload du document. Vérifiez le format et la taille (max 10 MB).");
+      alert(
+        "Erreur lors de l'upload du document. Vérifiez le format et la taille (max 10 MB).",
+      );
     }
   };
 

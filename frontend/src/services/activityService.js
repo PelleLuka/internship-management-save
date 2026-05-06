@@ -1,51 +1,51 @@
-import axios from "axios";
+import axios from 'axios';
 
 /**
  * Service: Get Activities
  * Retrieves list of IDs for all ACTIVE activities.
- * 
+ *
  * @returns {Promise<Array<{id: number}>>} Promise resolving to array of activity ID objects.
  */
 export const getActivities = async () => {
-    const res = await axios.get("/api/activities");
-    return res.data;
+  const res = await axios.get('/api/activities');
+  return res.data;
 };
 
 /**
  * Service: Get Activity By ID
  * Retrieves full details of a specific activity.
- * 
+ *
  * @param {number} id - The ID of the activity.
  * @returns {Promise<Object>} The activity details.
  */
 export const getActivityById = async (id) => {
-    const res = await axios.get(`/api/activities/${id}`);
-    return res.data;
+  const res = await axios.get(`/api/activities/${id}`);
+  return res.data;
 };
 
 /**
  * Service: Create Activity
  * Creates a new activity.
- * 
+ *
  * @param {Object} activity - The activity data (title, etc.).
  * @returns {Promise<Object>} The created activity object including new ID.
  */
 export const createActivity = async (activity) => {
-    const res = await axios.post("/api/activities", activity);
-    return res.data;
+  const res = await axios.post('/api/activities', activity);
+  return res.data;
 };
 
 /**
  * Service: Update Activity
  * Updates an activity (e.g. rename or toggle visibility).
- * 
+ *
  * @param {number} id - The ID of the activity.
  * @param {Object} activity - The updated data.
  * @returns {Promise<Object>} The updated activity object.
  */
 export const updateActivity = async (id, activity) => {
-    const res = await axios.patch(`/api/activities/${id}`, activity);
-    return res.data;
+  const res = await axios.patch(`/api/activities/${id}`, activity);
+  return res.data;
 };
 
 /**
@@ -56,7 +56,7 @@ export const updateActivity = async (id, activity) => {
  * @returns {Promise<void>}
  */
 export const deleteActivity = async (id) => {
-    await axios.delete(`/api/activities/${id}`);
+  await axios.delete(`/api/activities/${id}`);
 };
 
 /**
@@ -66,8 +66,8 @@ export const deleteActivity = async (id) => {
  * @returns {Promise<Array<{id, name, description, activityCount}>>}
  */
 export const getCategories = async () => {
-    const res = await axios.get('/api/categories');
-    return res.data;
+  const res = await axios.get('/api/categories');
+  return res.data;
 };
 
 /**
@@ -79,10 +79,10 @@ export const getCategories = async () => {
  * @returns {Promise<Object>}
  */
 export const uploadActivityDocument = async (activityId, file) => {
-    const form = new FormData();
-    form.append('document', file);
-    const res = await axios.post(`/api/activities/${activityId}/document`, form);
-    return res.data;
+  const form = new FormData();
+  form.append('document', file);
+  const res = await axios.post(`/api/activities/${activityId}/document`, form);
+  return res.data;
 };
 
 /**
@@ -93,7 +93,7 @@ export const uploadActivityDocument = async (activityId, file) => {
  * @returns {Promise<void>}
  */
 export const deleteActivityDocument = async (activityId) => {
-    await axios.delete(`/api/activities/${activityId}/document`);
+  await axios.delete(`/api/activities/${activityId}/document`);
 };
 
 /**
@@ -104,4 +104,4 @@ export const deleteActivityDocument = async (activityId) => {
  * @returns {string}
  */
 export const getActivityDocumentUrl = (activityId) =>
-    `/api/activities/${activityId}/document`;
+  `/api/activities/${activityId}/document`;

@@ -13,11 +13,19 @@ const props = defineProps({
 const emit = defineEmits(['close', 'success']);
 
 const firstInputRef = ref(null);
-const { formData, errors, isEditing, handleSubmit } = useInternshipForm(props, emit, firstInputRef);
+const { formData, errors, isEditing, handleSubmit } = useInternshipForm(
+  props,
+  emit,
+  firstInputRef,
+);
 </script>
 
 <template>
-  <AppDialog :isOpen="isOpen" :title="isEditing ? 'Modifier le stagiaire' : 'Nouveau stagiaire'" @close="$emit('close')">
+  <AppDialog
+    :isOpen="isOpen"
+    :title="isEditing ? 'Modifier le stagiaire' : 'Nouveau stagiaire'"
+    @close="$emit('close')"
+  >
     <form @submit.prevent="handleSubmit" class="space-y-4" novalidate>
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-2">
@@ -31,7 +39,13 @@ const { formData, errors, isEditing, handleSubmit } = useInternshipForm(props, e
             ref="firstInputRef"
             autofocus
           />
-          <p v-if="errors.firstName" class="text-sm text-red-600 mt-1" role="alert">{{ errors.firstName }}</p>
+          <p
+            v-if="errors.firstName"
+            class="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {{ errors.firstName }}
+          </p>
         </div>
         <div class="space-y-2">
           <label for="lastName" class="text-sm font-medium">Nom</label>
@@ -42,7 +56,13 @@ const { formData, errors, isEditing, handleSubmit } = useInternshipForm(props, e
             :class="errors.lastName ? 'border-red-500 focus-visible:ring-red-500' : ''"
             required
           />
-          <p v-if="errors.lastName" class="text-sm text-red-600 mt-1" role="alert">{{ errors.lastName }}</p>
+          <p
+            v-if="errors.lastName"
+            class="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {{ errors.lastName }}
+          </p>
         </div>
       </div>
 
@@ -56,12 +76,16 @@ const { formData, errors, isEditing, handleSubmit } = useInternshipForm(props, e
           :class="errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''"
           required
         />
-        <p v-if="errors.email" class="text-sm text-red-600 mt-1" role="alert">{{ errors.email }}</p>
+        <p v-if="errors.email" class="text-sm text-red-600 mt-1" role="alert">
+          {{ errors.email }}
+        </p>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-2">
-          <label for="startDate" class="text-sm font-medium">Date de début</label>
+          <label for="startDate" class="text-sm font-medium">
+            Date de début
+          </label>
           <AppInput
             id="startDate"
             type="date"
@@ -70,7 +94,13 @@ const { formData, errors, isEditing, handleSubmit } = useInternshipForm(props, e
             :class="errors.startDate ? 'border-red-500 focus-visible:ring-red-500' : ''"
             required
           />
-          <p v-if="errors.startDate" class="text-sm text-red-600 mt-1" role="alert">{{ errors.startDate }}</p>
+          <p
+            v-if="errors.startDate"
+            class="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {{ errors.startDate }}
+          </p>
         </div>
         <div class="space-y-2">
           <label for="endDate" class="text-sm font-medium">Date de fin</label>
@@ -82,7 +112,13 @@ const { formData, errors, isEditing, handleSubmit } = useInternshipForm(props, e
             :class="errors.endDate ? 'border-red-500 focus-visible:ring-red-500' : ''"
             required
           />
-          <p v-if="errors.endDate" class="text-sm text-red-600 mt-1" role="alert">{{ errors.endDate }}</p>
+          <p
+            v-if="errors.endDate"
+            class="text-sm text-red-600 mt-1"
+            role="alert"
+          >
+            {{ errors.endDate }}
+          </p>
         </div>
       </div>
 

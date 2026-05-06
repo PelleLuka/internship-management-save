@@ -9,10 +9,16 @@ const props = defineProps({
   tempSelectedActivityIds: { type: Set, default: () => new Set() },
 });
 
-const emit = defineEmits(['close-activity-menu', 'toggle-activity-selection', 'save-activities']);
+const emit = defineEmits([
+  'close-activity-menu',
+  'toggle-activity-selection',
+  'save-activities',
+]);
 
 const availableActivities = computed(() =>
-  props.activities.filter((a) => !(props.internship.activityIds || []).includes(a.id)),
+  props.activities.filter(
+    (a) => !(props.internship.activityIds || []).includes(a.id),
+  ),
 );
 </script>
 
@@ -23,10 +29,23 @@ const availableActivities = computed(() =>
   >
     <div class="flex justify-between items-center mb-3">
       <h4 class="font-semibold text-sm">Ajouter des activités</h4>
-      <button @click="emit('close-activity-menu')" class="text-slate-400 hover:text-slate-600">
+      <button
+        @click="emit('close-activity-menu')"
+        class="text-slate-400 hover:text-slate-600"
+      >
         <span class="sr-only">Fermer</span>
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </button>
     </div>
@@ -54,7 +73,13 @@ const availableActivities = computed(() =>
     </div>
 
     <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-      <AppButton variant="outline" size="sm" @click="emit('close-activity-menu')">Annuler</AppButton>
+      <AppButton
+        variant="outline"
+        size="sm"
+        @click="emit('close-activity-menu')"
+      >
+        Annuler
+      </AppButton>
       <AppButton
         size="sm"
         @click="emit('save-activities', internship.id)"

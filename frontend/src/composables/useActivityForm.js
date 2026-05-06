@@ -1,5 +1,10 @@
 import { onMounted, ref, watch } from 'vue';
-import { createActivity, getActivityById, getCategories, updateActivity } from '../services/activityService';
+import {
+  createActivity,
+  getActivityById,
+  getCategories,
+  updateActivity,
+} from '../services/activityService';
 
 const emptyForm = () => ({ title: '', visible: true });
 
@@ -74,7 +79,9 @@ export function useActivityForm(props, emit) {
       emit('close');
     } catch (error) {
       console.error('Failed to save activity', error);
-      const message = error.response?.data?.error || "Une erreur est survenue lors de l'enregistrement.";
+      const message =
+        error.response?.data?.error ||
+        "Une erreur est survenue lors de l'enregistrement.";
       alert(message);
     } finally {
       loading.value = false;

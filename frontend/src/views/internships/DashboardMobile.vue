@@ -1,16 +1,15 @@
 <script setup>
-import { onMounted, ref } from 'vue';
-import { useInternships } from '../../composables/useInternships';
-import { useInternshipActivities } from '../../composables/useInternshipActivities';
-import { useInternshipGrouping } from '../../composables/useInternshipGrouping';
-import { useActivities } from '../../composables/useActivities';
 import { Calendar } from 'lucide-vue-next';
-
+import { onMounted, ref } from 'vue';
 // Components
 import DashboardHeader from '../../components/internships/DashboardHeader.vue';
 import InternshipCard from '../../components/internships/InternshipCard.vue';
 import InternshipFormModal from '../../components/internships/InternshipFormModal.vue';
 import InternshipGroupList from '../../components/internships/InternshipGroupList.vue';
+import { useActivities } from '../../composables/useActivities';
+import { useInternshipActivities } from '../../composables/useInternshipActivities';
+import { useInternshipGrouping } from '../../composables/useInternshipGrouping';
+import { useInternships } from '../../composables/useInternships';
 
 // Init Composables
 const {
@@ -38,7 +37,7 @@ const {
   openActivityMenu,
   closeActivityMenu,
   toggleActivitySelection,
-  saveActivities
+  saveActivities,
 } = useActivities();
 
 // Local State
@@ -114,8 +113,13 @@ onMounted(() => {
             v-if="isNavOpen"
             class="w-full max-w-[calc(100vw-2rem)] mx-auto py-2 transition-all duration-300 animate-in slide-in-from-top-2"
           >
-            <div class="flex flex-nowrap gap-2 items-center overflow-x-auto scrollbar-hide pb-1">
-              <template v-for="[year, months] in groupedInternships" :key="year">
+            <div
+              class="flex flex-nowrap gap-2 items-center overflow-x-auto scrollbar-hide pb-1"
+            >
+              <template
+                v-for="[year, months] in groupedInternships"
+                :key="year"
+              >
                 <button
                   @click="toggleYear(year)"
                   class="shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap"
@@ -126,12 +130,16 @@ onMounted(() => {
                 ]"
                 >
                   {{ year }}
-                  <span class="ml-1 opacity-75 text-xs">({{ months.length }})</span>
+                  <span class="ml-1 opacity-75 text-xs"
+                    >({{ months.length }})</span
+                  >
                 </button>
 
                 <!-- Inline Expanded Months -->
                 <template v-if="expandedYear === year">
-                  <div class="flex flex-nowrap gap-2 items-center px-1 animate-in fade-in slide-in-from-left-4 duration-300">
+                  <div
+                    class="flex flex-nowrap gap-2 items-center px-1 animate-in fade-in slide-in-from-left-4 duration-300"
+                  >
                     <button
                       v-for="[month] in months"
                       :key="`${year}-${month}`"
@@ -152,16 +160,16 @@ onMounted(() => {
 
         <!-- Atomic Content List -->
         <div class="px-2">
-            <InternshipGroupList 
-                :groups="groupedInternships" 
-                :header-height="headerHeight"
-                :offset="88" 
-                @load-more="loadNextBatch"
-            >
+          <InternshipGroupList
+            :groups="groupedInternships"
+            :header-height="headerHeight"
+            :offset="88"
+            @load-more="loadNextBatch"
+          >
             <!-- Offset 88 = 64 (Navbar) + 24 (Padding) -->
 
             <template #item="{ item }">
-                <InternshipCard
+              <InternshipCard
                 :internship="item"
                 :expanded="expandedCards.has(item.id)"
                 :activities="activities"
@@ -175,13 +183,13 @@ onMounted(() => {
                 @close-activity-menu="closeActivityMenu"
                 @toggle-activity-selection="toggleActivitySelection"
                 @save-activities="handleSaveActivities"
-                />
+              />
             </template>
-            
+
             <template #empty>
-                <div v-if="internships.length === 0">Aucun stagiaire trouvé.</div>
+              <div v-if="internships.length === 0">Aucun stagiaire trouvé.</div>
             </template>
-            </InternshipGroupList>
+          </InternshipGroupList>
         </div>
       </div>
     </div>

@@ -1,11 +1,10 @@
-import mariadb from 'mariadb';
-import dotenv from 'dotenv';
-
 // Adjust path to find .env file in parent directory if needed, or default/current
 // The original index.js just did dotenv.config(), but migrate.js had a relative path.
 // Given index.js was in backend/, simple dotenv.config() works if run from backend/.
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
+import mariadb from 'mariadb';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,11 +13,11 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const pool = mariadb.createPool({
-    host: process.env.DB_HOST || 'database',
-    user: process.env.DB_USER || 'user',
-    password: process.env.DB_PASSWORD || 'password',
-    database: process.env.DB_NAME || 'internship_management',
-    connectionLimit: 5
+  host: process.env.DB_HOST || 'database',
+  user: process.env.DB_USER || 'user',
+  password: process.env.DB_PASSWORD || 'password',
+  database: process.env.DB_NAME || 'internship_management',
+  connectionLimit: 5,
 });
 
 export default pool;

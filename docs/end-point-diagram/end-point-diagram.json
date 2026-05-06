@@ -14,9 +14,7 @@
   "paths": {
     "/internships": {
       "get": {
-        "tags": [
-          "Internships"
-        ],
+        "tags": ["Internships"],
         "summary": "Retrieve the list of all internships",
         "description": "Get all internships registered in the system.",
         "responses": {
@@ -39,9 +37,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Internships"
-        ],
+        "tags": ["Internships"],
         "summary": "Create a new internship",
         "description": "Create a new internship record. The end date must be greater than or equal to the start date.",
         "requestBody": {
@@ -76,9 +72,7 @@
     },
     "/internships/{internshipId}": {
       "get": {
-        "tags": [
-          "Internships"
-        ],
+        "tags": ["Internships"],
         "summary": "Retrieve an internship",
         "description": "Get a single internship by its identifier, including its associated activities.",
         "parameters": [
@@ -106,9 +100,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Internships"
-        ],
+        "tags": ["Internships"],
         "summary": "Update an internship",
         "description": "Partially update an internship's details. The end date must be greater than or equal to the start date.",
         "parameters": [
@@ -181,9 +173,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Internships"
-        ],
+        "tags": ["Internships"],
         "summary": "Delete an internship",
         "description": "Delete an internship record. This will automatically remove all associations with activities (Cascade delete).",
         "parameters": [
@@ -206,9 +196,7 @@
     },
     "/internships/{internshipId}/activities/{activityId}": {
       "post": {
-        "tags": [
-          "Internships"
-        ],
+        "tags": ["Internships"],
         "summary": "Link an activity to an internship",
         "description": "Associate an existing activity with a specific internship. Creates a record in the `internship_activities` join table.",
         "parameters": [
@@ -239,9 +227,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Internships"
-        ],
+        "tags": ["Internships"],
         "summary": "Unlink an activity from an internship",
         "description": "Remove the association between an activity and an internship. Removes the record from the `internship_activities` join table. The activity itself is not deleted.",
         "parameters": [
@@ -267,9 +253,7 @@
     },
     "/activities": {
       "get": {
-        "tags": [
-          "Activities"
-        ],
+        "tags": ["Activities"],
         "summary": "Retrieve all activities",
         "description": "Get the list of all available activities.",
         "responses": {
@@ -292,9 +276,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Activities"
-        ],
+        "tags": ["Activities"],
         "summary": "Create a new activity",
         "description": "Create a new standalone activity.",
         "requestBody": {
@@ -329,9 +311,7 @@
     },
     "/activities/{activityId}": {
       "get": {
-        "tags": [
-          "Activities"
-        ],
+        "tags": ["Activities"],
         "summary": "Retrieve an activity",
         "description": "Get a specific activity by its identifier.",
         "parameters": [
@@ -359,9 +339,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Activities"
-        ],
+        "tags": ["Activities"],
         "summary": "Update an activity",
         "description": "Partially update an activity (e.g., change title or visibility). Use the `visible` field to hide an activity from the frontend if it cannot be deleted.",
         "parameters": [
@@ -557,11 +535,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "id",
-              "title",
-              "visible"
-            ],
+            "required": ["id", "title", "visible"],
             "properties": {
               "id": {
                 "type": "integer",
@@ -578,9 +552,7 @@
             "$ref": "#/components/schemas/ActivityBase"
           },
           {
-            "required": [
-              "title"
-            ]
+            "required": ["title"]
           }
         ]
       },

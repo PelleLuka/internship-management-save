@@ -1,9 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('SC14 - Navigation Clavier', () => {
-
   test('Parcours complet au clavier (Tabulation)', async ({ page }) => {
-    // Test refactored to verify functional focus (typing ability) 
+    // Test refactored to verify functional focus (typing ability)
     // rather than brittle browser focus state
     await page.goto('/');
 
@@ -17,7 +16,7 @@ test.describe('SC14 - Navigation Clavier', () => {
     await page.getByLabel('Prénom').click();
     // On remplit le Prénom
     await page.keyboard.type('Keyboard');
-    
+
     await page.keyboard.press('Tab'); // Vers Nom
     // Verify by typing (more robust than toBeFocused on headless)
     await page.keyboard.type('User');
@@ -26,8 +25,10 @@ test.describe('SC14 - Navigation Clavier', () => {
     await page.keyboard.press('Tab'); // Vers Email
     const uniqueId = Math.random().toString(36).substring(2, 8);
     await page.keyboard.type(`keyboard.${uniqueId}@test.com`);
-    await expect(page.getByLabel('Email')).toHaveValue(`keyboard.${uniqueId}@test.com`);
-    
+    await expect(page.getByLabel('Email')).toHaveValue(
+      `keyboard.${uniqueId}@test.com`,
+    );
+
     await page.keyboard.press('Tab'); // Vers Date Debut
     // Date inputs specifiques : Le comportement clavier (Tab) varie trop selon les navigateurs (Safari notamment)
     // On remplit directement pour éviter le flake, la navigation TAB ayant été validée sur les champs textes.
@@ -45,8 +46,7 @@ test.describe('SC14 - Navigation Clavier', () => {
     await expect(page.getByText('Keyboard User')).toBeVisible();
 
     // Nettoyage rapide via click (pas keyboard pour pas complexifier le teardown)
-    page.on('dialog', dialog => dialog.accept());
+    page.on('dialog', (dialog) => dialog.accept());
     await page.getByLabel('Supprimer Keyboard User').click();
   });
-
 });

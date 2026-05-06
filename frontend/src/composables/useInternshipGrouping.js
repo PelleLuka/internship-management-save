@@ -1,6 +1,6 @@
-import { computed, ref } from 'vue';
 import { format, getYear, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { computed, ref } from 'vue';
 
 export function useInternshipGrouping(internships) {
   const sortBy = ref('dateDesc');
@@ -9,10 +9,18 @@ export function useInternshipGrouping(internships) {
     const result = [...internships.value];
     result.sort((a, b) => {
       switch (sortBy.value) {
-        case 'firstName': return a.firstName.localeCompare(b.firstName);
-        case 'lastName':  return a.lastName.localeCompare(b.lastName);
-        case 'dateAsc':   return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-        default:          return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        case 'firstName':
+          return a.firstName.localeCompare(b.firstName);
+        case 'lastName':
+          return a.lastName.localeCompare(b.lastName);
+        case 'dateAsc':
+          return (
+            new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+          );
+        default:
+          return (
+            new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+          );
       }
     });
     return result;
@@ -37,15 +45,17 @@ export function useInternshipGrouping(internships) {
           : parseInt(b, 10) - parseInt(a, 10),
       )
       .map(([year, months]) => {
-        const sortedMonths = Object.entries(months).sort(([, internsA], [, internsB]) => {
-          if (!internsA[0]) return 1;
-          if (!internsB[0]) return -1;
-          const dateA = parseISO(internsA[0].startDate);
-          const dateB = parseISO(internsB[0].startDate);
-          return sortBy.value === 'dateAsc'
-            ? dateA.getTime() - dateB.getTime()
-            : dateB.getTime() - dateA.getTime();
-        });
+        const sortedMonths = Object.entries(months).sort(
+          ([, internsA], [, internsB]) => {
+            if (!internsA[0]) return 1;
+            if (!internsB[0]) return -1;
+            const dateA = parseISO(internsA[0].startDate);
+            const dateB = parseISO(internsB[0].startDate);
+            return sortBy.value === 'dateAsc'
+              ? dateA.getTime() - dateB.getTime()
+              : dateB.getTime() - dateA.getTime();
+          },
+        );
         return [year, sortedMonths];
       });
   });

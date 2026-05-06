@@ -1,7 +1,7 @@
+import { randomUUID } from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import multer from 'multer';
-import path from 'path';
-import { randomUUID } from 'crypto';
-import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -47,7 +47,8 @@ export const uploadCertificateTemplate = multer({
   storage: certificateStorage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const docxMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const docxMime =
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     if (file.mimetype === docxMime) return cb(null, true);
     cb(new Error('INVALID_FILE_TYPE'));
   },

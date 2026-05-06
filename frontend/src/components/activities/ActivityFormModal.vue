@@ -31,7 +31,9 @@ const {
   >
     <form @submit.prevent="handleSubmit" class="space-y-4" novalidate>
       <div class="space-y-2">
-        <label for="activityTitle" class="text-sm font-medium text-slate-700">Titre</label>
+        <label for="activityTitle" class="text-sm font-medium text-slate-700">
+          Titre
+        </label>
         <AppInput
           id="activityTitle"
           v-model="formData.title"
@@ -40,7 +42,9 @@ const {
           :class="errors.title ? 'border-red-500 focus-visible:ring-red-500' : ''"
           required
         />
-        <p v-if="errors.title" class="text-xs text-red-500">{{ errors.title }}</p>
+        <p v-if="errors.title" class="text-xs text-red-500">
+          {{ errors.title }}
+        </p>
       </div>
 
       <div class="space-y-2">
@@ -72,7 +76,10 @@ const {
           >
             {{ cat.name }}
           </button>
-          <span v-if="!categories.length" class="text-xs text-slate-400 self-center">
+          <span
+            v-if="!categories.length"
+            class="text-xs text-slate-400 self-center"
+          >
             Aucune catégorie — créez-en dans la page Catégories
           </span>
         </div>

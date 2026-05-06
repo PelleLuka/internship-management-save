@@ -1,9 +1,19 @@
 import { computed, nextTick, ref, watch } from 'vue';
-import { createInternship, getInternshipById, updateInternship } from '../services/internshipService';
+import {
+  createInternship,
+  getInternshipById,
+  updateInternship,
+} from '../services/internshipService';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const emptyForm = () => ({ firstName: '', lastName: '', email: '', startDate: '', endDate: '' });
+const emptyForm = () => ({
+  firstName: '',
+  lastName: '',
+  email: '',
+  startDate: '',
+  endDate: '',
+});
 
 export function useInternshipForm(props, emit, firstInputRef) {
   const formData = ref(emptyForm());
@@ -69,8 +79,13 @@ export function useInternshipForm(props, emit, firstInputRef) {
       errors.value.endDate = 'La date de fin est requise.';
       ok = false;
     }
-    if (f.startDate && f.endDate && new Date(f.startDate) > new Date(f.endDate)) {
-      errors.value.endDate = 'La date de fin doit être égale ou postérieure à la date de début.';
+    if (
+      f.startDate &&
+      f.endDate &&
+      new Date(f.startDate) > new Date(f.endDate)
+    ) {
+      errors.value.endDate =
+        'La date de fin doit être égale ou postérieure à la date de début.';
       ok = false;
     }
     return ok;
@@ -88,7 +103,9 @@ export function useInternshipForm(props, emit, firstInputRef) {
       emit('close');
     } catch (error) {
       console.error('Failed to save internship', error);
-      const message = error.response?.data?.error || "Une erreur est survenue lors de l'enregistrement.";
+      const message =
+        error.response?.data?.error ||
+        "Une erreur est survenue lors de l'enregistrement.";
       alert(message);
     }
   };

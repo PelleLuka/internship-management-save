@@ -10,7 +10,10 @@ import Activity from '../models/Activity.js';
 import Internship from '../models/Internship.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TEMPLATE_PATH = path.join(__dirname, '../uploads/certificate/template.docx');
+const TEMPLATE_PATH = path.join(
+  __dirname,
+  '../uploads/certificate/template.docx',
+);
 const carboneRender = promisify(carbone.render);
 
 const formatDate = (d) => format(new Date(d), 'dd MMMM yyyy', { locale: fr });
@@ -32,7 +35,9 @@ export const generateCertificate = async (internshipId) => {
   if (!isLibreOfficeAvailable()) throw new Error('NO_LIBREOFFICE');
 
   const activityRefs = await Internship.getActivities(internshipId);
-  const activities = await Promise.all(activityRefs.map((a) => Activity.getById(a.id)));
+  const activities = await Promise.all(
+    activityRefs.map((a) => Activity.getById(a.id)),
+  );
 
   const data = {
     prenom: internship.firstName,

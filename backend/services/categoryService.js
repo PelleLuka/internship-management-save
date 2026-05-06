@@ -10,13 +10,17 @@ export const getCategoryById = async (id) => {
 
 export const createCategory = async (data) => {
   if (!data.name?.trim()) throw new Error('VALIDATION_ERROR:name required');
-  return Category.create({ name: data.name.trim(), description: data.description?.trim() ?? null });
+  return Category.create({
+    name: data.name.trim(),
+    description: data.description?.trim() ?? null,
+  });
 };
 
 export const updateCategory = async (id, data) => {
   const cat = await Category.getById(id);
   if (!cat) throw new Error('NOT_FOUND');
-  if (data.name !== undefined && !data.name.trim()) throw new Error('VALIDATION_ERROR:name required');
+  if (data.name !== undefined && !data.name.trim())
+    throw new Error('VALIDATION_ERROR:name required');
   await Category.update(id, {
     name: data.name?.trim(),
     description: data.description?.trim(),

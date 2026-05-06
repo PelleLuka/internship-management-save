@@ -1,14 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('SC10 - Recherche Stagiaire', () => {
-
   const uniqueId = Date.now();
   const testUser = {
     firstName: `Searchable`,
     lastName: `User-${uniqueId}`,
     email: `search.${uniqueId}@test.com`,
     startDate: '2099-01-01',
-    endDate: '2100-01-01'
+    endDate: '2100-01-01',
   };
 
   test('Filtrer la liste des stagiaires', async ({ page }) => {
@@ -20,9 +19,14 @@ test.describe('SC10 - Recherche Stagiaire', () => {
     await page.getByLabel('Email').fill(testUser.email);
     await page.getByLabel('Date de début').fill(testUser.startDate);
     await page.getByLabel('Date de fin').fill(testUser.endDate);
-    
+
     // Attendre la création
-    const createResponse = page.waitForResponse(res => res.url().includes('/api/internships') && res.request().method() === 'POST' && res.status() === 201);
+    const createResponse = page.waitForResponse(
+      (res) =>
+        res.url().includes('/api/internships') &&
+        res.request().method() === 'POST' &&
+        res.status() === 201,
+    );
     await page.getByRole('button', { name: 'Créer' }).click();
     await createResponse;
 
@@ -31,14 +35,14 @@ test.describe('SC10 - Recherche Stagiaire', () => {
     await page.waitForTimeout(1000); // Wait for search to complete (watch trigger + API call)
     // Attente implicite que la liste se mette à jour (Vue reactivity)
     await expect(page.getByText(testUser.lastName)).toBeVisible();
-    
+
     // Vérifier que d'autres éléments ne sont PAS visibles (si possible, mais difficile sans connaître le dataset)
     // On peut vérifier le compteur si disponible, ou s'assurer qu'au moins 1 élément est là.
 
     // 3. Recherche Négative (Aucun résultat)
-    const impossibleName = "XylophoneZeroResultXYZ";
+    const impossibleName = 'XylophoneZeroResultXYZ';
     await page.getByPlaceholder('Rechercher...').fill(impossibleName);
-    
+
     // Il ne doit plus y avoir de cartes
     // Le code Vue n'affiche pas de message "Aucun résultat", donc on vérifie juste que notre user est caché
     await expect(page.getByText(testUser.lastName)).toBeHidden();
@@ -50,8 +54,9 @@ test.describe('SC10 - Recherche Stagiaire', () => {
     // await expect(page.getByText(testUser.lastName)).toBeVisible();
 
     // Nettoyage (Suppression)
-    page.on('dialog', dialog => dialog.accept());
-    await page.getByLabel(`Supprimer ${testUser.firstName} ${testUser.lastName}`).click();
+    page.on('dialog', (dialog) => dialog.accept());
+    await page
+      .getByLabel(`Supprimer ${testUser.firstName} ${testUser.lastName}`)
+      .click();
   });
-
 });

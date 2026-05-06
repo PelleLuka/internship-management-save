@@ -1,5 +1,8 @@
 import { ref } from 'vue';
-import { getInternshipActivities, removeActivityFromInternship } from '../services/internshipService';
+import {
+  getInternshipActivities,
+  removeActivityFromInternship,
+} from '../services/internshipService';
 
 export function useInternshipActivities(internships) {
   const expandedCards = ref(new Set());
@@ -9,7 +12,11 @@ export function useInternshipActivities(internships) {
       const linked = await getInternshipActivities(id);
       internships.value = internships.value.map((i) =>
         i.id === id
-          ? { ...i, linkedActivities: linked, activityIds: linked.map((a) => a.id) }
+          ? {
+              ...i,
+              linkedActivities: linked,
+              activityIds: linked.map((a) => a.id),
+            }
           : i,
       );
     } catch (e) {

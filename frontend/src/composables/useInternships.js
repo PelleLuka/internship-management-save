@@ -1,5 +1,8 @@
 import { computed, ref, watch } from 'vue';
-import { deleteInternship, getInternships } from '../services/internshipService';
+import {
+  deleteInternship,
+  getInternships,
+} from '../services/internshipService';
 
 export function useInternships() {
   const internships = ref([]);
@@ -17,7 +20,11 @@ export function useInternships() {
         page.value = 1;
         internships.value = [];
       }
-      const { data, total: totalCount } = await getInternships(page.value, limit.value, searchTerm.value);
+      const { data, total: totalCount } = await getInternships(
+        page.value,
+        limit.value,
+        searchTerm.value,
+      );
       internships.value = reset ? data : [...internships.value, ...data];
       total.value = totalCount;
     } catch (error) {

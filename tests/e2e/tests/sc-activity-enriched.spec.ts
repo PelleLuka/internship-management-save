@@ -61,7 +61,9 @@ test.describe('Enriched Activity Form', () => {
     // Click to expand
     await card.locator('div').first().click();
     // Card/Stat: internship count label visible
-    await expect(card.locator('text=Stages utilisant cet atelier')).toBeVisible();
+    await expect(
+      card.locator('text=Stages utilisant cet atelier'),
+    ).toBeVisible();
     // Card/StatDoc: document status label visible
     await expect(card.locator('text=Document').first()).toBeVisible();
   });

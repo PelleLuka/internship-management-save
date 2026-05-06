@@ -1,17 +1,16 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 // import morgan from 'morgan'; // Removed Morgan
 import logger from './config/logger.js';
 import requestLogger from './middleware/requestLogger.js'; // Import Middleware
-import healthRoutes from './routes/healthRoutes.js';
-import internshipRoutes from './routes/internshipRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import certificateRoutes from './routes/certificateRoutes.js';
-
-import path from 'path';
-import { fileURLToPath } from 'url';
+import healthRoutes from './routes/healthRoutes.js';
+import internshipRoutes from './routes/internshipRoutes.js';
 
 /**
  * Entry Point: Backend Server
@@ -49,11 +48,11 @@ app.use('/api/certificate', certificateRoutes);
 
 // Optional: Global error handler
 app.use((err, _req, res, _next) => {
-    logger.error(err.stack); // Use logger.error
-    res.status(500).json({ status: 'error', error: 'Something went wrong!' });
+  logger.error(err.stack); // Use logger.error
+  res.status(500).json({ status: 'error', error: 'Something went wrong!' });
 });
 
 // Start Server
 app.listen(PORT, () => {
-    logger.info(`Backend server listening at http://localhost:${PORT}`);
+  logger.info(`Backend server listening at http://localhost:${PORT}`);
 });

@@ -19,9 +19,10 @@ const searchQuery = ref('');
 const filteredCategories = computed(() => {
   if (!searchQuery.value) return categories.value;
   const q = searchQuery.value.toLowerCase();
-  return categories.value.filter(c =>
-    c.name.toLowerCase().includes(q) ||
-    (c.description ?? '').toLowerCase().includes(q),
+  return categories.value.filter(
+    (c) =>
+      c.name.toLowerCase().includes(q) ||
+      (c.description ?? '').toLowerCase().includes(q),
   );
 });
 
@@ -58,12 +59,20 @@ const handleDelete = async (cat) => {
 
 <template>
   <div class="w-full max-w-7xl mx-auto px-4 pb-12">
-    <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm sticky top-8 z-40 mb-8">
+    <div
+      class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm sticky top-8 z-40 mb-8"
+    >
       <h1 class="text-2xl font-bold text-slate-900">Catégories</h1>
       <div class="flex gap-3 w-full sm:w-auto">
         <div class="relative w-full sm:w-56">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <AppInput v-model="searchQuery" class="pl-9" placeholder="Rechercher..." />
+          <Search
+            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+          />
+          <AppInput
+            v-model="searchQuery"
+            class="pl-9"
+            placeholder="Rechercher..."
+          />
         </div>
         <AppButton @click="openCreate">
           <Plus class="w-4 h-4 mr-2" />
@@ -78,11 +87,15 @@ const handleDelete = async (cat) => {
       @close="cannotDeleteTarget = null"
     >
       <p class="text-slate-600 text-sm">
-        La catégorie <strong class="text-slate-900">« {{ cannotDeleteTarget?.name }} »</strong>
+        La catégorie
+        <strong class="text-slate-900"
+          >« {{ cannotDeleteTarget?.name }}»</strong
+        >
         ne peut pas être supprimée car des ateliers lui sont associés.
       </p>
       <p class="text-slate-500 text-sm mt-2">
-        Retirez d'abord cette catégorie de tous les ateliers concernés, puis réessayez.
+        Retirez d'abord cette catégorie de tous les ateliers concernés, puis
+        réessayez.
       </p>
       <div class="flex justify-end mt-4">
         <AppButton @click="cannotDeleteTarget = null">Fermer</AppButton>
@@ -90,8 +103,13 @@ const handleDelete = async (cat) => {
     </AppDialog>
 
     <!-- Empty state -->
-    <div v-if="!filteredCategories.length" class="text-center py-12 bg-white rounded-lg border border-dashed border-slate-300">
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4">
+    <div
+      v-if="!filteredCategories.length"
+      class="text-center py-12 bg-white rounded-lg border border-dashed border-slate-300"
+    >
+      <div
+        class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4"
+      >
         <Tag class="w-6 h-6 text-blue-500" />
       </div>
       <h3 class="text-lg font-medium text-slate-900">Aucune catégorie</h3>

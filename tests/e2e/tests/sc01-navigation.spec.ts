@@ -1,7 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('SC01 - Navigation & Affichage', () => {
-
   test('Redirection Accueil vers Internships', async ({ page }) => {
     // 1. Ouvrir la page d'accueil
     await page.goto('/');
@@ -11,7 +10,9 @@ test.describe('SC01 - Navigation & Affichage', () => {
     await expect(page).toHaveURL(/.*\/internships/);
 
     // 3. Vérifier le titre de la page pour être sûr qu'on est au bon endroit
-    await expect(page.getByRole('heading', { name: 'Stagiaires' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Stagiaires' }),
+    ).toBeVisible();
   });
 
   test('Navigation Menu Latéral', async ({ page }) => {
@@ -28,11 +29,13 @@ test.describe('SC01 - Navigation & Affichage', () => {
 
     // 2. Vérifier l'URL et le titre
     await expect(page).toHaveURL(/.*\/activities/);
-    
+
     // Le titre n'est pas visible sur mobile
     // On vérifie si le bouton menu est visible (donc mobile)
-    if (!await menuButton.isVisible()) {
-        await expect(page.getByRole('heading', { name: 'Activités' })).toBeVisible();
+    if (!(await menuButton.isVisible())) {
+      await expect(
+        page.getByRole('heading', { name: 'Activités' }),
+      ).toBeVisible();
     }
 
     // 3. Revenir sur "Stagiaires"
@@ -40,10 +43,11 @@ test.describe('SC01 - Navigation & Affichage', () => {
       await menuButton.click();
     }
     await page.getByRole('link', { name: 'Stagiaires' }).click();
-    
+
     // 4. Vérifier le retour
     await expect(page).toHaveURL(/.*\/internships/);
-    await expect(page.getByRole('heading', { name: 'Stagiaires' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Stagiaires' }),
+    ).toBeVisible();
   });
-
 });

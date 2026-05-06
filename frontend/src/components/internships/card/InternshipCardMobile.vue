@@ -1,7 +1,7 @@
 <script setup>
+import { Calendar, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Calendar, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { useInternshipStatus } from '../../../composables/useInternshipStatus';
 import AppButton from '../../AppButton.vue';
 
@@ -10,13 +10,18 @@ const props = defineProps({
   expanded: { type: Boolean, default: false },
   activities: { type: Array, default: () => [] },
   activityMenuOpen: { type: Boolean, default: false },
-  tempSelectedActivityIds: { type: Set, default: () => new Set() }
+  tempSelectedActivityIds: { type: Set, default: () => new Set() },
 });
 
 const emit = defineEmits([
-  'toggle', 'edit', 'delete', 'remove-activity', 
-  'open-activity-menu', 'close-activity-menu', 
-  'toggle-activity-selection', 'save-activities'
+  'toggle',
+  'edit',
+  'delete',
+  'remove-activity',
+  'open-activity-menu',
+  'close-activity-menu',
+  'toggle-activity-selection',
+  'save-activities',
 ]);
 
 const router = useRouter();
@@ -24,7 +29,8 @@ const router = useRouter();
 const internshipRef = computed(() => props.internship);
 const { statusConfig, formatDate } = useInternshipStatus(internshipRef);
 
-const handleCertificate = () => router.push(`/certificate/${props.internship.id}`);
+const handleCertificate = () =>
+  router.push(`/certificate/${props.internship.id}`);
 </script>
 
 <template>
@@ -41,9 +47,12 @@ const handleCertificate = () => router.push(`/certificate/${props.internship.id}
               class="font-semibold text-base transition-colors truncate"
               :class="[expanded ? 'text-blue-600' : 'text-slate-900']"
             >
-              {{ internship.firstName }} {{ internship.lastName }}
+              {{ internship.firstName }}
+              {{ internship.lastName }}
             </h3>
-            <span :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full shrink-0 text-xs font-semibold whitespace-nowrap', statusConfig.classes]">
+            <span
+              :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full shrink-0 text-xs font-semibold whitespace-nowrap', statusConfig.classes]"
+            >
               <span class="w-2 h-2 rounded-full bg-current shrink-0"></span>
               {{ statusConfig.label }}
             </span>
@@ -56,15 +65,25 @@ const handleCertificate = () => router.push(`/certificate/${props.internship.id}
 
       <div class="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
         <div class="flex flex-col gap-1">
-          <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Début</span>
-          <div class="flex items-center gap-1 text-xs font-medium text-slate-600">
+          <span
+            class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold"
+            >Début</span
+          >
+          <div
+            class="flex items-center gap-1 text-xs font-medium text-slate-600"
+          >
             <Calendar class="w-3 h-3 text-slate-400" />
             <span>{{ formatDate(internship.startDate) }}</span>
           </div>
         </div>
         <div class="flex flex-col gap-1">
-          <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Fin</span>
-          <div class="flex items-center gap-1 text-xs font-medium text-slate-600">
+          <span
+            class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold"
+            >Fin</span
+          >
+          <div
+            class="flex items-center gap-1 text-xs font-medium text-slate-600"
+          >
             <Calendar class="w-3 h-3 text-slate-400" />
             <span>{{ formatDate(internship.endDate) }}</span>
           </div>
@@ -106,7 +125,10 @@ const handleCertificate = () => router.push(`/certificate/${props.internship.id}
     >
       <div class="space-y-3 border-t border-slate-100 pt-3">
         <div>
-          <span class="text-slate-500 block text-xs mb-2 font-bold uppercase tracking-wider">Activités</span>
+          <span
+            class="text-slate-500 block text-xs mb-2 font-bold uppercase tracking-wider"
+            >Activités</span
+          >
 
           <div class="flex flex-wrap gap-1 mb-3">
             <span
@@ -148,7 +170,7 @@ const handleCertificate = () => router.push(`/certificate/${props.internship.id}
               @click.stop
             >
               <h4 class="font-bold text-lg mb-4">Ajouter des activités</h4>
-              
+
               <div class="flex-1 overflow-y-auto mb-4">
                 <div class="flex flex-wrap gap-2">
                   <button
@@ -166,8 +188,17 @@ const handleCertificate = () => router.push(`/certificate/${props.internship.id}
               </div>
 
               <div class="flex gap-3 pt-4 border-t border-slate-100 mt-auto">
-                <AppButton class="flex-1" variant="outline" @click="emit('close-activity-menu')">Fermer</AppButton>
-                <AppButton class="flex-1" @click="emit('save-activities', internship.id)">
+                <AppButton
+                  class="flex-1"
+                  variant="outline"
+                  @click="emit('close-activity-menu')"
+                >
+                  Fermer
+                </AppButton>
+                <AppButton
+                  class="flex-1"
+                  @click="emit('save-activities', internship.id)"
+                >
                   Ajouter ({{ tempSelectedActivityIds.size }})
                 </AppButton>
               </div>

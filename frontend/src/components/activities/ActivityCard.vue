@@ -38,12 +38,17 @@ const emit = defineEmits([
     :class="isExpanded ? 'border-blue-200 shadow-md' : 'border-slate-200 shadow-sm hover:shadow-md'"
   >
     <!-- Clickable header: icon, title, categories, description -->
-    <div @click="emit('toggle', activity.id)" class="p-5 cursor-pointer flex flex-col">
+    <div
+      @click="emit('toggle', activity.id)"
+      class="p-5 cursor-pointer flex flex-col"
+    >
       <div class="flex justify-between items-start gap-4 mb-3">
         <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
           <ActivityIcon class="w-5 h-5" />
         </div>
-        <div class="flex gap-1 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+        <div
+          class="flex gap-1 transition-opacity lg:opacity-0 lg:group-hover:opacity-100"
+        >
           <button
             @click.stop="emit('edit', activity.id)"
             class="p-2 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
@@ -69,7 +74,10 @@ const emit = defineEmits([
         </div>
       </div>
 
-      <h3 class="font-semibold text-slate-900 text-base break-words" :title="activity.title">
+      <h3
+        class="font-semibold text-slate-900 text-base break-words"
+        :title="activity.title"
+      >
         {{ activity.title }}
       </h3>
 
@@ -87,8 +95,15 @@ const emit = defineEmits([
       </div>
 
       <!-- Description -->
-      <div v-if="activity.description" class="mt-3 pt-3 border-t border-slate-100">
-        <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Description</p>
+      <div
+        v-if="activity.description"
+        class="mt-3 pt-3 border-t border-slate-100"
+      >
+        <p
+          class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1"
+        >
+          Description
+        </p>
         <p
           class="text-sm text-slate-500 leading-relaxed"
           :class="isExpanded ? '' : 'line-clamp-2'"
@@ -106,14 +121,25 @@ const emit = defineEmits([
       <div class="pt-3 border-t border-slate-100">
         <!-- Stats -->
         <div class="grid grid-cols-2 gap-3 mb-4">
-          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-1">
-            <span class="text-xs font-medium text-slate-500">Stages utilisant cet atelier</span>
-            <span class="text-2xl font-bold text-blue-600">{{ activity.internshipCount }}</span>
+          <div
+            class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-1"
+          >
+            <span class="text-xs font-medium text-slate-500"
+              >Stages utilisant cet atelier</span
+            >
+            <span class="text-2xl font-bold text-blue-600"
+              >{{ activity.internshipCount }}</span
+            >
           </div>
-          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-2">
+          <div
+            class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-2"
+          >
             <span class="text-xs font-medium text-slate-500">Document</span>
             <div class="flex items-center gap-2">
-              <CircleCheck v-if="activity.documentUrl" class="w-4 h-4 text-green-600 shrink-0" />
+              <CircleCheck
+                v-if="activity.documentUrl"
+                class="w-4 h-4 text-green-600 shrink-0"
+              />
               <CircleX v-else class="w-4 h-4 text-slate-400 shrink-0" />
               <span
                 class="text-sm font-medium"
@@ -125,7 +151,10 @@ const emit = defineEmits([
           </div>
         </div>
 
-        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2 block">Catégories</span>
+        <span
+          class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2 block"
+          >Catégories</span
+        >
 
         <!-- Assigned category badges -->
         <div class="flex flex-wrap gap-1 mb-3 min-h-[28px]">
@@ -135,7 +164,10 @@ const emit = defineEmits([
             :category="cat"
             @remove="(catId) => emit('remove-category', activity, catId)"
           />
-          <span v-if="!activity.categories?.length" class="text-xs text-slate-400 italic">
+          <span
+            v-if="!activity.categories?.length"
+            class="text-xs text-slate-400 italic"
+          >
             Aucune catégorie
           </span>
         </div>
@@ -163,12 +195,19 @@ const emit = defineEmits([
 
     <!-- Documentation — always visible -->
     <div class="mx-5 mb-5 mt-3 pt-3 border-t border-slate-100">
-      <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2">Documentation</p>
+      <p
+        class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2"
+      >
+        Documentation
+      </p>
 
       <template v-if="activity.documentUrl">
-        <div class="bg-green-50 border border-green-200 rounded-md px-3 py-2 flex items-center justify-between gap-2 mb-2">
+        <div
+          class="bg-green-50 border border-green-200 rounded-md px-3 py-2 flex items-center justify-between gap-2 mb-2"
+        >
           <span class="text-xs text-green-800 font-medium truncate">
-            📄 {{ activity.documentUrl.split('-').slice(5).join('-') || activity.documentUrl }}
+            📄
+            {{ activity.documentUrl.split('-').slice(5).join('-') || activity.documentUrl }}
           </span>
           <div class="flex gap-1 shrink-0">
             <a
@@ -194,9 +233,15 @@ const emit = defineEmits([
             </button>
           </div>
         </div>
-        <label class="block border border-dashed border-slate-300 rounded-md p-2 text-center text-xs text-slate-400 cursor-pointer hover:border-slate-400 transition-colors">
+        <label
+          class="block border border-dashed border-slate-300 rounded-md p-2 text-center text-xs text-slate-400 cursor-pointer hover:border-slate-400 transition-colors"
+        >
           🔄 Remplacer
-          <input type="file" class="hidden" @change="(e) => emit('upload-document', activity.id, e)" />
+          <input
+            type="file"
+            class="hidden"
+            @change="(e) => emit('upload-document', activity.id, e)"
+          />
         </label>
       </template>
 
@@ -204,9 +249,15 @@ const emit = defineEmits([
         v-else
         class="block border-2 border-dashed border-slate-200 rounded-md p-3 text-center text-xs text-slate-400 cursor-pointer hover:border-slate-300 transition-colors"
       >
-        📎 Glisser un fichier ou <span class="text-blue-500 underline">parcourir</span><br />
+        📎 Glisser un fichier ou
+        <span class="text-blue-500 underline">parcourir</span>
+        <br />
         <span class="text-[10px]">PDF, DOCX, ODT… · max 10 MB</span>
-        <input type="file" class="hidden" @change="(e) => emit('upload-document', activity.id, e)" />
+        <input
+          type="file"
+          class="hidden"
+          @change="(e) => emit('upload-document', activity.id, e)"
+        />
       </label>
     </div>
   </div>

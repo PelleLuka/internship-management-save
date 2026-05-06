@@ -1,5 +1,14 @@
 import express from 'express';
-import { getActivityIds, getActivityById, updateActivity, createActivity, deleteActivity, uploadDocument, downloadDocument, deleteDocument } from '../controllers/activityController.js';
+import {
+  createActivity,
+  deleteActivity,
+  deleteDocument,
+  downloadDocument,
+  getActivityById,
+  getActivityIds,
+  updateActivity,
+  uploadDocument,
+} from '../controllers/activityController.js';
 import { uploadActivityDocument } from '../middleware/upload.js';
 
 const router = express.Router();
@@ -20,12 +29,16 @@ router.patch('/:id', updateActivity);
 router.delete('/:id', deleteActivity);
 
 // Document endpoints
-router.post('/:id/document', (req, res, next) => {
-  uploadActivityDocument(req, res, (err) => {
-    if (err) return res.status(400).json({ error: err.message });
-    next();
-  });
-}, uploadDocument);
+router.post(
+  '/:id/document',
+  (req, res, next) => {
+    uploadActivityDocument(req, res, (err) => {
+      if (err) return res.status(400).json({ error: err.message });
+      next();
+    });
+  },
+  uploadDocument,
+);
 router.get('/:id/document', downloadDocument);
 router.delete('/:id/document', deleteDocument);
 

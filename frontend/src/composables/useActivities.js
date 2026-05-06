@@ -8,7 +8,7 @@ import { addActivityToInternship } from '../services/internshipService';
  */
 export function useActivities() {
   const activities = ref([]);
-  
+
   // State for the Activity Selection Menu (Popover/Modal)
   const activityMenuOpenId = ref(null); // ID of the internship whose menu is currently open
   const tempSelectedActivityIds = ref(new Set()); // Staging area for selections before saving
@@ -20,7 +20,7 @@ export function useActivities() {
         getActivityById(item.id).catch((e) => {
           console.warn(`Failed to load activity ${item.id}`, e);
           return null;
-        })
+        }),
       );
       const results = await Promise.all(promises);
       activities.value = results.filter((a) => a !== null);
@@ -39,7 +39,7 @@ export function useActivities() {
   // === MENU MANAGEMENT ===
   const openActivityMenu = (internship) => {
     activityMenuOpenId.value = internship.id;
-    tempSelectedActivityIds.value = new Set(); 
+    tempSelectedActivityIds.value = new Set();
   };
 
   const closeActivityMenu = () => {
@@ -57,9 +57,15 @@ export function useActivities() {
     tempSelectedActivityIds.value = newSet;
   };
 
-  const saveActivities = async (internshipId, internshipsRef, updateCallback) => {
+  const saveActivities = async (
+    internshipId,
+    internshipsRef,
+    updateCallback,
+  ) => {
     try {
-      const internship = internshipsRef.value.find((i) => i.id === internshipId);
+      const internship = internshipsRef.value.find(
+        (i) => i.id === internshipId,
+      );
       if (!internship) return;
 
       const promises = Array.from(tempSelectedActivityIds.value).map(
@@ -83,6 +89,6 @@ export function useActivities() {
     openActivityMenu,
     closeActivityMenu,
     toggleActivitySelection,
-    saveActivities
+    saveActivities,
   };
 }

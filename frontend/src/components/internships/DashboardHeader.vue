@@ -6,24 +6,24 @@ import DashboardHeaderMobile from './header/DashboardHeaderMobile.vue';
 const props = defineProps({
   searchQuery: {
     type: String,
-    default: ''
+    default: '',
   },
   sortBy: {
     type: String,
-    default: 'dateDesc'
+    default: 'dateDesc',
   },
   // Mobile Only: Controls visibility of filters
   isOpen: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 const emit = defineEmits([
-  'update:searchQuery', 
-  'update:sortBy', 
+  'update:searchQuery',
+  'update:sortBy',
   'open-modal',
-  'toggle' // Mobile Only: emitted when search icon is clicked
+  'toggle', // Mobile Only: emitted when search icon is clicked
 ]);
 
 const isMobile = useMediaQuery('(max-width: 890px)');

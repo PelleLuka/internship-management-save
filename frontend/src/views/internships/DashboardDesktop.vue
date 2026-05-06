@@ -1,17 +1,16 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useInternships } from '../../composables/useInternships';
-import { useInternshipActivities } from '../../composables/useInternshipActivities';
-import { useInternshipGrouping } from '../../composables/useInternshipGrouping';
-import { useActivities } from '../../composables/useActivities';
-import { useMediaQuery } from '../../composables/useMediaQuery';
-
 // Components
 import DashboardHeader from '../../components/internships/DashboardHeader.vue';
 import InternshipCard from '../../components/internships/InternshipCard.vue';
 import InternshipFormModal from '../../components/internships/InternshipFormModal.vue';
-import SidebarNavigation from '../../components/nav/SidebarNavigation.vue';
 import InternshipGroupList from '../../components/internships/InternshipGroupList.vue';
+import SidebarNavigation from '../../components/nav/SidebarNavigation.vue';
+import { useActivities } from '../../composables/useActivities';
+import { useInternshipActivities } from '../../composables/useInternshipActivities';
+import { useInternshipGrouping } from '../../composables/useInternshipGrouping';
+import { useInternships } from '../../composables/useInternships';
+import { useMediaQuery } from '../../composables/useMediaQuery';
 
 // Init Composables
 const {
@@ -39,7 +38,7 @@ const {
   openActivityMenu,
   closeActivityMenu,
   toggleActivitySelection,
-  saveActivities
+  saveActivities,
 } = useActivities();
 
 const isLgCustom = useMediaQuery('(min-width: 1022px)');
@@ -81,10 +80,10 @@ onMounted(() => {
   <div class="flex gap-8 w-full px-0 md:px-4 max-w-7xl mx-auto">
     <!-- Atomic Sidebar Navigation -->
     <!-- Displays Year/Month tree. Hidden on mobile, visible on LG screens. -->
-    <SidebarNavigation 
-      v-if="isLgCustom" 
-      :groups="groupedInternships" 
-      @scroll-to="scrollTo" 
+    <SidebarNavigation
+      v-if="isLgCustom"
+      :groups="groupedInternships"
+      @scroll-to="scrollTo"
     />
 
     <!-- Main Content Area -->
@@ -104,8 +103,8 @@ onMounted(() => {
         </div>
 
         <!-- Atomic Content List -->
-        <InternshipGroupList 
-          :groups="groupedInternships" 
+        <InternshipGroupList
+          :groups="groupedInternships"
           :header-height="headerHeight"
           @load-more="loadNextBatch"
         >
@@ -127,7 +126,7 @@ onMounted(() => {
               @save-activities="handleSaveActivities"
             />
           </template>
-          
+
           <template #empty>
             <div v-if="internships.length === 0">Aucun stagiaire trouvé.</div>
           </template>

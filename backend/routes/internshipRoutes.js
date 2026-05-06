@@ -1,15 +1,15 @@
 import express from 'express';
-import {
-    getInternships,
-    getInternshipById,
-    createInternship,
-    updateInternship,
-    deleteInternship,
-    getInternshipActivities,
-    addActivityToInternship,
-    removeActivityFromInternship
-} from '../controllers/internshipController.js';
 import { generateCertificate } from '../controllers/certificateController.js';
+import {
+  addActivityToInternship,
+  createInternship,
+  deleteInternship,
+  getInternshipActivities,
+  getInternshipById,
+  getInternships,
+  removeActivityFromInternship,
+  updateInternship,
+} from '../controllers/internshipController.js';
 
 const router = express.Router();
 
@@ -58,7 +58,10 @@ router.get('/:id/activities', getInternshipActivities);
 router.post('/:internshipId/activities/:activityId', addActivityToInternship);
 
 // DELETE /internships/:internshipId/activities/:activityId
-router.delete('/:internshipId/activities/:activityId', removeActivityFromInternship);
+router.delete(
+  '/:internshipId/activities/:activityId',
+  removeActivityFromInternship,
+);
 
 /**
  * GET /api/internships/:id/certificate

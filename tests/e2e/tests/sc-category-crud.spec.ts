@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Category CRUD', () => {
   test('create a category', async ({ page }) => {
@@ -6,7 +6,9 @@ test.describe('Category CRUD', () => {
     await page.getByRole('button', { name: /nouvelle catégorie/i }).click();
     await page.getByPlaceholder(/ex.*développement/i).fill('Développement');
     await page.getByRole('button', { name: /^créer$/i }).click();
-    await expect(page.getByRole('heading', { name: 'Développement' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Développement' }).first(),
+    ).toBeVisible();
   });
 
   test('edit a category', async ({ page }) => {
@@ -15,16 +17,25 @@ test.describe('Category CRUD', () => {
     await page.getByRole('button', { name: /nouvelle catégorie/i }).click();
     await page.getByPlaceholder(/ex.*développement/i).fill('A Modifier');
     await page.getByRole('button', { name: /^créer$/i }).click();
-    await expect(page.getByRole('heading', { name: 'A Modifier' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'A Modifier' }).first(),
+    ).toBeVisible();
     // Edit it
-    const card = page.locator('div.bg-white.rounded-xl').filter({ has: page.getByRole('heading', { name: 'A Modifier' }) }).first();
+    const card = page
+      .locator('div.bg-white.rounded-xl')
+      .filter({ has: page.getByRole('heading', { name: 'A Modifier' }) })
+      .first();
     await card.getByRole('button', { name: /modifier/i }).click();
     await page.getByPlaceholder(/ex.*développement/i).fill('Modifié');
     await page.getByRole('button', { name: /enregistrer/i }).click();
-    await expect(page.getByRole('heading', { name: 'Modifié' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Modifié' }).first(),
+    ).toBeVisible();
   });
 
-  test('delete button is disabled when category has linked activities', async ({ page }) => {
+  test('delete button is disabled when category has linked activities', async ({
+    page,
+  }) => {
     await page.goto('/categories');
     // If any category has activityCount > 0, its delete button should be disabled
     const disabledDeleteBtn = page.locator('button[aria-label*="impossible"]');
@@ -40,14 +51,23 @@ test.describe('Category CRUD', () => {
     await page.getByRole('button', { name: /nouvelle catégorie/i }).click();
     await page.getByPlaceholder(/ex.*développement/i).fill('A Supprimer');
     await page.getByRole('button', { name: /^créer$/i }).click();
-    await expect(page.getByRole('heading', { name: 'A Supprimer' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'A Supprimer' }).first(),
+    ).toBeVisible();
     // Find delete button for this card (should be enabled, 0 linked activities)
-    const card = page.locator('div.bg-white.rounded-xl').filter({ has: page.getByRole('heading', { name: 'A Supprimer' }) }).first();
+    const card = page
+      .locator('div.bg-white.rounded-xl')
+      .filter({ has: page.getByRole('heading', { name: 'A Supprimer' }) })
+      .first();
     await card.getByRole('button', { name: /supprimer/i }).click();
-    await expect(page.getByRole('heading', { name: 'A Supprimer' })).not.toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'A Supprimer' }),
+    ).not.toBeVisible();
   });
 
-  test('cannot delete modal appears when category has linked activities', async ({ page }) => {
+  test('cannot delete modal appears when category has linked activities', async ({
+    page,
+  }) => {
     // Create a category via API
     const catRes = await page.request.post('/api/categories', {
       data: { name: 'CatBlock E2E' },
@@ -62,7 +82,9 @@ test.describe('Category CRUD', () => {
     await page.goto('/categories');
 
     // Find the category card and click delete button
-    const card = page.locator('.grid > div').filter({ hasText: 'CatBlock E2E' });
+    const card = page
+      .locator('.grid > div')
+      .filter({ hasText: 'CatBlock E2E' });
     const deleteBtn = card.locator('button').filter({ hasText: '' }).last();
     await deleteBtn.click({ force: true });
 
@@ -80,7 +102,11 @@ test.describe('Category CRUD', () => {
     // Layout must be a grid, not a list
     await expect(page.locator('.grid')).toBeVisible();
     // Seeded categories must appear (use role to be more specific)
-    await expect(page.getByRole('heading', { name: 'Programmation' }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Web' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Programmation' }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Web' }).first(),
+    ).toBeVisible();
   });
 });

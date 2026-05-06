@@ -1,10 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('SC17 - Tests aux Limites', () => {
-
   test('Longueur maximale des champs', async ({ page }) => {
     await page.goto('/');
-    
+
     await page.getByRole('button', { name: 'Nouveau' }).click();
 
     // Limite théorique : 50 caractères pour le prénom (selon frontend validation)
@@ -21,10 +20,11 @@ test.describe('SC17 - Tests aux Limites', () => {
     await page.getByRole('button', { name: 'Créer' }).click(); // Trigger validation
     // On s'attend à un message d'erreur
     // Note: Le sélecteur dépend de votre implémentation précise des messages d'erreur
-    await expect(page.getByText('Le prénom doit avoir entre 1 et 50 caractères.')).toBeVisible();
-    
+    await expect(
+      page.getByText('Le prénom doit avoir entre 1 et 50 caractères.'),
+    ).toBeVisible();
+
     // Le bouton Créer devrait être sans effet ou bloqué (si implémenté via disable)
     // Dans votre cas, il n'est pas disabled mais le click ne ferme pas la modale.
   });
-
 });

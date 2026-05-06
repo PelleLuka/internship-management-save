@@ -29,6 +29,6 @@ export function useMasonryGrid() {
     getMasonryColumns,
     isTabletStart,
     isLgCustom,
-    isXl
+    isXl,
   };
 }

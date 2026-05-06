@@ -2,7 +2,7 @@
 /**
  * Navigation Sidebar Component.
  * Displays a hierarchical list of Years and Months to filter the internship list.
- * 
+ *
  * Usage:
  * <SidebarNavigation :groups="groupedInternships" @scroll-to="handleScroll" />
  */
@@ -12,10 +12,10 @@ defineProps({
    * Expected format: [ [ "2024", [ "Janvier", ... ] ], [ "2023", ... ] ]
    */
   groups: {
-    type: Array, 
+    type: Array,
     required: true,
-    default: () => []
-  }
+    default: () => [],
+  },
 });
 
 const emit = defineEmits(['scroll-to']);
@@ -23,13 +23,11 @@ const emit = defineEmits(['scroll-to']);
 
 <template>
   <div class="shrink-0 transition-all duration-300 w-fit min-w-[100px]">
-    <nav class="sticky top-8 h-[calc(100vh-3rem)] overflow-y-auto py-2 scrollbar-hide">
+    <nav
+      class="sticky top-8 h-[calc(100vh-3rem)] overflow-y-auto py-2 scrollbar-hide"
+    >
       <div class="space-y-6">
-        <div
-          v-for="[year, months] in groups"
-          :key="year"
-          class="space-y-2"
-        >
+        <div v-for="[year, months] in groups" :key="year" class="space-y-2">
           <button
             type="button"
             @click="emit('scroll-to', `year-${year}`)"

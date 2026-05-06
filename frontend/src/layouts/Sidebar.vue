@@ -1,42 +1,42 @@
 <script setup>
-import { Activity, Settings, Tag, User, X } from "lucide-vue-next";
-import { computed, ref } from "vue";
-import { useMediaQuery } from "../composables/useMediaQuery";
+import { Activity, Settings, Tag, User, X } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { useMediaQuery } from '../composables/useMediaQuery';
 
 const props = defineProps({
   isMobile: Boolean,
-  isOpen: Boolean
+  isOpen: Boolean,
 });
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits(['close']);
 
-const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+const isLargeScreen = useMediaQuery('(min-width: 1024px)');
 const isHovered = ref(false);
 
 // Desktop collapse logic: Collapsed if NOT large screen AND NOT hovered
 // Mobile: Always expanded (not collapsed)
 const isCollapsed = computed(() => {
-	if (props.isMobile) return false;
-	return !isLargeScreen.value && !isHovered.value;
+  if (props.isMobile) return false;
+  return !isLargeScreen.value && !isHovered.value;
 });
 
 const navItems = [
-	{ to: "/internships", icon: User, label: "Stagiaires" },
-	{ to: "/activities", icon: Activity, label: "Activités" },
-	{ to: "/categories", icon: Tag, label: "Catégories" },
-	{ to: "/settings", icon: Settings, label: "Paramètres" },
+  { to: '/internships', icon: User, label: 'Stagiaires' },
+  { to: '/activities', icon: Activity, label: 'Activités' },
+  { to: '/categories', icon: Tag, label: 'Catégories' },
+  { to: '/settings', icon: Settings, label: 'Paramètres' },
 ];
 </script>
 
 <template>
   <!-- Mobile Backdrop -->
-  <div 
-    v-if="isMobile && isOpen" 
+  <div
+    v-if="isMobile && isOpen"
     class="fixed inset-0 bg-black/50 z-[55] backdrop-blur-sm transition-opacity"
     @click="emit('close')"
   ></div>
 
-  <aside 
+  <aside
     class="bg-slate-900 text-white h-screen flex flex-col shrink-0 transition-all duration-300 z-[60]"
     :class="[
       isMobile ? 'fixed inset-y-0 left-0 shadow-xl' : 'sticky top-0',
@@ -46,16 +46,18 @@ const navItems = [
     @mouseenter="!isMobile && (isHovered = true)"
     @mouseleave="!isMobile && (isHovered = false)"
   >
-    <div class="p-6 border-b border-slate-800 flex justify-between items-center overflow-hidden h-[88px]">
-      <h1 
+    <div
+      class="p-6 border-b border-slate-800 flex justify-between items-center overflow-hidden h-[88px]"
+    >
+      <h1
         class="font-bold tracking-tight transition-all duration-300 whitespace-nowrap"
         :class="[isCollapsed ? 'text-2xl' : 'text-xl']"
       >
         {{ isCollapsed ? 'GS' : 'Gestion Stages' }}
       </h1>
-      
+
       <!-- Mobile Close Button -->
-      <button 
+      <button
         v-if="isMobile"
         @click="emit('close')"
         class="p-1 hover:bg-slate-800 rounded-md transition-colors"
@@ -86,15 +88,15 @@ const navItems = [
           :title="isCollapsed ? item.label : undefined"
         >
           <component :is="item.icon" class="w-5 h-5 shrink-0" />
-          <span 
+          <span
             class="font-medium transition-all duration-300 overflow-hidden whitespace-nowrap"
             :class="[isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100']"
           >
             {{ item.label }}
           </span>
-          
+
           <!-- Tooltip for collapsed mode -->
-          <div 
+          <div
             v-if="isCollapsed && !isMobile"
             class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50"
           >

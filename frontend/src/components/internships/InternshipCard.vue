@@ -8,13 +8,18 @@ const props = defineProps({
   expanded: Boolean,
   activities: Array,
   activityMenuOpen: Boolean,
-  tempSelectedActivityIds: Set
+  tempSelectedActivityIds: Set,
 });
 
 const emit = defineEmits([
-  'toggle', 'edit', 'delete', 'remove-activity', 
-  'open-activity-menu', 'close-activity-menu', 
-  'toggle-activity-selection', 'save-activities'
+  'toggle',
+  'edit',
+  'delete',
+  'remove-activity',
+  'open-activity-menu',
+  'close-activity-menu',
+  'toggle-activity-selection',
+  'save-activities',
 ]);
 
 const isMobile = useMediaQuery('(max-width: 890px)');

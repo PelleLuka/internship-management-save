@@ -1,6 +1,6 @@
-import { computed } from 'vue';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { computed } from 'vue';
 
 const parseLocalDate = (str) => {
   const [y, m, d] = String(str).slice(0, 10).split('-').map(Number);
@@ -18,11 +18,14 @@ export function useInternshipStatus(internship) {
     return 'active';
   });
 
-  const statusConfig = computed(() => ({
-    upcoming: { label: 'À venir',  classes: 'bg-amber-100 text-amber-600' },
-    active:   { label: 'En cours', classes: 'bg-green-100 text-green-600' },
-    done:     { label: 'Terminé',  classes: 'bg-blue-100  text-blue-600'  },
-  }[status.value]));
+  const statusConfig = computed(
+    () =>
+      ({
+        upcoming: { label: 'À venir', classes: 'bg-amber-100 text-amber-600' },
+        active: { label: 'En cours', classes: 'bg-green-100 text-green-600' },
+        done: { label: 'Terminé', classes: 'bg-blue-100  text-blue-600' },
+      })[status.value],
+  );
 
   const formatDate = (dateStr) => {
     try {

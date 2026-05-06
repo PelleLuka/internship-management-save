@@ -1,11 +1,17 @@
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const SCREENS = ['internships', 'activities', 'categories', 'settings', 'certificate'];
+const SCREENS = [
+  'internships',
+  'activities',
+  'categories',
+  'settings',
+  'certificate',
+];
 
 const toBase64 = (filePath) => {
   if (!existsSync(filePath)) return null;
@@ -14,11 +20,12 @@ const toBase64 = (filePath) => {
 
 const cards = SCREENS.map((name) => {
   const pencilSrc = toBase64(resolve(__dirname, `screens/${name}.png`));
-  const appSrc    = toBase64(resolve(__dirname, `screenshots/${name}.png`));
+  const appSrc = toBase64(resolve(__dirname, `screenshots/${name}.png`));
 
-  const img = (src, label) => src
-    ? `<div class="col"><p class="label">${label}</p><img src="${src}" alt="${label} — ${name}"></div>`
-    : `<div class="col"><p class="label">${label}</p><p class="missing">⚠️ Screenshot manquant</p></div>`;
+  const img = (src, label) =>
+    src
+      ? `<div class="col"><p class="label">${label}</p><img src="${src}" alt="${label} — ${name}"></div>`
+      : `<div class="col"><p class="label">${label}</p><p class="missing">⚠️ Screenshot manquant</p></div>`;
 
   return `
 <section>
@@ -61,9 +68,12 @@ const reportPath = resolve(__dirname, 'validation-report.html');
 writeFileSync(reportPath, html, 'utf8');
 console.log('✅ Rapport généré : design/validation-report.html');
 
-const opener = process.platform === 'darwin' ? 'open'
-  : process.platform === 'win32' ? 'start'
-  : 'xdg-open';
+const opener =
+  process.platform === 'darwin'
+    ? 'open'
+    : process.platform === 'win32'
+      ? 'start'
+      : 'xdg-open';
 
 try {
   execSync(`${opener} "${reportPath}"`);

@@ -1,16 +1,16 @@
-import { test } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { test } from '@playwright/test';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = resolve(__dirname, 'screenshots');
 
 const SCREENS = [
   { name: 'internships', path: '/internships' },
-  { name: 'activities',  path: '/activities' },
-  { name: 'categories',  path: '/categories' },
-  { name: 'settings',    path: '/settings' },
+  { name: 'activities', path: '/activities' },
+  { name: 'categories', path: '/categories' },
+  { name: 'settings', path: '/settings' },
   { name: 'certificate', path: '/certificate/1' },
 ];
 

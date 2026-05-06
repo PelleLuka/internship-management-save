@@ -4,18 +4,25 @@ import * as certificateService from '../services/certificateService.js';
 
 export const generateCertificate = async (req, res) => {
   try {
-    const pdf = await certificateService.generateCertificate(Number(req.params.id));
+    const pdf = await certificateService.generateCertificate(
+      Number(req.params.id),
+    );
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="certificat-stage-${req.params.id}.pdf"`,
     });
     res.send(pdf);
   } catch (err) {
-    if (err.message === 'NOT_FOUND') return res.status(404).json({ error: 'Internship not found' });
-    if (err.message === 'NO_TEMPLATE') return res.status(400).json({ error: 'No certificate template uploaded yet' });
+    if (err.message === 'NOT_FOUND')
+      return res.status(404).json({ error: 'Internship not found' });
+    if (err.message === 'NO_TEMPLATE')
+      return res
+        .status(400)
+        .json({ error: 'No certificate template uploaded yet' });
     if (err.message === 'NO_LIBREOFFICE') {
       return res.status(503).json({
-        error: 'LibreOffice is required to generate PDFs. Run the backend via Docker (it is preinstalled in the container).',
+        error:
+          'LibreOffice is required to generate PDFs. Run the backend via Docker (it is preinstalled in the container).',
       });
     }
     logger.error(err);
@@ -30,8 +37,9 @@ export const uploadTemplate = (req, res) => {
   });
 };
 
-export const downloadTemplate = (req, res) => {
+export const downloadTemplate = (_req, res) => {
   const templatePath = certificateService.getTemplatePath();
-  if (!templatePath) return res.status(404).json({ error: 'No template uploaded' });
+  if (!templatePath)
+    return res.status(404).json({ error: 'No template uploaded' });
   res.download(templatePath, 'certificate-template.docx');
 };

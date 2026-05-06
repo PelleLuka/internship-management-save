@@ -1,26 +1,25 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('SC05 - Modification de Stagiaire', () => {
-
   const uniqueId = Date.now();
   const originalUser = {
     firstName: 'ToEdit',
     lastName: `User-${uniqueId}`,
     email: `original.${uniqueId}@test.com`,
     startDate: '2099-01-01',
-    endDate: '2100-01-01'
+    endDate: '2100-01-01',
   };
 
   const modifiedUser = {
     firstName: 'Edited',
-    lastName: 'Mod'
+    lastName: 'Mod',
   };
 
   test('Modifier un stagiaire existant', async ({ page }) => {
     // Désactiver le cache pour éviter les données périmées (surtout Chrome)
     await page.setExtraHTTPHeaders({
       'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
+      Pragma: 'no-cache',
     });
 
     // 1. Pré-condition : Créer un stagiaire (via UI pour l'instant, plus tard via API si dispo)
@@ -35,9 +34,9 @@ test.describe('SC05 - Modification de Stagiaire', () => {
 
     // Vérifier qu'il est créé
     const fullNameOriginal = `${originalUser.firstName} ${originalUser.lastName}`;
-    
+
     // Vérifier qu'il est créé (premier de la liste grâce à 2099)
-    
+
     // On attend juste que l'élément apparaisse en haut de liste
     const cardLocator = page.getByText(fullNameOriginal).first();
     await expect(cardLocator).toBeVisible();
@@ -48,7 +47,9 @@ test.describe('SC05 - Modification de Stagiaire', () => {
     await cardLocator.click();
     // C'est ici que l'aria-label devient utile
     // On doit peut-être attendre un peu ou scroller, mais avec le filtre recherche il devrait être là
-    await page.getByRole('button', { name: `Modifier ${fullNameOriginal}` }).click();
+    await page
+      .getByRole('button', { name: `Modifier ${fullNameOriginal}` })
+      .click();
 
     // 3. Modifier les champs
     // Vérifier que les champs sont pré-remplis (C'est aussi un test de lecture)
@@ -58,13 +59,14 @@ test.describe('SC05 - Modification de Stagiaire', () => {
     // Appliquer modifs
     await page.getByLabel('Prénom').fill(modifiedUser.firstName);
     await page.getByLabel('Nom', { exact: true }).fill(modifiedUser.lastName);
-    
+
     // 4. Sauvegarder
     // On attend la réponse du serveur (PUT)
-    const updatePromise = page.waitForResponse(response => 
-      response.url().includes('/api/internships') && 
-      response.request().method() === 'PUT' &&
-      response.status() === 200
+    const updatePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/internships') &&
+        response.request().method() === 'PUT' &&
+        response.status() === 200,
     );
     await page.getByRole('button', { name: 'Mettre à jour' }).click();
     await updatePromise;
@@ -73,13 +75,14 @@ test.describe('SC05 - Modification de Stagiaire', () => {
     // 5. Vérifier la mise à jour
     // Pour éviter les problèmes de rafraîchissement client, on recharge la page
     await page.reload();
-    
+
     // On doit remettre le filtre car le reload l'a effacé
     await page.getByPlaceholder('Rechercher...').fill(originalUser.email);
     await page.getByPlaceholder('Rechercher...').press('Enter');
-    
-    const fullNameModified = `${modifiedUser.firstName} ${modifiedUser.lastName}`;
-    await expect(page.getByRole('heading', { name: fullNameModified })).toBeVisible({ timeout: 15000 });
-  });
 
+    const fullNameModified = `${modifiedUser.firstName} ${modifiedUser.lastName}`;
+    await expect(
+      page.getByRole('heading', { name: fullNameModified }),
+    ).toBeVisible({ timeout: 15000 });
+  });
 });

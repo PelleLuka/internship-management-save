@@ -17,9 +17,18 @@ export function useCategories() {
     }
   };
 
-  const create = async (data) => { await api.createCategory(data); await load(); };
-  const update = async (id, data) => { await api.updateCategory(id, data); await load(); };
-  const remove = async (id) => { await api.deleteCategory(id); await load(); };
+  const create = async (data) => {
+    await api.createCategory(data);
+    await load();
+  };
+  const update = async (id, data) => {
+    await api.updateCategory(id, data);
+    await load();
+  };
+  const remove = async (id) => {
+    await api.deleteCategory(id);
+    await load();
+  };
 
   return { categories, loading, error, load, create, update, remove };
 }

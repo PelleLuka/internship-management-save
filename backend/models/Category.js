@@ -14,7 +14,7 @@ const Category = {
         GROUP BY c.id
         ORDER BY c.name
       `);
-      return rows.map(row => ({
+      return rows.map((row) => ({
         id: row.id,
         name: row.name,
         description: row.description,
@@ -29,14 +29,17 @@ const Category = {
     let conn;
     try {
       conn = await pool.getConnection();
-      const rows = await conn.query(`
+      const rows = await conn.query(
+        `
         SELECT c.id, c.name, c.description,
                COUNT(ac.category_id) as activity_count
         FROM category c
         LEFT JOIN activity_category ac ON ac.category_id = c.id
         WHERE c.id = ?
         GROUP BY c.id
-      `, [id]);
+      `,
+        [id],
+      );
       if (!rows[0]) return null;
       return {
         id: rows[0].id,
@@ -55,7 +58,7 @@ const Category = {
       conn = await pool.getConnection();
       const res = await conn.query(
         'INSERT INTO category (name, description) VALUES (?, ?)',
-        [data.name, data.description ?? null]
+        [data.name, data.description ?? null],
       );
       return Number(res.insertId);
     } finally {
@@ -69,11 +72,20 @@ const Category = {
       conn = await pool.getConnection();
       const fields = [];
       const values = [];
-      if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
-      if (data.description !== undefined) { fields.push('description = ?'); values.push(data.description); }
+      if (data.name !== undefined) {
+        fields.push('name = ?');
+        values.push(data.name);
+      }
+      if (data.description !== undefined) {
+        fields.push('description = ?');
+        values.push(data.description);
+      }
       if (!fields.length) return false;
       values.push(id);
-      const res = await conn.query(`UPDATE category SET ${fields.join(', ')} WHERE id = ?`, values);
+      const res = await conn.query(
+        `UPDATE category SET ${fields.join(', ')} WHERE id = ?`,
+        values,
+      );
       return res.affectedRows > 0;
     } finally {
       if (conn) conn.end();

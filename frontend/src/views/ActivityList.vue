@@ -43,7 +43,6 @@ const toggleExpand = (id) => {
 
 <template>
   <div class="w-full max-w-7xl mx-auto px-4 pb-12">
-
     <!-- Mobile Header -->
     <template v-if="isMobile">
       <Teleport to="#header-actions">
@@ -70,8 +69,14 @@ const toggleExpand = (id) => {
         :class="isSearchOpen ? 'py-4' : 'h-0 overflow-hidden py-0'"
       >
         <div class="relative w-full">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <AppInput v-model="searchQuery" class="pl-9 w-full bg-white" placeholder="Rechercher une activité..." />
+          <Search
+            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+          />
+          <AppInput
+            v-model="searchQuery"
+            class="pl-9 w-full bg-white"
+            placeholder="Rechercher une activité..."
+          />
         </div>
       </div>
     </template>
@@ -84,8 +89,14 @@ const toggleExpand = (id) => {
       <h1 class="text-2xl font-bold text-slate-900">Activités</h1>
       <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
         <div class="relative w-full sm:w-64">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <AppInput v-model="searchQuery" class="pl-9" placeholder="Rechercher une activité..." />
+          <Search
+            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+          />
+          <AppInput
+            v-model="searchQuery"
+            class="pl-9"
+            placeholder="Rechercher une activité..."
+          />
         </div>
         <AppButton @click="() => { editingId = null; isModalOpen = true; }">
           <Plus class="w-4 h-4 mr-2" />
@@ -99,11 +110,17 @@ const toggleExpand = (id) => {
       v-if="filteredActivities.length === 0"
       class="text-center py-12 bg-white rounded-lg border border-dashed border-slate-300"
     >
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-4">
+      <div
+        class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-4"
+      >
         <ActivityIcon class="w-6 h-6 text-slate-400" />
       </div>
-      <h3 class="text-lg font-medium text-slate-900">Aucune activité trouvée</h3>
-      <p class="text-slate-500 mt-1">Commencez par créer une nouvelle activité.</p>
+      <h3 class="text-lg font-medium text-slate-900">
+        Aucune activité trouvée
+      </h3>
+      <p class="text-slate-500 mt-1">
+        Commencez par créer une nouvelle activité.
+      </p>
     </div>
 
     <!-- Activity cards grid -->

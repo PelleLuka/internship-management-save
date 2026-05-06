@@ -9,14 +9,14 @@ import Person from '../models/Person.js';
 
 /* --- Helpers --- */
 const isValidEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
 const isValidDate = (dateString) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return false;
-    const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return false;
-    return date.toISOString().startsWith(dateString);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return false;
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.toISOString().startsWith(dateString);
 };
 
 /* --- Methods --- */
@@ -29,13 +29,13 @@ const isValidDate = (dateString) => {
  * @returns {Promise<Object>} { data: Array, total: Number }
  */
 export const getInternships = async (page = 1, limit = 20, search = '') => {
-    const offset = (page - 1) * limit;
-    const [data, total] = await Promise.all([
-        Internship.getAll(limit, offset, search),
-        Internship.count(search)
-    ]);
-    
-    return { data, total };
+  const offset = (page - 1) * limit;
+  const [data, total] = await Promise.all([
+    Internship.getAll(limit, offset, search),
+    Internship.count(search),
+  ]);
+
+  return { data, total };
 };
 
 /**
@@ -45,11 +45,11 @@ export const getInternships = async (page = 1, limit = 20, search = '') => {
  * @throws {Error} If internship not found
  */
 export const getInternshipById = async (id) => {
-    const internship = await Internship.getById(id);
-    if (!internship) {
-        throw new Error('NOT_FOUND');
-    }
-    return internship;
+  const internship = await Internship.getById(id);
+  if (!internship) {
+    throw new Error('NOT_FOUND');
+  }
+  return internship;
 };
 
 /**
@@ -58,7 +58,7 @@ export const getInternshipById = async (id) => {
  * @returns {Promise<Array>} List of activities
  */
 export const getInternshipActivities = async (id) => {
-    return await Internship.getActivities(id);
+  return await Internship.getActivities(id);
 };
 
 const validateFields = (data, { partial = false } = {}) => {
@@ -67,13 +67,17 @@ const validateFields = (data, { partial = false } = {}) => {
   const em = data.email?.trim();
 
   if (!partial) {
-    if (!fn || !ln || !em || !data.startDate || !data.endDate) throw new Error('MISSING_FIELDS');
+    if (!fn || !ln || !em || !data.startDate || !data.endDate)
+      throw new Error('MISSING_FIELDS');
   }
-  if ((fn && fn.length > 80) || (ln && ln.length > 80)) throw new Error('NAME_TOO_LONG');
+  if ((fn && fn.length > 80) || (ln && ln.length > 80))
+    throw new Error('NAME_TOO_LONG');
   if (em && em.length > 254) throw new Error('EMAIL_TOO_LONG');
   if (em && !isValidEmail(em)) throw new Error('INVALID_EMAIL');
-  if (data.startDate && !isValidDate(data.startDate)) throw new Error('INVALID_DATE_FORMAT');
-  if (data.endDate && !isValidDate(data.endDate)) throw new Error('INVALID_DATE_FORMAT');
+  if (data.startDate && !isValidDate(data.startDate))
+    throw new Error('INVALID_DATE_FORMAT');
+  if (data.endDate && !isValidDate(data.endDate))
+    throw new Error('INVALID_DATE_FORMAT');
 };
 
 /**
@@ -147,15 +151,15 @@ export const deleteInternship = async (id) => {
  * @throws {Error} If entities not found
  */
 export const addActivityToInternship = async (internshipId, activityId) => {
-    const internship = await Internship.getById(internshipId);
-    const activity = await Activity.getById(activityId);
+  const internship = await Internship.getById(internshipId);
+  const activity = await Activity.getById(activityId);
 
-    if (!internship || !activity) {
-        throw new Error('NOT_FOUND');
-    }
+  if (!internship || !activity) {
+    throw new Error('NOT_FOUND');
+  }
 
-    await Internship.addActivity(internshipId, activityId);
-    return activity;
+  await Internship.addActivity(internshipId, activityId);
+  return activity;
 };
 
 /**
@@ -165,9 +169,12 @@ export const addActivityToInternship = async (internshipId, activityId) => {
  * @returns {Promise<void>}
  * @throws {Error} If association not found
  */
-export const removeActivityFromInternship = async (internshipId, activityId) => {
-    const removed = await Internship.removeActivity(internshipId, activityId);
-    if (!removed) {
-         throw new Error('NOT_FOUND');
-    }
+export const removeActivityFromInternship = async (
+  internshipId,
+  activityId,
+) => {
+  const removed = await Internship.removeActivity(internshipId, activityId);
+  if (!removed) {
+    throw new Error('NOT_FOUND');
+  }
 };

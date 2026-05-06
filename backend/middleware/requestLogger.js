@@ -6,39 +6,39 @@ import logger from '../config/logger.js';
  * Replacing Morgan dependencies with a custom implementation.
  */
 const requestLogger = (req, res, next) => {
-    const start = Date.now();
-    
-    // Capture basic info immediately
-    const method = req.method;
-    const url = req.originalUrl || req.url;
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
-    const userAgent = req.headers['user-agent'] || null;
+  const start = Date.now();
 
-    // Listen for the response to finish
-    res.on('finish', () => {
-        const duration = Date.now() - start;
-        const status = res.statusCode;
-        const contentLength = res.get('Content-Length') || 0;
+  // Capture basic info immediately
+  const method = req.method;
+  const url = req.originalUrl || req.url;
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
+  const userAgent = req.headers['user-agent'] || null;
 
-        const logObject = {
-            method,
-            url,
-            status,
-            duration: `${duration}ms`,
-            contentLength,
-            ip,
-            userAgent
-        };
+  // Listen for the response to finish
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const status = res.statusCode;
+    const contentLength = res.get('Content-Length') || 0;
 
-        // Log based on status code (Error if 500+, Info otherwise)
-        if (status >= 500) {
-            logger.error(JSON.stringify(logObject));
-        } else {
-            logger.info(JSON.stringify(logObject));
-        }
-    });
+    const logObject = {
+      method,
+      url,
+      status,
+      duration: `${duration}ms`,
+      contentLength,
+      ip,
+      userAgent,
+    };
 
-    next();
+    // Log based on status code (Error if 500+, Info otherwise)
+    if (status >= 500) {
+      logger.error(JSON.stringify(logObject));
+    } else {
+      logger.info(JSON.stringify(logObject));
+    }
+  });
+
+  next();
 };
 
 export default requestLogger;
