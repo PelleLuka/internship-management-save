@@ -898,9 +898,23 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
     -- ... (compléter, inclure des stages À venir, En cours et Terminés)
   ;
 
+  -- 6 catégories par défaut (voir screenshots_problem/problem6.png)
+  INSERT INTO category (id, name, description) VALUES
+    (1, 'Développement', 'Activités de programmation, développement logiciel et création de jeux'),
+    (2, 'Système', 'Installation, configuration et administration de systèmes d''exploitation'),
+    (3, 'Réseau', 'Activités liées aux réseaux informatiques et à la communication'),
+    (4, 'Hardware', 'Montage, configuration et utilisation de matériel informatique'),
+    (5, 'Graphisme', 'Création visuelle, retouche d''image et composition graphique'),
+    (6, 'Modélisation 3D', 'Modélisation, impression et démonstration en 3D');
+
+  -- Liens activité ↔ catégorie (1 catégorie par activité, sauf id 13 qui en a 2)
+  INSERT INTO activity_category (activity_id, category_id) VALUES
+    (1,1),(2,4),(3,2),(4,1),(5,1),(6,1),(7,3),(8,1),(9,1),(10,2),(11,5),(12,1),(13,4),(13,6);
+
   SET FOREIGN_KEY_CHECKS = 1;
   ```
 - [ ] Vérifier que le jeu de données inclut des stages avec les 3 statuts possibles (À venir, En cours, Terminé) pour les tests E2E
+- [ ] Vérifier que chaque catégorie a au moins 1 atelier (le bouton Supprimer doit être désactivable et testable). Counts attendus : Développement 7, Système 2, Réseau 1, Hardware 2, Graphisme 1, Modélisation 3D 1
 - [ ] Créer `tests/setup/restoreDb.js` — script Node.js ESM qui lit `restore_db.sql` et l'exécute via le driver mariadb avec `multipleStatements: true` :
   ```js
   import mariadb from 'mariadb';
@@ -1553,7 +1567,9 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   - `toggleActivitySelection(activityId)`, `saveActivities(internshipId, internships, updateInternshipActivities)`
 
 - [ ] Créer `frontend/src/composables/useActivityList.js` — données, CRUD et filtre pour la vue ActivityList :
-  - `activities`, `allCategories`, `searchQuery`, `isModalOpen`, `editingId`, `isSearchOpen`, `expandedId`
+  - `activities`, `allCategories`, `searchQuery`, `isModalOpen`, `editingId`, `isSearchOpen`
+  - `expandedIds` (`ref(new Set())`) — **plusieurs cartes peuvent être dépliées simultanément**, comme pour les stagiaires
+  - `toggleExpand(id)` — ajoute/retire l'id du Set en remplaçant la référence (`expandedIds.value = new Set(...)`) pour conserver la réactivité Vue
   - `loadActivities()` — enrichit chaque activité avec ses catégories
   - `handleDelete(id)`, `handleUploadDocument(id, file)`, `handleDeleteDocument(id)`
   - `filteredActivities` (computed) — filtre sur le titre
@@ -1566,11 +1582,11 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   - `onMounted`/`onUnmounted` pour listener Escape
   > ⚠️ `tempCategoryIds` est un `Set` — toujours remplacer la référence pour déclencher la réactivité Vue
 
-- [ ] Créer `frontend/src/components/activities/ActivityCategoryBadge.vue` — badge déletable d'une catégorie :
-  - Props : `category`
-  - Emits : `remove(categoryId)`
-  - Span avec nom + bouton X qui apparaît au hover (`group/cat` + `opacity-0 group-hover/cat:opacity-100`)
-  > ⚠️ Source unique de vérité — utilisé deux fois dans `ActivityCard.vue` (header + section dépliée)
+- [ ] Créer `frontend/src/components/activities/ActivityCategoryBadge.vue` — badge d'une catégorie (lecture seule ou supprimable) :
+  - Props : `category`, `removable` (boolean, default `false`)
+  - Emits : `remove(categoryId)` (uniquement quand `removable` est vrai)
+  - Span avec nom de la catégorie ; si `removable`, bouton X qui apparaît au hover (`group/cat` + `opacity-0 group-hover/cat:opacity-100`)
+  > ⚠️ Source unique de vérité — utilisé deux fois dans `ActivityCard.vue` (compact = read-only, déplié = removable)
 
 - [ ] Créer `frontend/src/components/activities/ActivityCategoryPopover.vue` — popover d'ajout de catégorie extrait de `ActivityCard` :
   - Props : `categoryMenuOpen`, `availableCategories`, `tempCategoryIds`
@@ -1580,13 +1596,26 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 - [ ] Créer `frontend/src/components/activities/ActivityCard.vue` — rendu d'une seule carte atelier :
   - Props : `activity`, `isExpanded`, `categoryMenuOpen`, `tempCategoryIds`, `availableCategories`
   - Emits : `toggle`, `edit`, `delete`, `remove-category`, `open-category-menu`, `close-category-menu`, `toggle-category-selection`, `save-categories`, `upload-document`, `delete-document`
-  - Header cliquable, section dépliée (stats + badges catégories), zone document toujours visible
-  - Utilise `<ActivityCategoryBadge>` (header + section dépliée) et `<ActivityCategoryPopover>` — **ne pas redupliquer** ces blocs
+  - Attribut `data-testid="activity-card"` sur le wrapper (ciblé par les E2E)
+  - **Carte entièrement cliquable** pour étendre/replier (`@click="emit('toggle', activity.id)"` sur le wrapper)
+  - **Vue compact** (`!isExpanded`) :
+    1. Icône activité + boutons Modifier/Supprimer **visibles uniquement au hover desktop** (`lg:opacity-0 lg:group-hover:opacity-100`)
+    2. Titre
+    3. Tags catégories **non-cliquables, non-supprimables** (`<ActivityCategoryBadge>` sans `removable`)
+    4. Ligne de séparation (`<hr>`)
+    5. Description tronquée à 2 lignes (`line-clamp-2`)
+  - **Vue dépliée** ajoute en dessous, avec `@click.stop` sur le wrapper de la zone dépliée (pour ne pas re-déclencher le toggle) :
+    6. Ligne de séparation
+    7. Bloc **Documentation** : zone d'upload (drag-drop) si pas de fichier, sinon ligne fichier + boutons Voir/Télécharger/Supprimer/Remplacer
+    8. Ligne de séparation
+    9. Bloc **Catégories** : tags **supprimables** (`removable`) + bouton « + Ajouter une catégorie » + `<ActivityCategoryPopover>`
+  > ❌ **Pas de mini-cartes stats** (`internshipCount` / statut document) — design simplifié.
+  > Les boutons Edit/Delete/X-catégorie/Voir/Télécharger/Supprimer/Remplacer/Ajouter doivent **tous** avoir `@click.stop` pour ne pas déclencher le toggle de la carte.
 
-- [ ] Créer `frontend/src/views/ActivityList.vue` — orchestrateur léger (~110 lignes) :
-  - Importe `useActivityList()` + `useCategoryMenu(loadActivities, allCategories)`
-  - `toggleExpand(id)` local : ferme le menu de catégorie avant de changer de carte dépliée
-  - Rend une grille d'`ActivityCard` via `v-for filteredActivities`
+- [ ] Créer `frontend/src/views/ActivityList.vue` — orchestrateur léger (~85 lignes) :
+  - Importe `useActivityList()` + `useCategoryMenu(loadActivities, allCategories)` + `MasonryGrid`
+  - `toggleExpand(id)` local : appelle `baseToggleExpand(id)` puis `closeCategoryMenu()`
+  - Rend les cartes via `<MasonryGrid :items="filteredActivities">` (pas une grille CSS) — chaque colonne est une pile verticale indépendante donc une carte qui s'étend pousse seulement les cartes en dessous d'elle dans la même colonne
 
 - [ ] Créer `frontend/src/composables/useActivityForm.js` — logique du formulaire atelier extraite du modal :
   - `formData` (title, visible), `description`, `selectedCategoryIds`, `categories`, `errors`, `loading`
@@ -1605,7 +1634,13 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 - [ ] Écrire `sc07-activity-crud.spec.ts` — créer, modifier, supprimer un atelier
 - [ ] Écrire `sc08-internship-association.spec.ts` — associer un atelier à un stage depuis la carte dépliée
 - [ ] Écrire `sc09-internship-dissociation.spec.ts` — retirer un atelier d'un stage
-- [ ] Écrire `sc-activity-enriched.spec.ts` — description visible, tags catégories, suppression bloquée (bouton désactivé), mini-cartes stats
+- [ ] Écrire `sc-activity-enriched.spec.ts` :
+  - description visible (extrait dans la carte compact)
+  - tags catégories visibles dans la carte (1 badge pour activité 4 = `Développement`)
+  - bouton Supprimer désactivé pour un atelier lié à des stages
+  - bloc Documentation visible **uniquement** quand la carte est dépliée
+  - bloc « Ajouter une catégorie » visible uniquement quand la carte est dépliée
+  > Sélecteur des cartes : `[data-testid="activity-card"]` (le wrapper utilise `MasonryGrid` donc plus de `.grid > div`)
 - [ ] Run : `npm run test:e2e` → tous verts
 
 ### Module catégories
@@ -1616,7 +1651,11 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 - [ ] Créer `frontend/src/components/categories/CategoryCard.vue` — rendu d'une carte catégorie :
   - Props : `category`
   - Emits : `edit`, `delete`
-  - Icône + boutons Modifier/Supprimer (désactivé si `activityCount > 0`) + compteur ateliers liés
+  - Icône `Tag` + boutons Modifier/Supprimer (Supprimer désactivé si `activityCount > 0`)
+  - Titre + description optionnelle + compteur d'ateliers
+  - **Texte du compteur** : `{{ count }} atelier{{ count > 1 ? 's' : '' }}` — donne `"1 atelier"` / `"2 ateliers"` / `"0 atelier"`. Pas le mot « lié(s) ».
+  - **Pas de séparateur** (ni `border-t`, ni `<hr>`) entre le titre et le compteur
+  > ⚠️ **Espaces du compteur** : interpolation Vue sur deux lignes (`{{ count }}` puis `atelier{{ s }}`) — le saut de ligne devient un espace au rendu. Si Biome reformate et colle les balises, on obtient `"1ateliers"` (sans espace) — relire le rendu après chaque format.
 - [ ] Créer `frontend/src/views/CategoryList.vue` — orchestrateur de la liste :
   - Grille responsive (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`) avec `<CategoryCard v-for>`
   - Barre de recherche : `searchQuery` ref + `filteredCategories` computed (`name` + `description`)
@@ -1624,7 +1663,10 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 - [ ] Créer `frontend/src/components/categories/CategoryFormModal.vue` — formulaire nom + description optionnelle, émit `@saved` / `@close`
 
 **Tests E2E — catégories :**
-- [ ] Écrire `sc-category-crud.spec.ts` — créer, modifier une catégorie ; tentative de suppression d'une catégorie liée → Cannot Delete Modal visible
+- [ ] Écrire `sc-category-crud.spec.ts` :
+  - les 6 catégories seed sont visibles (vérifier au moins 2 noms : `Développement`, `Système`)
+  - créer / modifier une catégorie
+  - tentative de suppression d'une catégorie liée → modal « Suppression impossible » visible avec le nom de la catégorie
 - [ ] Run : `npm run test:e2e` → tous verts
 
 ### Badges de statut
@@ -1673,8 +1715,9 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   > Ce script exécute `tests/setup/restoreDb.js` qui : (1) se connecte à MariaDB via le pool, (2) lit `tests/setup/restore_db.sql`, (3) exécute le SQL avec `multipleStatements: true` — TRUNCATE de toutes les tables puis INSERT des données de test
 - [ ] Vérifier le résultat attendu après restauration :
   - **60 stagiaires** dans la table `internship` (+ personnes associées dans `person`)
-  - **15 activités** dans la table `activity` (12 visibles, 3 avec `visible = 0`)
-  - **Stagiaire ID 60** : Joël Dacobeau avec les activités 14 et 15 associées
+  - **15 activités** dans la table `activity` (13 visibles dont les 13 de problem4.png, 2 avec `visible = 0` pour tester le soft-delete)
+  - **6 catégories** par défaut : Développement (7 ateliers), Système (2), Réseau (1), Hardware (2), Graphisme (1), Modélisation 3D (1)
+  - **Stagiaire ID 60** : Joël Dacobeau (utilisé par certains scénarios manuels)
   - Stages couvrant les 3 statuts : passés (dates 2024), en cours (dates encadrant aujourd'hui), à venir (dates futures)
 
 ### Sanity check — intégrité des données
