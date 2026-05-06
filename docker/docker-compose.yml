@@ -8,7 +8,9 @@ services:
     volumes:
       - ../backend:/app/backend
       - /app/backend/node_modules
-      - uploads_data:/app/backend/uploads
+      # Bind mount uploads from the repo so the seed certificate template
+      # (backend/uploads/certificate/template.docx) is available in the container.
+      # A named volume would shadow the directory and the template would be missing.
     command: npm run dev --workspace=backend
     environment:
       - DB_HOST=database
@@ -69,7 +71,6 @@ services:
 
 volumes:
   mariadb_data:
-  uploads_data:
 
 
 networks:

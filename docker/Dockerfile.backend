@@ -9,6 +9,11 @@ RUN apk add --no-cache \
     font-noto \
     font-noto-cjk
 
+# Carbone (on Linux) calls `soffice.bin` directly, not `soffice`. The binary lives in
+# /usr/lib/libreoffice/program/ and is not in the default PATH on Alpine. Add it so
+# Carbone's `which.sync('soffice.bin')` can resolve it.
+ENV PATH="/usr/lib/libreoffice/program:${PATH}"
+
 WORKDIR /app
 
 # Copy root manifest files

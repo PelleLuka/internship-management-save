@@ -39,3 +39,7 @@ design/validation-report.html
 # Playwright test artifacts
 tests/e2e/playwright-report/
 tests/e2e/test-results/
+
+# User uploads (activity documents) — keep folder structure but not user files
+backend/uploads/activities/*
+!backend/uploads/activities/.gitkeep

@@ -285,7 +285,7 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 
 **Stockage des documents :**
 - [ ] Étudier 2 variantes : BLOB en base de données vs Filesystem + référence en DB
-- [ ] Conclure : **Filesystem retenu** — performances optimales, nommage `<uuid>-<nom-sanitisé>.<ext>`, volume Docker `uploads_data`
+- [ ] Conclure : **Filesystem retenu** — performances optimales, nommage `<uuid>-<nom-sanitisé>.<ext>`, dossier `backend/uploads/` bind-monté depuis le repo (le template du certificat est versionné, les fichiers utilisateurs sont gitignored)
 
 **Génération du certificat :**
 - [ ] Étudier 2 variantes : HTML → PDF via Puppeteer vs DOCX template → PDF via carbone.js + LibreOffice
@@ -348,8 +348,8 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
   - **Frontend** : « Vue.js 3 + Vite » sur le port `:8081`
   - **Backend** : « Node.js + Express.js » sur le port `:3000`
   - **Base de données** : « MariaDB » sur le port `:3306`
-- [ ] Ajouter le volume Docker `uploads_data` (cylindre) relié au backend
-- [ ] Ajouter les flèches étiquetées : `HTTP/JSON` (navigateur → frontend), `REST API` (frontend → backend), `SQL` (backend → MariaDB), `R/W` (backend → uploads_data)
+- [ ] Ajouter le dossier `backend/uploads/` (cylindre, bind mount) relié au backend
+- [ ] Ajouter les flèches étiquetées : `HTTP/JSON` (navigateur → frontend), `REST API` (frontend → backend), `SQL` (backend → MariaDB), `R/W` (backend → backend/uploads/)
 - [ ] Exporter en PNG → `docs/architecture/architecture-3tiers.png`
 - [ ] Insérer dans §5.1 du rapport (Figure 4)
 
@@ -636,7 +636,9 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
       volumes:
         - ../backend:/app/backend
         - /app/backend/node_modules
-        - uploads_data:/app/backend/uploads
+        # ⚠️ Ne PAS utiliser un named volume sur /app/backend/uploads : il masquerait
+        # le bind mount de ../backend et le template (backend/uploads/certificate/template.docx)
+        # serait invisible dans le container → erreur NO_TEMPLATE / 400 sur la génération.
       command: npm run dev --workspace=backend
       environment:
         - DB_HOST=database
@@ -697,12 +699,19 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
   volumes:
     mariadb_data:
-    uploads_data:
 
   networks:
     app-network:
       driver: bridge
   ```
+  > **Stratégie uploads :** les fichiers d'activités et le template du certificat vivent dans `backend/uploads/` (bind-monté depuis le repo).
+  > - Le **template** (`backend/uploads/certificate/template.docx`) est versionné dans le repo et toujours disponible au démarrage.
+  > - Les **uploads d'activités** (`backend/uploads/activities/`) sont écrits côté hôte. Ajouter au `.gitignore` :
+  >   ```
+  >   backend/uploads/activities/*
+  >   !backend/uploads/activities/.gitkeep
+  >   ```
+  > - Si l'admin upload un nouveau template via l'UI, il écrase `backend/uploads/certificate/template.docx`. Sur un dev pull, ça apparaît comme un fichier modifié — c'est normal.
 - [ ] Vérifier que `depends_on` est correct : `frontend` attend `backend`, `backend` attend `database`
 
 ### Dockerfile backend
@@ -717,6 +726,11 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
       openjdk11-jre-headless \
       font-noto \
       font-noto-cjk
+
+  # ⚠️ Indispensable : Carbone (sur Linux) appelle directement `soffice.bin`, pas `soffice`.
+  # Le binaire est dans /usr/lib/libreoffice/program/ qui n'est pas dans le PATH par défaut sur Alpine.
+  # Sans cette ligne, `which.sync('soffice.bin')` échoue → "Cannot find LibreOffice" → 500 sur la génération PDF.
+  ENV PATH="/usr/lib/libreoffice/program:${PATH}"
 
   WORKDIR /app
 
@@ -945,7 +959,8 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   ```bash
   docker compose exec backend node -e "import('./backend/config/db.js').then(m => m.default.getConnection()).then(c => { console.log('OK'); c.end(); })"
   ```
-- [ ] Vérifier que le volume `uploads_data` persiste entre les redémarrages : `docker compose down && docker compose up` → le volume existe toujours
+- [ ] Vérifier que le template du certificat est accessible : `docker compose exec backend ls /app/backend/uploads/certificate/template.docx` → fichier listé
+- [ ] Vérifier que le bind mount fonctionne : un upload via `POST /api/activities/:id/document` doit créer un fichier dans `backend/uploads/activities/` côté hôte
 - [ ] Commit : `chore: add Docker infrastructure, Nginx, DB schema and test restore script`
 
 ---
@@ -1249,9 +1264,19 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   router.post('/template', uploadCertificateTemplate, uploadTemplate);  // POST /api/certificate/template
   router.get('/:id', generateCertificate);             // ← monté sur /api/internships/:id/certificate via internshipRoutes
   ```
-- [ ] Créer le template DOCX de démonstration avec les balises carbone :
-  - `{prenom}`, `{nom}`, `{email}`, `{date_debut}`, `{date_fin}`, `{date_emission}`
-  - Boucle ateliers : `{#ateliers}` ... `{titre}` ... `{categories}` ... `{/ateliers}`
+- [ ] Créer le template DOCX de démonstration avec les **balises Carbone v3** (préfixe `d.` obligatoire) :
+  - Champs simples : `{d.prenom}`, `{d.nom}`, `{d.email}`, `{d.date_debut}`, `{d.date_fin}`, `{d.date_emission}`
+  - Boucle ateliers (Carbone répète automatiquement entre les deux marqueurs) :
+    ```
+    ▸ {d.ateliers[i].titre}        ← première itération (le contenu est répété)
+       {d.ateliers[i].categories}
+    ▸ {d.ateliers[i+1].titre}      ← marqueur de fin (Carbone le retire)
+       {d.ateliers[i+1].categories}
+    ```
+  > ⚠️ **Pièges Carbone classiques** :
+  > - Sans `d.` devant : `{prenom}` apparaît tel quel dans le PDF (Carbone ne le voit pas comme un marqueur).
+  > - La syntaxe Mustache `{#ateliers}...{/ateliers}` n'existe pas en Carbone — utiliser `[i]`/`[i+1]`.
+  > - Les deux paragraphes `[i]` et `[i+1]` doivent être **structurellement identiques** (mêmes runs `<w:r>`, même mise en forme) sinon Carbone ne reconnaît pas le pattern de boucle.
 - [ ] Placer le template dans `backend/uploads/certificate/template.docx`
 - [ ] Tester dans Postman : génération PDF (200 + binaire), sans template (404/500)
 - [ ] Ajouter à la collection Postman
