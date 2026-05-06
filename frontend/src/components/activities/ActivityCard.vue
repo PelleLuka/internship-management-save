@@ -1,16 +1,10 @@
 <script setup>
-import {
-  Activity as ActivityIcon,
-  CircleCheck,
-  CircleX,
-  Pencil,
-  Trash2,
-} from 'lucide-vue-next';
+import { Activity as ActivityIcon, Pencil, Trash2 } from 'lucide-vue-next';
 import { getActivityDocumentUrl } from '../../services/activityService';
 import ActivityCategoryBadge from './ActivityCategoryBadge.vue';
 import ActivityCategoryPopover from './ActivityCategoryPopover.vue';
 
-const props = defineProps({
+defineProps({
   activity: { type: Object, required: true },
   isExpanded: { type: Boolean, default: false },
   categoryMenuOpen: { type: Boolean, default: false },
@@ -34,14 +28,12 @@ const emit = defineEmits([
 
 <template>
   <div
-    class="group bg-white rounded-xl border transition-all duration-200 flex flex-col scroll-mt-32"
+    class="group bg-white rounded-xl border transition-all duration-200 flex flex-col scroll-mt-32 cursor-pointer"
     :class="isExpanded ? 'border-blue-200 shadow-md' : 'border-slate-200 shadow-sm hover:shadow-md'"
+    @click="emit('toggle', activity.id)"
   >
-    <!-- Clickable header: icon, title, categories, description -->
-    <div
-      @click="emit('toggle', activity.id)"
-      class="p-5 cursor-pointer flex flex-col"
-    >
+    <!-- Header: icon + actions / title / non-removable badges / separator / description -->
+    <div class="p-5">
       <div class="flex justify-between items-start gap-4 mb-3">
         <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
           <ActivityIcon class="w-5 h-5" />
@@ -81,126 +73,46 @@ const emit = defineEmits([
         {{ activity.title }}
       </h3>
 
-      <!-- Category badges — deletable -->
-      <div
-        v-if="activity.categories?.length"
-        class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-1"
-      >
+      <!-- Non-removable category tags below the title -->
+      <div v-if="activity.categories?.length" class="mt-2 flex flex-wrap gap-1">
         <ActivityCategoryBadge
           v-for="cat in activity.categories"
           :key="cat.id"
           :category="cat"
-          @remove="(catId) => emit('remove-category', activity, catId)"
         />
       </div>
 
+      <!-- Separator -->
+      <hr class="my-4 border-slate-100" />
+
       <!-- Description -->
-      <div
-        v-if="activity.description"
-        class="mt-3 pt-3 border-t border-slate-100"
+      <p
+        class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1"
       >
-        <p
-          class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1"
-        >
-          Description
-        </p>
-        <p
-          class="text-sm text-slate-500 leading-relaxed"
-          :class="isExpanded ? '' : 'line-clamp-2'"
-        >
-          {{ activity.description }}
-        </p>
-      </div>
+        Description
+      </p>
+      <p
+        class="text-sm text-slate-500 leading-relaxed"
+        :class="isExpanded ? '' : 'line-clamp-2'"
+      >
+        {{ activity.description || '—' }}
+      </p>
     </div>
 
-    <!-- Expanded: stats + category management -->
+    <!-- Expanded sections: Documentation + Categories management -->
     <div
       v-if="isExpanded"
-      class="px-5 pb-0 animate-in slide-in-from-top-2 duration-200"
+      class="px-5 pb-5 animate-in slide-in-from-top-2 duration-200"
+      @click.stop
     >
-      <div class="pt-3 border-t border-slate-100">
-        <!-- Stats -->
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div
-            class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-1"
-          >
-            <span class="text-xs font-medium text-slate-500"
-              >Stages utilisant cet atelier</span
-            >
-            <span class="text-2xl font-bold text-blue-600"
-              >{{ activity.internshipCount }}</span
-            >
-          </div>
-          <div
-            class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-2"
-          >
-            <span class="text-xs font-medium text-slate-500">Document</span>
-            <div class="flex items-center gap-2">
-              <CircleCheck
-                v-if="activity.documentUrl"
-                class="w-4 h-4 text-green-600 shrink-0"
-              />
-              <CircleX v-else class="w-4 h-4 text-slate-400 shrink-0" />
-              <span
-                class="text-sm font-medium"
-                :class="activity.documentUrl ? 'text-green-600' : 'text-slate-400'"
-              >
-                {{ activity.documentUrl ? 'Disponible' : 'Aucun document' }}
-              </span>
-            </div>
-          </div>
-        </div>
+      <hr class="border-slate-100 mb-4" />
 
-        <span
-          class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2 block"
-          >Catégories</span
-        >
-
-        <!-- Assigned category badges -->
-        <div class="flex flex-wrap gap-1 mb-3 min-h-[28px]">
-          <ActivityCategoryBadge
-            v-for="cat in activity.categories"
-            :key="cat.id"
-            :category="cat"
-            @remove="(catId) => emit('remove-category', activity, catId)"
-          />
-          <span
-            v-if="!activity.categories?.length"
-            class="text-xs text-slate-400 italic"
-          >
-            Aucune catégorie
-          </span>
-        </div>
-
-        <!-- Add category button + popover -->
-        <div class="relative mb-3">
-          <button
-            @click.stop="emit('open-category-menu', activity)"
-            class="w-full flex items-center justify-center gap-1.5 h-9 text-slate-500 border border-slate-300 rounded-md text-sm transition-colors hover:bg-slate-50"
-          >
-            + Ajouter une catégorie
-          </button>
-
-          <ActivityCategoryPopover
-            :category-menu-open="categoryMenuOpen"
-            :available-categories="availableCategories"
-            :temp-category-ids="tempCategoryIds"
-            @close-category-menu="emit('close-category-menu')"
-            @toggle-category-selection="(id) => emit('toggle-category-selection', id)"
-            @save-categories="emit('save-categories', activity)"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Documentation — always visible -->
-    <div class="mx-5 mb-5 mt-3 pt-3 border-t border-slate-100">
+      <!-- Documentation block -->
       <p
         class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2"
       >
         Documentation
       </p>
-
       <template v-if="activity.documentUrl">
         <div
           class="bg-green-50 border border-green-200 rounded-md px-3 py-2 flex items-center justify-between gap-2 mb-2"
@@ -226,7 +138,7 @@ const emit = defineEmits([
               ⬇
             </a>
             <button
-              @click="emit('delete-document', activity.id)"
+              @click.stop="emit('delete-document', activity.id)"
               class="text-xs text-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-100"
             >
               🗑
@@ -244,7 +156,6 @@ const emit = defineEmits([
           />
         </label>
       </template>
-
       <label
         v-else
         class="block border-2 border-dashed border-slate-200 rounded-md p-3 text-center text-xs text-slate-400 cursor-pointer hover:border-slate-300 transition-colors"
@@ -259,6 +170,48 @@ const emit = defineEmits([
           @change="(e) => emit('upload-document', activity.id, e)"
         />
       </label>
+
+      <hr class="my-4 border-slate-100" />
+
+      <!-- Categories management block -->
+      <p
+        class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2"
+      >
+        Catégories
+      </p>
+      <div class="flex flex-wrap gap-1 mb-3 min-h-[28px]">
+        <ActivityCategoryBadge
+          v-for="cat in activity.categories"
+          :key="cat.id"
+          :category="cat"
+          removable
+          @remove="(catId) => emit('remove-category', activity, catId)"
+        />
+        <span
+          v-if="!activity.categories?.length"
+          class="text-xs text-slate-400 italic"
+        >
+          Aucune catégorie
+        </span>
+      </div>
+
+      <div class="relative">
+        <button
+          @click.stop="emit('open-category-menu', activity)"
+          class="w-full flex items-center justify-center gap-1.5 h-9 text-slate-500 border border-slate-300 rounded-md text-sm transition-colors hover:bg-slate-50"
+        >
+          + Ajouter une catégorie
+        </button>
+
+        <ActivityCategoryPopover
+          :category-menu-open="categoryMenuOpen"
+          :available-categories="availableCategories"
+          :temp-category-ids="tempCategoryIds"
+          @close-category-menu="emit('close-category-menu')"
+          @toggle-category-selection="(id) => emit('toggle-category-selection', id)"
+          @save-categories="emit('save-categories', activity)"
+        />
+      </div>
     </div>
   </div>
 </template>

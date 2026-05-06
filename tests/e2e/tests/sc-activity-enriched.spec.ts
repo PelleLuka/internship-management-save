@@ -10,11 +10,18 @@ test.describe('Enriched Activity Form', () => {
     await expect(page.getByText(/catégories/i).first()).toBeVisible();
   });
 
-  test('document zone is always visible on activity cards', async ({
+  test('documentation block is visible only on expanded activity cards', async ({
     page,
   }) => {
     await page.goto('/activities');
-    await expect(page.getByText(/documentation/i).first()).toBeVisible();
+    // Documentation header is hidden in compact view
+    await expect(page.getByText(/documentation/i)).toHaveCount(0);
+    // Click any card to expand it
+    const card = page
+      .locator('.grid > div')
+      .filter({ hasText: "Réalisation d'un site Web" });
+    await card.click();
+    await expect(card.getByText(/documentation/i)).toBeVisible();
   });
 
   test('can select categories when creating an activity', async ({ page }) => {
@@ -52,20 +59,20 @@ test.describe('Enriched Activity Form', () => {
     ).toBeVisible();
   });
 
-  test('expanded activity card shows stat cards', async ({ page }) => {
+  test('expanded activity card shows documentation and category management', async ({
+    page,
+  }) => {
     await page.goto('/activities');
-    // Activity 4 "Réalisation d'un site Web..." is seeded with categories
     const card = page
       .locator('.grid > div')
       .filter({ hasText: "Réalisation d'un site Web" });
-    // Click to expand
-    await card.locator('div').first().click();
-    // Card/Stat: internship count label visible
+    await card.click();
+    // Documentation block visible
+    await expect(card.getByText(/documentation/i)).toBeVisible();
+    // Category management block visible (with the "Ajouter une catégorie" button)
     await expect(
-      card.locator('text=Stages utilisant cet atelier'),
+      card.getByRole('button', { name: /ajouter une catégorie/i }),
     ).toBeVisible();
-    // Card/StatDoc: document status label visible
-    await expect(card.locator('text=Document').first()).toBeVisible();
   });
 
   test('delete button is disabled for activities linked to internships', async ({
