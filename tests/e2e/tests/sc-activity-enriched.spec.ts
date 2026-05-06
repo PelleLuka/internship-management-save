@@ -39,13 +39,12 @@ test.describe('Enriched Activity Form', () => {
 
   test('activity card shows category badges', async ({ page }) => {
     await page.goto('/activities');
-    // Activity 4 "Réalisation d'un site Web..." is seeded with Programmation + Web categories
+    // Activity 4 "Réalisation d'un site Web..." is seeded with the Développement category
     const card = page
       .locator('[data-testid="activity-card"]')
       .filter({ hasText: "Réalisation d'un site Web" });
-    await expect(card.locator('span').filter({ hasText: 'Web' })).toBeVisible();
     await expect(
-      card.locator('span').filter({ hasText: 'Programmation' }),
+      card.locator('span').filter({ hasText: 'Développement' }),
     ).toBeVisible();
   });
 

@@ -69,16 +69,31 @@ UPDATE activity SET description = 'Réalisation d\'une affiche de film avec le l
 UPDATE activity SET description = 'Développement du jeu Simon avec Python sur Raspberry Pi Pico.' WHERE id = 12;
 UPDATE activity SET description = 'Découverte du fonctionnement d\'une imprimante 3D et démonstration d\'impression d\'un objet.' WHERE id = 13;
 
--- Seed categories
+-- Seed categories (6 default categories — see screenshots_problem/problem6.png)
 INSERT INTO category (id, name, description) VALUES
-  (1, 'Programmation', 'Activités liées à la programmation et au développement logiciel'),
-  (2, 'Web', 'Activités liées au développement web et à la création de sites');
+  (1, 'Développement', 'Activités de programmation, développement logiciel et création de jeux'),
+  (2, 'Système', 'Installation, configuration et administration de systèmes d\'exploitation'),
+  (3, 'Réseau', 'Activités liées aux réseaux informatiques et à la communication'),
+  (4, 'Hardware', 'Montage, configuration et utilisation de matériel informatique'),
+  (5, 'Graphisme', 'Création visuelle, retouche d\'image et composition graphique'),
+  (6, 'Modélisation 3D', 'Modélisation, impression et démonstration en 3D');
 
--- Link categories to activities
+-- Link categories to activities (matches the badges shown in problem4.png)
 INSERT INTO activity_category (activity_id, category_id) VALUES
-  (1, 1),
-  (4, 1),
-  (4, 2);
+  (1, 1),     -- Ordo Lumina (Python)        → Développement
+  (2, 4),     -- Montage poste de travail PC → Hardware
+  (3, 2),     -- Installation Ubuntu         → Système
+  (4, 1),     -- Site Web HTML/CSS/PHP       → Développement
+  (5, 1),     -- Casse-briques               → Développement
+  (6, 1),     -- Tetris                      → Développement
+  (7, 3),     -- Attrape-moi (Processing)    → Réseau
+  (8, 1),     -- Flappy Bird (Scratch)       → Développement
+  (9, 1),     -- Pac-Miam (Scratch)          → Développement
+  (10, 2),    -- Robot Ozobot                → Système
+  (11, 5),    -- Affiche film (Gimp)         → Graphisme
+  (12, 1),    -- Simon (Raspberry Pi)        → Développement
+  (13, 4),    -- Impression 3D               → Hardware
+  (13, 6);    -- Impression 3D               → Modélisation 3D
 
 SET FOREIGN_KEY_CHECKS = 1;
 ALTER TABLE internship AUTO_INCREMENT = 1000;

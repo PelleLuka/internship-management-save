@@ -103,10 +103,10 @@ test.describe('Category CRUD', () => {
     await expect(page.locator('.grid')).toBeVisible();
     // Seeded categories must appear (use role to be more specific)
     await expect(
-      page.getByRole('heading', { name: 'Programmation' }).first(),
+      page.getByRole('heading', { name: 'Développement' }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Web' }).first(),
+      page.getByRole('heading', { name: 'Système' }).first(),
     ).toBeVisible();
   });
 });

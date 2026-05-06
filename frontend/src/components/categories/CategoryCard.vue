@@ -46,14 +46,10 @@ const emit = defineEmits(['edit', 'delete']);
       >
         {{ category.description }}
       </p>
-    </div>
-
-    <div class="mt-auto pt-2 border-t border-slate-100">
-      <span class="text-xs text-slate-400">
-        {{ category.activityCount }}atelier
-        {{ category.activityCount !== 1 ? 's' : '' }}lié
-        {{ category.activityCount !== 1 ? 's' : '' }}
-      </span>
+      <p class="text-xs text-slate-400 mt-1">
+        {{ category.activityCount }}
+        atelier{{ category.activityCount > 1 ? 's' : '' }}
+      </p>
     </div>
   </div>
 </template>
