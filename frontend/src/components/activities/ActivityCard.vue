@@ -30,6 +30,7 @@ const emit = defineEmits([
   <div
     class="group bg-white rounded-xl border transition-all duration-200 flex flex-col scroll-mt-32 cursor-pointer"
     :class="isExpanded ? 'border-blue-200 shadow-md' : 'border-slate-200 shadow-sm hover:shadow-md'"
+    data-testid="activity-card"
     @click="emit('toggle', activity.id)"
   >
     <!-- Header: icon + actions / title / non-removable badges / separator / description -->

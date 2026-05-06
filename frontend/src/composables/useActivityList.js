@@ -15,7 +15,14 @@ export function useActivityList() {
   const isModalOpen = ref(false);
   const editingId = ref(null);
   const isSearchOpen = ref(false);
-  const expandedId = ref(null);
+  const expandedIds = ref(new Set());
+
+  const toggleExpand = (id) => {
+    const next = new Set(expandedIds.value);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    expandedIds.value = next;
+  };
 
   const loadActivities = async () => {
     try {
@@ -92,7 +99,8 @@ export function useActivityList() {
     isModalOpen,
     editingId,
     isSearchOpen,
-    expandedId,
+    expandedIds,
+    toggleExpand,
     filteredActivities,
     loadActivities,
     handleDelete,

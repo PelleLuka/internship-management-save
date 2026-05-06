@@ -18,7 +18,7 @@ test.describe('Enriched Activity Form', () => {
     await expect(page.getByText(/documentation/i)).toHaveCount(0);
     // Click any card to expand it
     const card = page
-      .locator('.grid > div')
+      .locator('[data-testid="activity-card"]')
       .filter({ hasText: "Réalisation d'un site Web" });
     await card.click();
     await expect(card.getByText(/documentation/i)).toBeVisible();
@@ -41,7 +41,7 @@ test.describe('Enriched Activity Form', () => {
     await page.goto('/activities');
     // Activity 4 "Réalisation d'un site Web..." is seeded with Programmation + Web categories
     const card = page
-      .locator('.grid > div')
+      .locator('[data-testid="activity-card"]')
       .filter({ hasText: "Réalisation d'un site Web" });
     await expect(card.locator('span').filter({ hasText: 'Web' })).toBeVisible();
     await expect(
@@ -52,7 +52,7 @@ test.describe('Enriched Activity Form', () => {
   test('activity card shows description excerpt', async ({ page }) => {
     await page.goto('/activities');
     const card = page
-      .locator('.grid > div')
+      .locator('[data-testid="activity-card"]')
       .filter({ hasText: "Réalisation d'un site Web" });
     await expect(
       card.locator("text=Création d'un site web dynamique"),
@@ -64,7 +64,7 @@ test.describe('Enriched Activity Form', () => {
   }) => {
     await page.goto('/activities');
     const card = page
-      .locator('.grid > div')
+      .locator('[data-testid="activity-card"]')
       .filter({ hasText: "Réalisation d'un site Web" });
     await card.click();
     // Documentation block visible
@@ -81,7 +81,7 @@ test.describe('Enriched Activity Form', () => {
     await page.goto('/activities');
     // Activity 1 is seeded in internship_activity (linked to internships 1 and 8)
     const card = page
-      .locator('.grid > div')
+      .locator('[data-testid="activity-card"]')
       .filter({ hasText: 'Jeu de mémoire lumineux' });
     const deleteBtn = card.locator(
       'button[aria-label*="Suppression impossible"]',

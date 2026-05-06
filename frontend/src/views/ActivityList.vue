@@ -4,6 +4,7 @@ import AppButton from '../components/AppButton.vue';
 import AppInput from '../components/AppInput.vue';
 import ActivityCard from '../components/activities/ActivityCard.vue';
 import ActivityFormModal from '../components/activities/ActivityFormModal.vue';
+import MasonryGrid from '../components/common/MasonryGrid.vue';
 import { useActivityList } from '../composables/useActivityList';
 import { useCategoryMenu } from '../composables/useCategoryMenu';
 import { useMediaQuery } from '../composables/useMediaQuery';
@@ -13,11 +14,12 @@ const isMobile = useMediaQuery('(max-width: 890px)');
 const {
   allCategories,
   editingId,
-  expandedId,
+  expandedIds,
   filteredActivities,
   isModalOpen,
   isSearchOpen,
   searchQuery,
+  toggleExpand: baseToggleExpand,
   handleDelete,
   handleDeleteDocument,
   handleUploadDocument,
@@ -36,7 +38,7 @@ const {
 } = useCategoryMenu(loadActivities, allCategories);
 
 const toggleExpand = (id) => {
-  expandedId.value = expandedId.value === id ? null : id;
+  baseToggleExpand(id);
   closeCategoryMenu();
 };
 </script>
@@ -123,28 +125,29 @@ const toggleExpand = (id) => {
       </p>
     </div>
 
-    <!-- Activity cards grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <ActivityCard
-        v-for="activity in filteredActivities"
-        :key="activity.id"
-        :activity="activity"
-        :isExpanded="expandedId === activity.id"
-        :categoryMenuOpen="categoryMenuActivityId === activity.id"
-        :tempCategoryIds="tempCategoryIds"
-        :availableCategories="availableCategories(activity)"
-        @toggle="toggleExpand"
-        @edit="(id) => { editingId = id; isModalOpen = true; }"
-        @delete="handleDelete"
-        @remove-category="removeCategoryFromActivity"
-        @open-category-menu="openCategoryMenu"
-        @close-category-menu="closeCategoryMenu"
-        @toggle-category-selection="toggleCategorySelection"
-        @save-categories="saveCategories"
-        @upload-document="handleUploadDocument"
-        @delete-document="handleDeleteDocument"
-      />
-    </div>
+    <!-- Activity cards — masonry layout: an expanded card pushes only the
+         cards directly below it in the same column (not the whole row). -->
+    <MasonryGrid v-else :items="filteredActivities">
+      <template #default="{ item: activity }">
+        <ActivityCard
+          :activity="activity"
+          :isExpanded="expandedIds.has(activity.id)"
+          :categoryMenuOpen="categoryMenuActivityId === activity.id"
+          :tempCategoryIds="tempCategoryIds"
+          :availableCategories="availableCategories(activity)"
+          @toggle="toggleExpand"
+          @edit="(id) => { editingId = id; isModalOpen = true; }"
+          @delete="handleDelete"
+          @remove-category="removeCategoryFromActivity"
+          @open-category-menu="openCategoryMenu"
+          @close-category-menu="closeCategoryMenu"
+          @toggle-category-selection="toggleCategorySelection"
+          @save-categories="saveCategories"
+          @upload-document="handleUploadDocument"
+          @delete-document="handleDeleteDocument"
+        />
+      </template>
+    </MasonryGrid>
 
     <ActivityFormModal
       :isOpen="isModalOpen"
