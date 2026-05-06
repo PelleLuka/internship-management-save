@@ -1723,10 +1723,10 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 - [ ] Vérifier le résultat attendu après restauration :
   - **26 stagiaires** dans la table `internship` (+ personnes associées dans `person`) :
     - 11 historiques (ids 1-10, 60) — tous **Terminé** (2024-2025)
-    - 15 récents (ids 100-114) répartis sur 3 mois pour tester les statuts :
-      - **5 Terminé** en avril 2026 (ids 100-104)
-      - **5 En cours** en mai 2026 encadrant la date du jour (ids 105-109)
-      - **5 À venir** en juin 2026 (ids 110-114)
+    - 15 récents (ids 100-114), **stages de 2 jours** dispersés sur 3 mois :
+      - 5 en avril (ids 100-104, espacés d'environ 7 jours) → **Terminé**
+      - 5 en mai (ids 105-109) → 1 Terminé (4-5 mai) + 2 En cours (5-6 mai et 6-7 mai, encadrant la date du jour) + 2 À venir (14-15 mai, 25-26 mai)
+      - 5 en juin (ids 110-114, espacés d'environ 7 jours) → **À venir**
   - **15 activités** dans la table `activity` (13 visibles dont les 13 de problem4.png, 2 avec `visible = 0` pour tester le soft-delete)
   - **6 catégories** par défaut : Développement (7 ateliers), Système (2), Réseau (1), Hardware (2), Graphisme (1), Modélisation 3D (1)
   - **Stagiaire ID 60** : Joël Dacobeau (utilisé par certains scénarios manuels)
