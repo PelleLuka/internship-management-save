@@ -48,7 +48,7 @@ test.describe('Enriched Activity Form', () => {
       .locator('.grid > div')
       .filter({ hasText: "Réalisation d'un site Web" });
     await expect(
-      card.locator("text=Réalisation d'un site web complet"),
+      card.locator("text=Création d'un site web dynamique"),
     ).toBeVisible();
   });
 

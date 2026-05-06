@@ -17,10 +17,10 @@ INSERT INTO activity (id, title, visible) VALUES
   (7, 'Programmation du jeu Attrape-moi (Processing)', 1),
   (8, 'Programmation du jeu Flappy Bird (Scratch)', 1),
   (9, 'Programmation du jeu Pac-Miam (Scratch)', 1),
-  (10, 'Programmation d\'un robot Ozobot (OzoBlockly)', 1),
+  (10, 'Programmation d\'un robot Ozobot (OzobotEditor)', 1),
   (11, 'Création d\'une affiche de film (Gimp)', 1),
   (12, 'Programmation du jeu Simon sur un Raspberry Pi Pico (Python)', 1),
-  (13, 'Programmation d\'un robot (LEGO Mindstorms)', 0),
+  (13, 'Démonstration d\'une impression 3D', 1),
   (14, 'Réalisation d\'un circuit électronique interactif (Arduino, Scratch et Kinect)', 0),
   (15, 'Création d\'une affiche de film (Photoshop)', 0);
 
@@ -54,9 +54,20 @@ INSERT INTO internship_activity (internship_id, activity_id) VALUES
   (1,1),(1,2),(2,3),(2,4),(3,5),(3,6),(4,7),(4,8),(5,9),(5,10),
   (6,11),(6,12),(7,13),(7,14),(8,15),(8,1),(9,2),(9,3),(10,4),(10,5);
 
--- Descriptions on activities used in card display tests
-UPDATE activity SET description = 'Développement d\'un jeu utilisant Python et des LEDs pour créer une séquence lumineuse interactive.' WHERE id = 1;
-UPDATE activity SET description = 'Réalisation d\'un site web complet avec formulaires PHP, base de données MySQL et mise en page CSS avancée.' WHERE id = 4;
+-- Descriptions on all visible activities (aligned with the Pencil design / problem4.png)
+UPDATE activity SET description = 'Création d\'un jeu de mémoire lumineux avec Python et un Raspberry Pi Pico.' WHERE id = 1;
+UPDATE activity SET description = 'Assemblage et configuration d\'un ordinateur de bureau complet.' WHERE id = 2;
+UPDATE activity SET description = 'Installation et configuration d\'Ubuntu Linux sur un poste de travail.' WHERE id = 3;
+UPDATE activity SET description = 'Création d\'un site web dynamique avec HTML, CSS et PHP.' WHERE id = 4;
+UPDATE activity SET description = 'Développement du jeu classique Casse-briques en Small Basic.' WHERE id = 5;
+UPDATE activity SET description = 'Recréation du jeu Tetris en Microsoft Small Basic.' WHERE id = 6;
+UPDATE activity SET description = 'Développement du jeu Attrape-moi avec le langage Processing.' WHERE id = 7;
+UPDATE activity SET description = 'Recréation du jeu Flappy Bird avec Scratch.' WHERE id = 8;
+UPDATE activity SET description = 'Développement du jeu Pac-Miam avec Scratch.' WHERE id = 9;
+UPDATE activity SET description = 'Programmation et contrôle d\'un robot Ozobot via OzobotEditor.' WHERE id = 10;
+UPDATE activity SET description = 'Réalisation d\'une affiche de film avec le logiciel Gimp.' WHERE id = 11;
+UPDATE activity SET description = 'Développement du jeu Simon avec Python sur Raspberry Pi Pico.' WHERE id = 12;
+UPDATE activity SET description = 'Découverte du fonctionnement d\'une imprimante 3D et démonstration d\'impression d\'un objet.' WHERE id = 13;
 
 -- Seed categories
 INSERT INTO category (id, name, description) VALUES
