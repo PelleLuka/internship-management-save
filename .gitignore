@@ -43,6 +43,9 @@ tests/e2e/test-results/
 # Newman / Postman API test report
 report_output.json
 
+# Ad-hoc debug screenshots / PDFs (kept locally, never committed)
+screenshots_problem/
+
 # User uploads (activity documents) — keep folder structure but not user files
 backend/uploads/activities/*
 !backend/uploads/activities/.gitkeep
