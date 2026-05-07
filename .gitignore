@@ -28,6 +28,7 @@ dist-ssr
 *.sw?
 backups/
 backup/data/*.sql
+!backup/data/baseline.sql
 scripts/backup_db.sh
 .superpowers/
 

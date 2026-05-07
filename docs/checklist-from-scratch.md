@@ -816,6 +816,41 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   CMD ["crond", "-f", "-d", "8"]
   ```
 
+### Scripts de backup et restore
+
+- [ ] Créer `backup/scripts/backup.sh` — utilise `mariadb-dump` pour générer un fichier SQL horodaté dans `/data/backup_<YYYY-MM-DD_HH-MM-SS>.sql`. Doit utiliser le hostname `database` (nom du service Docker) pour atteindre la DB.
+- [ ] Créer `backup/scripts/restore.sh <filename>` — prend un nom de fichier et l'applique à la DB via `mariadb -h database -u user -p... internship_management < /data/<filename>`. Le préfixe `/data/` est ajouté automatiquement.
+- [ ] Créer `backup/config/crontab` — planifier une sauvegarde hebdomadaire :
+  ```cron
+  0 6 * * 1 /scripts/backup.sh >> /var/log/cron.log 2>&1
+  ```
+
+### Baseline + .gitignore
+
+- [ ] Ajouter au `.gitignore` :
+  ```
+  backup/data/*.sql
+  !backup/data/baseline.sql
+  ```
+  > Tous les dumps automatiques sont ignorés (ils changent à chaque exécution), sauf `baseline.sql` qui est l'**état de référence** versionné dans le repo.
+
+- [ ] Générer le baseline une fois que le seed est en place :
+  ```bash
+  # Restaurer le seed pour partir d'une DB propre
+  npm run db:restore
+  # Lancer un dump via le service backup
+  docker compose -f docker/docker-compose.yml exec backup /scripts/backup.sh
+  # Le dump est dans backup/data/backup_<date>.sql — le copier sous le nom canonique :
+  cp backup/data/backup_<date>.sql backup/data/baseline.sql
+  ```
+- [ ] Commiter `backup/data/baseline.sql` — cet état devient l'**état officiel reproductible** de l'application.
+
+> **Deux mécanismes complémentaires** :
+> - `npm run db:restore` (= `tests/setup/restoreDb.js` exécutant `tests/setup/restore_db.sql`) : seed curé avec commentaires, utilisé par les tests E2E. Source de vérité **structurelle**.
+> - `backup/scripts/restore.sh baseline.sql` : dump complet (schema + data) qui capture l'état exact de la DB à un instant T. Source de vérité **figée** (utile si on veut rejouer un état historique sans re-générer le seed).
+
+> **Quand mettre à jour `baseline.sql` ?** Quand le seed (`restore_db.sql`) change et qu'on veut figer ce nouvel état, refaire la séquence db:restore → backup.sh → cp → commit.
+
 ### Schéma SQL
 
 - [ ] Créer `database/schema.sql` avec les 6 tables dans l'ordre (respecter les dépendances FK) :
