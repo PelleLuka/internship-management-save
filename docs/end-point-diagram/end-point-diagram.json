@@ -1,576 +1,959 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "API Internship Management",
-    "version": "1.0.1",
-    "description": "API for managing internships and activities at the apprenticeship center."
+    "title": "WorkXP Admin API",
+    "version": "2.0.0",
+    "description": "REST API for the CA TIC WorkXP Admin application — internship and workshop management for the Centre d'Apprentissage TIC at HEIA-FR. Covers stagiaires (internships), ateliers (activities), categories, document attachments and PDF certificate generation. The backend is implemented with Express.js and MariaDB; routes are mounted under the `/api` prefix.",
+    "contact": {
+      "name": "Luka Pellegrinelli",
+      "email": "luka.pellegrinelli@hefr.ch"
+    }
   },
   "servers": [
     {
-      "url": "https://virtserver.swaggerhub.com/heiafr-48e/internship/1.0.1",
-      "description": "SwaggerHub API Auto Mocking"
+      "url": "http://localhost:3000/api",
+      "description": "Local development backend (docker compose up -d)"
+    },
+    {
+      "url": "https://virtserver.swaggerhub.com/heiafr-48e/internship/2.0.0",
+      "description": "SwaggerHub mock server"
     }
   ],
+  "tags": [
+    { "name": "Health", "description": "Backend availability and DB connectivity probe." },
+    { "name": "Internships", "description": "CRUD on internships (stages) — paginated list with search, full details, association with activities, certificate generation." },
+    { "name": "Activities", "description": "CRUD on the workshop catalogue — soft-delete preserves historical associations." },
+    { "name": "Categories", "description": "CRUD on classification categories — deletion is blocked when activities are linked." },
+    { "name": "Documents", "description": "Upload, download and removal of the optional document attached to an activity (PDF, DOCX, ODT, etc.)." },
+    { "name": "Certificate", "description": "Stage certificate generation (per-internship PDF) and global DOCX template upload." }
+  ],
   "paths": {
-    "/internships": {
+    "/health": {
       "get": {
-        "tags": ["Internships"],
-        "summary": "Retrieve the list of all internships",
-        "description": "Get all internships registered in the system.",
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Liveness probe used by Docker healthcheck and CI sanity checks. Confirms the backend is reachable and the MariaDB pool can acquire a connection.",
         "responses": {
           "200": {
-            "description": "List of internships retrieved successfully",
+            "description": "Backend is up and the database is reachable.",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Internship"
-                  }
-                }
+                "schema": { "$ref": "#/components/schemas/HealthStatus" },
+                "example": { "status": "ok", "database": "connected" }
               }
             }
           },
-          "500": {
-            "description": "Internal server error"
-          }
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/internships": {
+      "get": {
+        "tags": ["Internships"],
+        "summary": "List internships (paginated, searchable)",
+        "description": "Returns a paginated list of internships. Supports server-side search across first name, last name and email.",
+        "parameters": [
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/LimitParam" },
+          { "$ref": "#/components/parameters/SearchParam" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of internships.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/InternshipListResponse" }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       },
       "post": {
         "tags": ["Internships"],
-        "summary": "Create a new internship",
-        "description": "Create a new internship record. The end date must be greater than or equal to the start date.",
+        "summary": "Create an internship",
+        "description": "Creates a new person and the associated internship in a single call. Validates field lengths, email format and end_date >= start_date.",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/InternshipCreateRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/InternshipCreateRequest" }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
-            "description": "Internship created successfully",
+            "description": "Internship created.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Internship"
-                }
+                "schema": { "$ref": "#/components/schemas/Internship" }
               }
             }
           },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       }
     },
-    "/internships/{internshipId}": {
+    "/internships/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
       "get": {
         "tags": ["Internships"],
-        "summary": "Retrieve an internship",
-        "description": "Get a single internship by its identifier, including its associated activities.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/InternshipId"
-          }
-        ],
+        "summary": "Get an internship by ID",
         "responses": {
           "200": {
-            "description": "Internship found",
+            "description": "Internship details.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternshipDetail"
-                }
+                "schema": { "$ref": "#/components/schemas/Internship" }
               }
             }
           },
-          "404": {
-            "description": "Internship not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       },
-      "patch": {
+      "put": {
         "tags": ["Internships"],
         "summary": "Update an internship",
-        "description": "Partially update an internship's details. The end date must be greater than or equal to the start date.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/InternshipId"
-          }
-        ],
+        "description": "Partial-update : every field is optional. The end_date >= start_date constraint is re-validated against the resulting state, even if only one of the two dates is supplied.",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/InternshipUpdateRequest"
-              },
-              "examples": {
-                "updateFirstName": {
-                  "summary": "Update first name",
-                  "value": {
-                    "firstName": "Lukas"
-                  }
-                },
-                "updateLastName": {
-                  "summary": "Update last name",
-                  "value": {
-                    "lastName": "Meyer"
-                  }
-                },
-                "updateEmail": {
-                  "summary": "Update email address",
-                  "value": {
-                    "email": "stagiaire.updated@example.com"
-                  }
-                },
-                "updateStartDate": {
-                  "summary": "Update start date",
-                  "value": {
-                    "startDate": "2025-03-10"
-                  }
-                },
-                "updateEndDate": {
-                  "summary": "Update end date",
-                  "value": {
-                    "endDate": "2025-03-21"
-                  }
-                }
-              }
+              "schema": { "$ref": "#/components/schemas/InternshipUpdateRequest" }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "description": "Internship updated successfully",
+            "description": "Updated internship.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InternshipDetail"
-                }
+                "schema": { "$ref": "#/components/schemas/Internship" }
               }
             }
           },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Internship not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       },
       "delete": {
         "tags": ["Internships"],
         "summary": "Delete an internship",
-        "description": "Delete an internship record. This will automatically remove all associations with activities (Cascade delete).",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/InternshipId"
-          }
-        ],
+        "description": "Hard delete. CASCADE on internship_activity removes the associations automatically.",
         "responses": {
-          "204": {
-            "description": "Internship deleted successfully"
-          },
-          "404": {
-            "description": "Internship not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
+          "204": { "description": "Internship deleted." },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       }
     },
-    "/internships/{internshipId}/activities/{activityId}": {
-      "post": {
+    "/internships/{id}/activities": {
+      "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+      "get": {
         "tags": ["Internships"],
-        "summary": "Link an activity to an internship",
-        "description": "Associate an existing activity with a specific internship. Creates a record in the `internship_activities` join table.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/InternshipId"
-          },
-          {
-            "$ref": "#/components/parameters/ActivityId"
-          }
-        ],
+        "summary": "List activities linked to an internship",
+        "description": "Returns every activity linked to the internship through `internship_activity`, including soft-deleted ones (preserves historical context for the certificate).",
         "responses": {
           "200": {
-            "description": "Activity linked successfully",
+            "description": "Array of activities.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Activity"
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Activity" }
                 }
               }
             }
           },
-          "404": {
-            "description": "Internship or Activity not found"
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/internships/{internshipId}/activities/{activityId}": {
+      "parameters": [
+        {
+          "name": "internshipId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "integer", "minimum": 1 }
+        },
+        {
+          "name": "activityId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "integer", "minimum": 1 }
+        }
+      ],
+      "post": {
+        "tags": ["Internships"],
+        "summary": "Link an activity to an internship",
+        "description": "Idempotent — INSERT IGNORE on `internship_activity`. Returns the linked activity for convenience.",
+        "responses": {
+          "200": {
+            "description": "Activity successfully linked.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Activity" }
+              }
+            }
           },
-          "500": {
-            "description": "Internal server error"
-          }
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       },
       "delete": {
         "tags": ["Internships"],
         "summary": "Unlink an activity from an internship",
-        "description": "Remove the association between an activity and an internship. Removes the record from the `internship_activities` join table. The activity itself is not deleted.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/InternshipId"
-          },
-          {
-            "$ref": "#/components/parameters/ActivityId"
-          }
-        ],
         "responses": {
-          "204": {
-            "description": "Activity unlinked successfully"
-          },
+          "204": { "description": "Association removed." },
           "404": {
-            "description": "Association not found"
+            "description": "Association not found.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "Association not found" }
+              }
+            }
           },
-          "500": {
-            "description": "Internal server error"
-          }
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/internships/{id}/certificate": {
+      "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+      "get": {
+        "tags": ["Internships", "Certificate"],
+        "summary": "Generate the certificate PDF for an internship",
+        "description": "Reads the global DOCX template, injects the internship + linked activities data via carbone.js, converts the result to PDF via LibreOffice headless and streams it back. Requires that a template was previously uploaded via `POST /certificate/template` AND that LibreOffice is installed in the backend container.",
+        "responses": {
+          "200": {
+            "description": "PDF certificate (binary stream).",
+            "content": {
+              "application/pdf": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       }
     },
     "/activities": {
       "get": {
         "tags": ["Activities"],
-        "summary": "Retrieve all activities",
-        "description": "Get the list of all available activities.",
+        "summary": "List visible activity IDs",
+        "description": "Returns the IDs of all visible activities (soft-deleted ones are excluded). Mostly kept for backwards-compatibility — prefer `GET /activities/details` for the catalogue page.",
         "responses": {
           "200": {
-            "description": "List of activities retrieved successfully",
+            "description": "Array of activity IDs.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Activity"
+                    "type": "object",
+                    "properties": { "id": { "type": "integer" } },
+                    "required": ["id"]
                   }
-                }
+                },
+                "example": [{ "id": 1 }, { "id": 2 }, { "id": 3 }]
               }
             }
           },
-          "500": {
-            "description": "Internal server error"
-          }
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       },
       "post": {
         "tags": ["Activities"],
-        "summary": "Create a new activity",
-        "description": "Create a new standalone activity.",
+        "summary": "Create an activity",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ActivityCreateRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/ActivityCreateRequest" }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
-            "description": "Activity created successfully",
+            "description": "Activity created (full enriched object).",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Activity"
-                }
+                "schema": { "$ref": "#/components/schemas/Activity" }
               }
             }
           },
           "400": {
-            "description": "Invalid input data"
+            "description": "Title missing or too long.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "Title is required" }
+              }
+            }
           },
-          "500": {
-            "description": "Internal server error"
-          }
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       }
     },
-    "/activities/{activityId}": {
+    "/activities/details": {
       "get": {
         "tags": ["Activities"],
-        "summary": "Retrieve an activity",
-        "description": "Get a specific activity by its identifier.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ActivityId"
-          }
-        ],
+        "summary": "List all visible activities — fully enriched",
+        "description": "Single round-trip alternative to `GET /activities` followed by N × `GET /activities/{id}`. Each item includes its categories array and `internshipCount`. Powers the activities catalogue on the frontend.",
         "responses": {
           "200": {
-            "description": "Activity found",
+            "description": "Array of enriched activities.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Activity"
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Activity" }
                 }
               }
             }
           },
-          "404": {
-            "description": "Activity not found"
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/activities/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+      "get": {
+        "tags": ["Activities"],
+        "summary": "Get an activity by ID",
+        "description": "Returns the full enriched object including categories and `internshipCount`. Soft-deleted activities are still returned by this endpoint.",
+        "responses": {
+          "200": {
+            "description": "Activity details.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Activity" }
+              }
+            }
           },
-          "500": {
-            "description": "Internal server error"
-          }
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       },
       "patch": {
         "tags": ["Activities"],
-        "summary": "Update an activity",
-        "description": "Partially update an activity (e.g., change title or visibility). Use the `visible` field to hide an activity from the frontend if it cannot be deleted.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ActivityId"
-          }
-        ],
+        "summary": "Partially update an activity",
+        "description": "Wrapped in a SQL transaction (atomic update of `activity` row + `activity_category` rebinding).",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
+              "schema": { "$ref": "#/components/schemas/ActivityUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated activity.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Activity" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (e.g. INVALID_INPUT, TITLE_TOO_LONG).",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["Activities"],
+        "summary": "Soft-delete an activity",
+        "description": "Sets `visible = 0`. Blocked if the activity is currently linked to at least one internship.",
+        "responses": {
+          "204": { "description": "Activity soft-deleted." },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/activities/{id}/document": {
+      "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+      "post": {
+        "tags": ["Documents"],
+        "summary": "Upload a document for an activity",
+        "description": "Replaces the existing document if any. Stored as `<uuid>-<sanitized-name>.<ext>` in the backend uploads volume. Type whitelist: PDF, DOCX, DOC, ODT, PPT, PPTX, XLS, XLSX, ODS, TXT. Max size: 10 Mo.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ActivityUpdateRequest"
-              },
-              "examples": {
-                "updateTitle": {
-                  "summary": "Update activity title",
-                  "value": {
-                    "title": "New Activity Title"
+                "type": "object",
+                "properties": {
+                  "document": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The file to upload."
                   }
                 },
-                "hideActivity": {
-                  "summary": "Hide activity (soft delete)",
-                  "value": {
-                    "visible": false
-                  }
+                "required": ["document"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document uploaded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "documentUrl": {
+                      "type": "string",
+                      "description": "The stored filename (uuid-prefixed)."
+                    },
+                    "originalName": {
+                      "type": "string",
+                      "description": "The original filename submitted by the client."
+                    }
+                  },
+                  "required": ["documentUrl", "originalName"]
                 }
               }
             }
           },
-          "required": true
-        },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      },
+      "get": {
+        "tags": ["Documents"],
+        "summary": "Download the document attached to an activity",
         "responses": {
           "200": {
-            "description": "Activity updated successfully",
+            "description": "Binary file (the original MIME type is preserved).",
+            "content": {
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "404": {
+            "description": "No document or file missing on disk.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["Documents"],
+        "summary": "Remove the document attached to an activity",
+        "description": "Clears the `document_url` column. The physical file is deleted on a best-effort basis (errors logged but not propagated).",
+        "responses": {
+          "200": {
+            "description": "Document removed.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "No document attached.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "No document" }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "List categories",
+        "description": "Returns every category along with its `activityCount` (number of linked activities).",
+        "responses": {
+          "200": {
+            "description": "Array of categories.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Activity"
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Category" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "Create a category",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CategoryCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "id": { "type": "integer" } },
+                  "required": ["id"]
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid input data"
+            "description": "Validation error (e.g. name missing or too long).",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Get a category by ID",
+        "responses": {
+          "200": {
+            "description": "Category details.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Category" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["Categories"],
+        "summary": "Update a category",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CategoryUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "Delete a category",
+        "description": "Blocked if the category is linked to at least one activity (HAS_LINKED_ACTIVITIES → 409).",
+        "responses": {
+          "204": { "description": "Category deleted." },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/certificate/template": {
+      "get": {
+        "tags": ["Certificate"],
+        "summary": "Download the current certificate template",
+        "description": "Returns the DOCX template currently used to generate certificates. 404 if no template was uploaded yet.",
+        "responses": {
+          "200": {
+            "description": "DOCX template (binary).",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
           },
           "404": {
-            "description": "Activity not found"
-          },
-          "500": {
-            "description": "Internal server error"
+            "description": "No template uploaded.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "No template uploaded" }
+              }
+            }
           }
+        }
+      },
+      "post": {
+        "tags": ["Certificate"],
+        "summary": "Upload a new certificate template",
+        "description": "Replaces any existing template. The file must be a `.docx` (max 10 Mo). Carbone.js placeholders supported include `{d.prenom}`, `{d.nom}`, `{d.email}`, `{d.date_debut}`, `{d.date_fin}`, `{d.date_emission}`, and the loop pair `{d.ateliers[i].titre}` / `{d.ateliers[i+1].titre}`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "template": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "DOCX file."
+                  }
+                },
+                "required": ["template"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Template uploaded.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
         }
       }
     }
   },
   "components": {
     "parameters": {
-      "InternshipId": {
-        "name": "internshipId",
+      "IdParam": {
+        "name": "id",
         "in": "path",
-        "description": "Unique identifier of the internship",
         "required": true,
-        "schema": {
-          "type": "integer",
-          "format": "int64"
+        "schema": { "type": "integer", "minimum": 1 },
+        "description": "Resource numeric ID."
+      },
+      "PageParam": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "integer", "minimum": 1, "default": 1 },
+        "description": "1-based page number."
+      },
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+        "description": "Items per page."
+      },
+      "SearchParam": {
+        "name": "search",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "string" },
+        "description": "Free-text filter applied to first_name, last_name and email (LIKE %term%)."
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request (file type, file size, malformed body).",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "invalidFileType": {
+                "summary": "Invalid file MIME type",
+                "value": { "error": "INVALID_FILE_TYPE" }
+              },
+              "fileTooLarge": {
+                "summary": "File over 10 Mo",
+                "value": { "error": "File too large" }
+              }
+            }
+          }
         }
       },
-      "ActivityId": {
-        "name": "activityId",
-        "in": "path",
-        "description": "Unique identifier of the activity",
-        "required": true,
-        "schema": {
-          "type": "integer",
-          "format": "int64"
+      "NotFound": {
+        "description": "Resource not found.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "error": "Internship not found" }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Operation blocked by a referential dependency.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "linkedInternships": {
+                "summary": "Activity is linked to active internships",
+                "value": { "error": "Cannot delete activity: it is linked to internships." }
+              },
+              "linkedActivities": {
+                "summary": "Category is linked to activities",
+                "value": { "error": "Cannot delete category: it is linked to activities." }
+              }
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "One or more business validation rules failed.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "missingFields": {
+                "summary": "Required fields missing",
+                "value": { "error": "Missing required fields" }
+              },
+              "endBeforeStart": {
+                "summary": "End date earlier than start date",
+                "value": { "error": "End date must be after or equal to start date" }
+              },
+              "invalidEmail": {
+                "summary": "Email format invalid",
+                "value": { "error": "Invalid email format" }
+              }
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "An external dependency is unavailable (typically LibreOffice for PDF conversion).",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "error": "LibreOffice is not available — cannot convert DOCX to PDF."
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Unexpected server error. Stack trace is logged via winston in `logs/error.log`; the client receives a generic message.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "error": "Internal server error" }
+          }
         }
       }
     },
     "schemas": {
-      "InternshipBase": {
+      "HealthStatus": {
         "type": "object",
         "properties": {
-          "firstName": {
-            "type": "string",
-            "description": "First name of the intern"
-          },
-          "lastName": {
-            "type": "string",
-            "description": "Last name of the intern"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Email address of the intern"
-          },
-          "startDate": {
-            "type": "string",
-            "format": "date",
-            "description": "Start date of the internship (YYYY-MM-DD)"
-          },
-          "endDate": {
-            "type": "string",
-            "format": "date",
-            "description": "End date of the internship (YYYY-MM-DD)"
-          }
-        }
+          "status": { "type": "string", "enum": ["ok"] },
+          "database": { "type": "string", "enum": ["connected", "disconnected"] }
+        },
+        "required": ["status"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "description": "Human-readable error message." }
+        },
+        "required": ["error"]
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] }
+        },
+        "required": ["success"]
       },
       "Internship": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/InternshipBase"
-          },
-          {
-            "type": "object",
-            "required": [
-              "id",
-              "firstName",
-              "lastName",
-              "email",
-              "startDate",
-              "endDate"
-            ],
-            "properties": {
-              "id": {
-                "type": "integer",
-                "format": "int64",
-                "description": "Unique identifier of the internship"
-              }
-            }
-          }
-        ]
-      },
-      "InternshipCreateRequest": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/InternshipBase"
-          },
-          {
-            "required": [
-              "firstName",
-              "lastName",
-              "email",
-              "startDate",
-              "endDate"
-            ]
-          }
-        ]
-      },
-      "InternshipUpdateRequest": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/InternshipBase"
-          }
-        ]
-      },
-      "InternshipDetail": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Internship"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "activities": {
-                "type": "array",
-                "description": "List of activities associated with this internship",
-                "items": {
-                  "$ref": "#/components/schemas/Activity"
-                }
-              }
-            }
-          }
-        ]
-      },
-      "ActivityBase": {
         "type": "object",
         "properties": {
-          "title": {
-            "type": "string",
-            "description": "Title of the activity"
-          },
-          "visible": {
-            "type": "boolean",
-            "description": "Visibility status in the frontend",
-            "default": true
-          }
+          "id": { "type": "integer", "example": 100 },
+          "personId": { "type": "integer", "example": 100 },
+          "firstName": { "type": "string", "maxLength": 80, "example": "Lucie" },
+          "lastName": { "type": "string", "maxLength": 80, "example": "Bernard" },
+          "email": { "type": "string", "format": "email", "maxLength": 254, "example": "lucie.bernard@example.com" },
+          "startDate": { "type": "string", "format": "date", "example": "2026-04-02" },
+          "endDate": { "type": "string", "format": "date", "example": "2026-04-03" }
+        },
+        "required": ["id", "personId", "firstName", "lastName", "email", "startDate", "endDate"]
+      },
+      "InternshipCreateRequest": {
+        "type": "object",
+        "properties": {
+          "firstName": { "type": "string", "maxLength": 80 },
+          "lastName": { "type": "string", "maxLength": 80 },
+          "email": { "type": "string", "format": "email", "maxLength": 254 },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" }
+        },
+        "required": ["firstName", "lastName", "email", "startDate", "endDate"]
+      },
+      "InternshipUpdateRequest": {
+        "type": "object",
+        "description": "All fields are optional; the end_date >= start_date check is re-evaluated against the resulting state.",
+        "properties": {
+          "firstName": { "type": "string", "maxLength": 80 },
+          "lastName": { "type": "string", "maxLength": 80 },
+          "email": { "type": "string", "format": "email", "maxLength": 254 },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" }
         }
       },
-      "Activity": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ActivityBase"
+      "InternshipListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Internship" }
           },
-          {
-            "type": "object",
-            "required": ["id", "title", "visible"],
-            "properties": {
-              "id": {
-                "type": "integer",
-                "format": "int64",
-                "description": "Unique identifier of the activity"
-              }
-            }
+          "total": {
+            "type": "integer",
+            "description": "Total number of internships matching the optional `search` filter (regardless of pagination).",
+            "example": 26
           }
-        ]
+        },
+        "required": ["data", "total"]
+      },
+      "CategoryRef": {
+        "type": "object",
+        "description": "Minimal category projection embedded inside an Activity.",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "example": "Développement" }
+        },
+        "required": ["id", "name"]
+      },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "title": { "type": "string", "maxLength": 255, "example": "Jeu de mémoire lumineux Ordo Lumina (Python)" },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Création d'un jeu de mémoire lumineux avec Python et un Raspberry Pi Pico."
+          },
+          "documentUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Stored filename (uuid-prefixed). Use `extractOriginalName` on the frontend to display.",
+            "example": "5b18a4e2-9c11-4b7a-8a77-fd1e3a112233-Ordo-Lumina.pdf"
+          },
+          "visible": { "type": "boolean", "example": true },
+          "categories": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CategoryRef" }
+          },
+          "internshipCount": {
+            "type": "integer",
+            "description": "Number of internships currently linked to this activity (used to enforce delete restriction).",
+            "example": 3
+          }
+        },
+        "required": ["id", "title", "visible", "categories", "internshipCount"]
       },
       "ActivityCreateRequest": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ActivityBase"
-          },
-          {
-            "required": ["title"]
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "minLength": 3, "maxLength": 255 },
+          "description": { "type": "string", "nullable": true },
+          "categoryIds": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1 }
           }
-        ]
+        },
+        "required": ["title"]
       },
       "ActivityUpdateRequest": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ActivityBase"
+        "type": "object",
+        "description": "At least one field must be supplied. Updating `categoryIds` replaces the full set of links (delete-then-insert in a transaction).",
+        "properties": {
+          "title": { "type": "string", "minLength": 3, "maxLength": 255 },
+          "description": { "type": "string", "nullable": true },
+          "categoryIds": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1 }
           },
-          {
-            "type": "object",
-            "properties": {
-              "visible": {
-                "type": "boolean",
-                "description": "Set to false to soft-delete/hide the activity"
-              }
-            }
+          "visible": { "type": "boolean" },
+          "documentUrl": { "type": "string", "nullable": true }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "maxLength": 100, "example": "Développement" },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Activités de programmation, développement logiciel et création de jeux"
+          },
+          "activityCount": {
+            "type": "integer",
+            "description": "Number of activities currently linked to this category (used to enforce delete restriction).",
+            "example": 7
           }
-        ]
+        },
+        "required": ["id", "name", "activityCount"]
+      },
+      "CategoryCreateRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "description": { "type": "string", "nullable": true }
+        },
+        "required": ["name"]
+      },
+      "CategoryUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "description": { "type": "string", "nullable": true }
+        }
       }
     }
   }
