@@ -73,24 +73,31 @@ const Activity = {
    */
   create: async (data) => {
     return withConnection(async (conn) => {
-      const res = await conn.query(
-        'INSERT INTO activity (title, description, visible) VALUES (?, ?, ?)',
-        [
-          data.title,
-          data.description ?? null,
-          data.visible !== undefined ? data.visible : true,
-        ],
-      );
-      const id = Number(res.insertId);
-      if (data.categoryIds?.length) {
-        for (const cid of data.categoryIds) {
-          await conn.query(
-            'INSERT INTO activity_category (activity_id, category_id) VALUES (?, ?)',
-            [id, cid],
-          );
+      await conn.beginTransaction();
+      try {
+        const res = await conn.query(
+          'INSERT INTO activity (title, description, visible) VALUES (?, ?, ?)',
+          [
+            data.title,
+            data.description ?? null,
+            data.visible !== undefined ? data.visible : true,
+          ],
+        );
+        const id = Number(res.insertId);
+        if (data.categoryIds?.length) {
+          for (const cid of data.categoryIds) {
+            await conn.query(
+              'INSERT INTO activity_category (activity_id, category_id) VALUES (?, ?)',
+              [id, cid],
+            );
+          }
         }
+        await conn.commit();
+        return id;
+      } catch (err) {
+        await conn.rollback();
+        throw err;
       }
-      return id;
     });
   },
 
@@ -104,44 +111,51 @@ const Activity = {
    */
   update: async (id, data) => {
     return withConnection(async (conn) => {
-      const fields = [];
-      const values = [];
-      if (data.title !== undefined) {
-        fields.push('title = ?');
-        values.push(data.title);
-      }
-      if (data.description !== undefined) {
-        fields.push('description = ?');
-        values.push(data.description);
-      }
-      if (data.documentUrl !== undefined) {
-        fields.push('document_url = ?');
-        values.push(data.documentUrl);
-      }
-      if (data.visible !== undefined) {
-        fields.push('visible = ?');
-        values.push(data.visible);
-      }
-      if (fields.length) {
-        values.push(id);
-        await conn.query(
-          `UPDATE activity SET ${fields.join(', ')} WHERE id = ?`,
-          values,
-        );
-      }
-      if (data.categoryIds !== undefined) {
-        await conn.query(
-          'DELETE FROM activity_category WHERE activity_id = ?',
-          [id],
-        );
-        for (const cid of data.categoryIds) {
+      await conn.beginTransaction();
+      try {
+        const fields = [];
+        const values = [];
+        if (data.title !== undefined) {
+          fields.push('title = ?');
+          values.push(data.title);
+        }
+        if (data.description !== undefined) {
+          fields.push('description = ?');
+          values.push(data.description);
+        }
+        if (data.documentUrl !== undefined) {
+          fields.push('document_url = ?');
+          values.push(data.documentUrl);
+        }
+        if (data.visible !== undefined) {
+          fields.push('visible = ?');
+          values.push(data.visible);
+        }
+        if (fields.length) {
+          values.push(id);
           await conn.query(
-            'INSERT INTO activity_category (activity_id, category_id) VALUES (?, ?)',
-            [id, cid],
+            `UPDATE activity SET ${fields.join(', ')} WHERE id = ?`,
+            values,
           );
         }
+        if (data.categoryIds !== undefined) {
+          await conn.query(
+            'DELETE FROM activity_category WHERE activity_id = ?',
+            [id],
+          );
+          for (const cid of data.categoryIds) {
+            await conn.query(
+              'INSERT INTO activity_category (activity_id, category_id) VALUES (?, ?)',
+              [id, cid],
+            );
+          }
+        }
+        await conn.commit();
+        return true;
+      } catch (err) {
+        await conn.rollback();
+        throw err;
       }
-      return true;
     });
   },
 
