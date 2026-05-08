@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import logger from '../config/logger.js';
 import Activity from '../models/Activity.js';
 
 const UPLOADS_DIR = path.join(
@@ -126,7 +127,13 @@ export const uploadActivityDocument = async (id, filename) => {
   if (!activity) throw new Error('NOT_FOUND');
   if (activity.documentUrl) {
     const oldPath = path.join(UPLOADS_DIR, activity.documentUrl);
-    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    if (fs.existsSync(oldPath)) {
+      try {
+        fs.unlinkSync(oldPath);
+      } catch (err) {
+        logger.warn(`Failed to unlink ${oldPath}: ${err.message}`);
+      }
+    }
   }
   await Activity.update(id, { documentUrl: filename });
   return filename;
@@ -144,6 +151,12 @@ export const deleteActivityDocument = async (id) => {
   const activity = await Activity.getById(id);
   if (!activity?.documentUrl) throw new Error('NO_DOCUMENT');
   const filePath = path.join(UPLOADS_DIR, activity.documentUrl);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  if (fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch (err) {
+      logger.warn(`Failed to unlink ${filePath}: ${err.message}`);
+    }
+  }
   await Activity.update(id, { documentUrl: null });
 };

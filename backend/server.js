@@ -23,6 +23,16 @@ const __dirname = path.dirname(__filename);
 // Load .env from root directory (parent of backend)
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+const REQUIRED_ENV = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (missing.length) {
+  logger.error(
+    `Missing required environment variables: ${missing.join(', ')}. ` +
+      `Check your .env file at the project root (see .env.example).`,
+  );
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
