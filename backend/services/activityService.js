@@ -42,7 +42,7 @@ export const getActivityById = async (id) => {
  * @throws {Error} If validation fails
  */
 export const createActivity = async (data) => {
-  const { title, visible } = data;
+  const { title } = data;
 
   if (!title) {
     throw new Error('MISSING_TITLE');
@@ -59,11 +59,7 @@ export const createActivity = async (data) => {
     visible: true,
   });
 
-  return {
-    id: newId,
-    title,
-    visible: visible !== undefined ? visible : true,
-  };
+  return await Activity.getById(newId);
 };
 
 /**
@@ -75,6 +71,11 @@ export const createActivity = async (data) => {
  */
 export const updateActivity = async (id, data) => {
   const { title, visible } = data;
+
+  const existing = await Activity.getById(id);
+  if (!existing) {
+    throw new Error('NOT_FOUND');
+  }
 
   if (
     title === undefined &&
@@ -90,7 +91,7 @@ export const updateActivity = async (id, data) => {
     throw new Error('TITLE_TOO_LONG');
   }
 
-  const success = await Activity.update(id, {
+  await Activity.update(id, {
     title,
     visible,
     description:
@@ -100,13 +101,6 @@ export const updateActivity = async (id, data) => {
     documentUrl: data.documentUrl,
     categoryIds: data.categoryIds,
   });
-
-  if (!success) {
-    const existing = await Activity.getById(id);
-    if (!existing) {
-      throw new Error('NOT_FOUND');
-    }
-  }
 
   return await Activity.getById(id);
 };
