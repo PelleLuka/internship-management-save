@@ -27,32 +27,38 @@ const Activity = {
    */
   getById: async (id) => {
     return withConnection(async (conn) => {
-      const rows = await conn.query('SELECT * FROM activity WHERE id = ?', [
-        id,
-      ]);
+      const rows = await conn.query(
+        `SELECT
+          a.id,
+          a.title,
+          a.description,
+          a.document_url,
+          a.visible,
+          GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids,
+          GROUP_CONCAT(DISTINCT c.name ORDER BY c.id SEPARATOR '||') AS category_names,
+          (SELECT COUNT(*) FROM internship_activity ia WHERE ia.activity_id = a.id) AS internship_count
+        FROM activity a
+        LEFT JOIN activity_category ac ON ac.activity_id = a.id
+        LEFT JOIN category c ON c.id = ac.category_id
+        WHERE a.id = ?
+        GROUP BY a.id`,
+        [id],
+      );
       if (!rows[0]) return null;
-      const [categories, internCount] = await Promise.all([
-        conn.query(
-          `
-          SELECT c.id, c.name FROM category c
-          JOIN activity_category ac ON ac.category_id = c.id
-          WHERE ac.activity_id = ?
-        `,
-          [id],
-        ),
-        conn.query(
-          'SELECT COUNT(*) AS cnt FROM internship_activity WHERE activity_id = ?',
-          [id],
-        ),
-      ]);
+      const row = rows[0];
+      const ids = row.category_ids
+        ? row.category_ids.split(',').map(Number)
+        : [];
+      const names = row.category_names ? row.category_names.split('||') : [];
+      const categories = ids.map((cid, i) => ({ id: cid, name: names[i] }));
       return {
-        id: rows[0].id,
-        title: rows[0].title,
-        description: rows[0].description,
-        documentUrl: rows[0].document_url,
-        visible: rows[0].visible,
-        categories: categories.map((c) => ({ id: c.id, name: c.name })),
-        internshipCount: Number(internCount[0].cnt),
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        documentUrl: row.document_url,
+        visible: row.visible,
+        categories,
+        internshipCount: Number(row.internship_count),
       };
     });
   },
