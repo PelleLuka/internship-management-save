@@ -1,6 +1,18 @@
 <script setup>
-import { Activity as ActivityIcon, Pencil, Trash2 } from 'lucide-vue-next';
-import { getActivityDocumentUrl } from '../../services/activityService';
+import {
+  Activity as ActivityIcon,
+  Download,
+  Eye,
+  FileText,
+  Paperclip,
+  Pencil,
+  RefreshCw,
+  Trash2,
+} from 'lucide-vue-next';
+import {
+  extractOriginalName,
+  getActivityDocumentUrl,
+} from '../../services/activityService';
 import ActivityCategoryBadge from './ActivityCategoryBadge.vue';
 import ActivityCategoryPopover from './ActivityCategoryPopover.vue';
 
@@ -118,38 +130,46 @@ const emit = defineEmits([
         <div
           class="bg-green-50 border border-green-200 rounded-md px-3 py-2 flex items-center justify-between gap-2 mb-2"
         >
-          <span class="text-xs text-green-800 font-medium truncate">
-            📄
-            {{ activity.documentUrl.split('-').slice(5).join('-') || activity.documentUrl }}
+          <span
+            class="flex items-center gap-1.5 min-w-0 text-xs text-green-800 font-medium"
+          >
+            <FileText class="w-4 h-4 shrink-0" />
+            <span class="truncate"
+              >{{ extractOriginalName(activity.documentUrl) }}</span
+            >
           </span>
           <div class="flex gap-1 shrink-0">
             <a
               v-if="activity.documentUrl.toLowerCase().endsWith('.pdf')"
               :href="getActivityDocumentUrl(activity.id)"
               target="_blank"
-              class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 whitespace-nowrap"
+              class="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 whitespace-nowrap"
+              aria-label="Voir le document"
             >
-              👁 Voir
+              <Eye class="w-3.5 h-3.5" />
             </a>
             <a
               :href="getActivityDocumentUrl(activity.id)"
               download
-              class="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded hover:bg-slate-200"
+              class="inline-flex items-center gap-1 text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded hover:bg-slate-200"
+              aria-label="Télécharger le document"
             >
-              ⬇
+              <Download class="w-3.5 h-3.5" />
             </a>
             <button
               @click.stop="emit('delete-document', activity.id)"
-              class="text-xs text-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-100"
+              class="inline-flex items-center gap-1 text-xs text-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-100"
+              aria-label="Supprimer le document"
             >
-              🗑
+              <Trash2 class="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
         <label
           class="block border border-dashed border-slate-300 rounded-md p-2 text-center text-xs text-slate-400 cursor-pointer hover:border-slate-400 transition-colors"
         >
-          🔄 Remplacer
+          <RefreshCw class="w-3.5 h-3.5 inline -mt-0.5 mr-1" />
+          Remplacer
           <input
             type="file"
             class="hidden"
@@ -161,7 +181,8 @@ const emit = defineEmits([
         v-else
         class="block border-2 border-dashed border-slate-200 rounded-md p-3 text-center text-xs text-slate-400 cursor-pointer hover:border-slate-300 transition-colors"
       >
-        📎 Glisser un fichier ou
+        <Paperclip class="w-4 h-4 inline -mt-1 mr-1" />
+        Glisser un fichier ou
         <span class="text-blue-500 underline">parcourir</span>
         <br />
         <span class="text-[10px]">PDF, DOCX, ODT… · max 10 MB</span>

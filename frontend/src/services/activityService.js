@@ -105,3 +105,21 @@ export const deleteActivityDocument = async (activityId) => {
  */
 export const getActivityDocumentUrl = (activityId) =>
   `/api/activities/${activityId}/document`;
+
+/**
+ * Extract the user-friendly original filename from a stored documentUrl.
+ * Files are stored as `<uuid>-<sanitized-name>.<ext>` where the UUID is the
+ * standard 5-segment dash-separated form; we strip the UUID prefix and return
+ * the remaining filename.
+ *
+ * @param {string} documentUrl - The stored filename (uuid-prefixed).
+ * @returns {string} The original sanitized name, or the full string if it does
+ *   not start with a UUID.
+ */
+export const extractOriginalName = (documentUrl) => {
+  if (!documentUrl) return '';
+  const match = documentUrl.match(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-(.+)$/i,
+  );
+  return match ? match[1] : documentUrl;
+};
