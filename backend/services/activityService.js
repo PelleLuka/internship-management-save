@@ -81,7 +81,7 @@ export const createActivity = async (data) => {
  * @throws {Error} If validation fails or activity not found
  */
 export const updateActivity = async (id, data) => {
-  const { title } = data;
+  const { title, visible } = data;
 
   const existing = await Activity.getById(id);
   if (!existing) {
