@@ -996,7 +996,23 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   });
 
   export default pool;
+
+  /**
+   * Helper : exécute `fn(conn)` avec une connexion empruntée au pool, et la
+   * relâche systématiquement (même en cas d'erreur). Tous les models utilisent
+   * cette fonction au lieu de répéter le boilerplate `let conn; try; finally`.
+   */
+  export const withConnection = async (fn) => {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      return await fn(conn);
+    } finally {
+      if (conn) conn.end();
+    }
+  };
   ```
+  > Convention : tous les models doivent utiliser `withConnection` plutôt que d'ouvrir/fermer une connexion à la main. Évite les fuites en cas d'erreur et concentre la gestion du pool en un seul endroit.
 
 ### Vérification
 
@@ -1108,6 +1124,18 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+  // Fail fast si une variable d'environnement critique manque, plutôt que de
+  // démarrer puis échouer cryptiquement à la première requête DB.
+  const REQUIRED_ENV = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+  const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+  if (missing.length) {
+    logger.error(
+      `Missing required environment variables: ${missing.join(', ')}. ` +
+        `Check your .env file at the project root (see .env.example).`,
+    );
+    process.exit(1);
+  }
+
   const app = express();
   const PORT = process.env.PORT || 3000;
 
@@ -1192,8 +1220,21 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 ### Module stagiaires
 
 **Principes du pattern Model → Service → Controller → Route :**
-- **Model** : requêtes SQL uniquement, `let conn; try { ... } finally { if (conn) conn.end(); }`
-- **Service** : logique métier, lève des erreurs nommées (`throw new Error('NOT_FOUND')`)
+- **Model** : requêtes SQL uniquement, encapsulées dans `withConnection(async (conn) => { ... })` (helper exporté depuis `backend/config/db.js`). Aucune méthode ne fait `pool.getConnection()` directement — le boilerplate `let conn / try / finally` n'apparaît qu'une seule fois, dans le helper.
+- **Service** : logique métier, lève des erreurs nommées (`throw new Error('NOT_FOUND')`). Pour les opérations multi-statements (ex : INSERT activity + boucle INSERT activity_category), utiliser une transaction SQL explicite à l'intérieur du `withConnection` :
+  ```js
+  return withConnection(async (conn) => {
+    await conn.beginTransaction();
+    try {
+      // opérations multiples
+      await conn.commit();
+      return result;
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    }
+  });
+  ```
 - **Controller** : parse les params HTTP, appelle le service, construit la réponse HTTP
 - **Route** : définit les URLs et verbes HTTP, importe les controllers
 
@@ -1228,19 +1269,27 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 ### Module ateliers
 
 - [ ] Créer `backend/models/Activity.js` :
+  - Helper privé `mapRow(row)` qui transforme une ligne SQL (avec `category_ids` et `category_names` au format GROUP_CONCAT) en objet activité. Réutilisé par `getById` et `getAllDetails`.
   - `getAllIds()` → liste des IDs visibles (`WHERE visible = 1`)
-  - `getById(id)` → détails + `internshipCount` via COUNT JOIN + catégories liées
-  - `create(data)` → INSERT + association `categoryIds` dans `activity_category`
-  - `update(id, data)` → PATCH partiel + mise à jour des catégories
+  - `getById(id)` → **une seule requête SQL** : `LEFT JOIN activity_category` + `LEFT JOIN category` + `GROUP_CONCAT(DISTINCT c.id ORDER BY c.id)` pour les IDs et `GROUP_CONCAT(DISTINCT c.name ORDER BY c.id SEPARATOR '||')` pour les noms (le `||` évite les conflits avec les virgules dans les noms de catégorie) + sous-requête corrélée `(SELECT COUNT(*) FROM internship_activity ...)` pour `internshipCount`. Le mapping JS reconstruit `categories: [{id, name}]` à partir des deux GROUP_CONCAT.
+  - `getAllDetails()` → mêmes joins/agrégats que `getById` mais avec `WHERE a.visible = 1` + `ORDER BY a.id ASC`. Retourne un **tableau d'objets enrichis** ; permet au frontend d'éviter le pattern N+1.
+  - `create(data)` → INSERT + association `categoryIds` dans `activity_category`, **wrappés dans une transaction** (`beginTransaction` / `commit` / `rollback`) pour garantir l'atomicité.
+  - `update(id, data)` → PATCH partiel + recréation des liens catégories, **également dans une transaction**.
   - `delete(id)` → soft delete `UPDATE activity SET visible = 0`
+  > ⚠️ **Pourquoi un helper `mapRow` privé ?** `getById` et `getAllDetails` partagent exactement la même logique de mapping (split GROUP_CONCAT → array). Source unique de vérité = pas de divergence possible entre détail et liste.
 - [ ] Créer `backend/services/activityService.js` :
   - `deleteActivity` : `getById` → si `internshipCount > 0` → `throw new Error('HAS_LINKED_INTERNSHIPS')` → sinon soft delete
+  - `createActivity` retourne **l'objet enrichi complet** via `Activity.getById(newId)` (cohérence avec `updateActivity`, évite un fetch supplémentaire côté client)
+  - `updateActivity` fait un check d'existence explicite au début (`Activity.getById(id)` → `NOT_FOUND` si absent) avant validation
+  - `getActivityDetails()` → simple wrapper sur `Activity.getAllDetails()` ; consommé par le frontend via le nouvel endpoint `/api/activities/details`
+  - `uploadActivityDocument` et `deleteActivityDocument` enveloppent leurs `fs.unlinkSync` dans un `try / catch` qui logge via `logger.warn`. La cohérence DB prime sur le nettoyage filesystem : l'`UPDATE activity SET document_url = NULL` doit toujours s'exécuter, même si le fichier physique a déjà disparu.
   - Erreurs : `NOT_FOUND`, `MISSING_TITLE`, `TITLE_TOO_LONG`, `HAS_LINKED_INTERNSHIPS`, `INVALID_INPUT`
-- [ ] Créer `backend/controllers/activityController.js` — `409` sur `HAS_LINKED_INTERNSHIPS`, `400` sur upload invalide
-- [ ] Créer `backend/routes/activityRoutes.js` — 8 endpoints :
+- [ ] Créer `backend/controllers/activityController.js` — `409` sur `HAS_LINKED_INTERNSHIPS`, `400` sur upload invalide. Ajouter le handler `getActivityDetails` (200 + tableau).
+- [ ] Créer `backend/routes/activityRoutes.js` — 9 endpoints. **Ordre important** : `/details` doit être déclaré AVANT `/:id` sinon Express matche `/details` comme `:id = "details"` et appelle le mauvais handler.
   ```js
   router.get('/', getActivityIds);                                  // GET  /api/activities
   router.post('/', createActivity);                                 // POST /api/activities
+  router.get('/details', getActivityDetails);                       // GET  /api/activities/details (AVANT /:id)
   router.get('/:id', getActivityById);                              // GET  /api/activities/:id
   router.patch('/:id', updateActivity);                             // PATCH /api/activities/:id
   router.delete('/:id', deleteActivity);                            // DEL  /api/activities/:id
@@ -1602,7 +1651,7 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
 
 ### Module ateliers
 
-- [ ] Créer `frontend/src/services/activityService.js` — `getActivityIds()`, `getActivityById(id)`, `createActivity(data)`, `updateActivity(id, data)`, `deleteActivity(id)`, `uploadDocument(id, file)`, `deleteDocument(id)`
+- [ ] Créer `frontend/src/services/activityService.js` — `getActivities()` (liste d'IDs), `getActivityById(id)`, `getActivityDetails()` (liste enrichie en un seul appel — backend `/api/activities/details`), `createActivity(data)`, `updateActivity(id, data)`, `deleteActivity(id)`, `uploadActivityDocument(id, file)`, `deleteActivityDocument(id)`, `getActivityDocumentUrl(id)` et le helper `extractOriginalName(documentUrl)` qui retire le préfixe UUID via regex `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-(.+)$/i` (évite le `split('-').slice(5)` fragile et le magic number 5).
 - [ ] Créer `frontend/src/composables/useActivities.js` — gestion du menu d'ajout d'atelier depuis les cartes stagiaire :
   - `activities`, `activityMenuOpenId`, `tempSelectedActivityIds`
   - `loadActivities()`, `openActivityMenu(internship)`, `closeActivityMenu()`
@@ -1612,7 +1661,7 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   - `activities`, `allCategories`, `searchQuery`, `isModalOpen`, `editingId`, `isSearchOpen`
   - `expandedIds` (`ref(new Set())`) — **plusieurs cartes peuvent être dépliées simultanément**, comme pour les stagiaires
   - `toggleExpand(id)` — ajoute/retire l'id du Set en remplaçant la référence (`expandedIds.value = new Set(...)`) pour conserver la réactivité Vue
-  - `loadActivities()` — enrichit chaque activité avec ses catégories
+  - `loadActivities()` — **un seul appel API** : `activities.value = await getActivityDetails()`. Évite le pattern N+1 (avant : `getActivities()` puis `Promise.all(getActivityById(id))` × N).
   - `handleDelete(id)`, `handleUploadDocument(id, file)`, `handleDeleteDocument(id)`
   - `filteredActivities` (computed) — filtre sur le titre
 
@@ -1648,9 +1697,10 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
     5. Description tronquée à 2 lignes (`line-clamp-2`)
   - **Vue dépliée** ajoute en dessous, avec `@click.stop` sur le wrapper de la zone dépliée (pour ne pas re-déclencher le toggle) :
     6. Ligne de séparation
-    7. Bloc **Documentation** : zone d'upload (drag-drop) si pas de fichier, sinon ligne fichier + boutons Voir/Télécharger/Supprimer/Remplacer
+    7. Bloc **Documentation** : zone d'upload (drag-drop) si pas de fichier, sinon ligne fichier + boutons Voir/Télécharger/Supprimer/Remplacer. **Icônes Lucide uniquement** (`FileText`, `Eye`, `Download`, `Trash2`, `RefreshCw`, `Paperclip`) — pas d'emojis Unicode dans le markup, pour rester cohérent avec le reste de l'app. Aria-labels obligatoires sur les boutons icon-only (« Voir le document », « Télécharger le document », « Supprimer le document »).
     8. Ligne de séparation
     9. Bloc **Catégories** : tags **supprimables** (`removable`) + bouton « + Ajouter une catégorie » + `<ActivityCategoryPopover>`
+  > Pour afficher le nom du document, utiliser `extractOriginalName(activity.documentUrl)` (helper du service) — pas l'expression inline `split('-').slice(5).join('-')`.
   > ❌ **Pas de mini-cartes stats** (`internshipCount` / statut document) — design simplifié.
   > Les boutons Edit/Delete/X-catégorie/Voir/Télécharger/Supprimer/Remplacer/Ajouter doivent **tous** avoir `@click.stop` pour ne pas déclencher le toggle de la carte.
 
@@ -1773,7 +1823,14 @@ Ouvrir PlantUML (plantuml.com ou extension VS Code). Créer un fichier `.txt` pa
   ```bash
   npm run test:e2e:sanity
   ```
-  > Exécute `tests/e2e/tests/technical/sanity-db-check.spec.ts` via l'API Playwright `request` (pas de navigateur) : vérifie `total = 60` stagiaires, `length = 12` activités visibles, stagiaire ID 60 = Joël Dacobeau, activités 14 et 15 associées
+  > Exécute `tests/e2e/tests/technical/sanity-db-check.spec.ts` via l'API Playwright `request` (pas de navigateur). Quatre vérifications :
+  > 1. `internships.total === 26` (11 historiques + 15 récents)
+  > 2. `activities.length === 13` (13 visibles ; ids 14 et 15 sont soft-deleted donc absents de `GET /api/activities`)
+  > 3. `categories.length === 6` (les 6 catégories par défaut)
+  > 4. Stagiaire ID 60 = Joël Dacobeau ; stagiaire ID 1 (Lucas Martin) a les activités 1 et 2 dans son `internship_activity`
+  > Le check d'association est volontairement placé sur l'internship 1 et non plus sur l'internship 60 — ce dernier n'a aucune association dans le seed actuel, et les activités 14/15 sont soft-deleted donc invisibles via l'API.
+  >
+  > Le sanity check Postman (`tests/api/sanity_check.postman_collection.json`) suit la même logique avec 3 items : `internships` (total = 26), `activities` (length = 13), `categories` (length = 6) + le spot-check sur l'internship 1.
 - [ ] Si le sanity check échoue → vérifier la connexion DB et relancer `npm run db:restore`
 
 ### Tests API — Newman
