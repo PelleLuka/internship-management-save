@@ -37,8 +37,8 @@ export const getActivityById = async (id) => {
 
 /**
  * Create a new Activity
- * @param {Object} data - { title, visible }
- * @returns {Promise<Object>} Created activity object
+ * @param {Object} data - { title, description, categoryIds, visible }
+ * @returns {Promise<Object>} Full enriched activity object (id, title, description, documentUrl, visible, categories, internshipCount).
  * @throws {Error} If validation fails
  */
 export const createActivity = async (data) => {
@@ -65,12 +65,12 @@ export const createActivity = async (data) => {
 /**
  * Update an existing Activity
  * @param {number} id - Activity ID
- * @param {Object} data - { title, visible }
+ * @param {Object} data - { title, description, categoryIds, documentUrl, visible } (all optional)
  * @returns {Promise<Object>} Updated activity object
  * @throws {Error} If validation fails or activity not found
  */
 export const updateActivity = async (id, data) => {
-  const { title, visible } = data;
+  const { title } = data;
 
   const existing = await Activity.getById(id);
   if (!existing) {
