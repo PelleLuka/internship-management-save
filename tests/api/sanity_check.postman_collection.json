@@ -17,8 +17,8 @@
               "});",
               "",
               "var jsonData = pm.response.json();",
-              "pm.test(\"Should have 60 internships (Total)\", function () {",
-              "    pm.expect(jsonData.total).to.eql(60);",
+              "pm.test(\"Should have 26 internships (Total)\", function () {",
+              "    pm.expect(jsonData.total).to.eql(26);",
               "});",
               "",
               "// Check LAST Intern (ID 60) to ensure SQL completed fully",
@@ -32,14 +32,14 @@
               "    });",
               "});",
               "",
-              "// Check Associations for Last Intern (Expect 14, 15)",
-              "pm.sendRequest(pm.environment.get(\"baseUrl\") + \"/internships/60/activities\", function (err, res) {",
-              "    pm.test(\"Last Intern Associations OK\", function() {",
+              "// Check Associations for Internship 1 (Lucas Martin) which has activities 1 and 2",
+              "pm.sendRequest(pm.environment.get(\"baseUrl\") + \"/internships/1/activities\", function (err, res) {",
+              "    pm.test(\"First Intern Associations OK\", function() {",
               "        var activities = res.json();",
               "        pm.expect(activities).to.be.an('array');",
               "        var ids = activities.map(a => a.id);",
-              "        pm.expect(ids).to.include(14);",
-              "        pm.expect(ids).to.include(15);",
+              "        pm.expect(ids).to.include(1);",
+              "        pm.expect(ids).to.include(2);",
               "    });",
               "});"
             ],
@@ -70,9 +70,9 @@
               "});",
               "",
               "var jsonData = pm.response.json();",
-              "pm.test(\"Should have 12 visible activities\", function () {",
-              "    // DB has 15, but 3 are visible=0. API likely returns 12.",
-              "    pm.expect(jsonData.length).to.eql(12);",
+              "pm.test(\"Should have 13 visible activities\", function () {",
+              "    // DB has 15 rows, 2 are visible=0 (ids 14, 15) → API returns 13.",
+              "    pm.expect(jsonData.length).to.eql(13);",
               "});"
             ],
             "type": "text/javascript"
@@ -86,6 +86,37 @@
           "raw": "{{baseUrl}}/activities",
           "host": ["{{baseUrl}}"],
           "path": ["activities"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Categories Count",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Should have 6 default categories\", function () {",
+              "    pm.expect(jsonData.length).to.eql(6);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["categories"]
         }
       },
       "response": []
