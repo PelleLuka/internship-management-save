@@ -12,12 +12,6 @@ const mapRow = (row) => ({
 
 const Internship = {
   /**
-   * Retrieves all internship IDs from the database.
-   * Useful for list views where only IDs are needed initially (lazy loading).
-   *
-   * @returns {Promise<Array<{id: number}>>} Array of objects containing internship IDs.
-   */
-  /**
    * Retrieves all internships with pagination and optional search.
    *
    * @param {number} limit - Number of items per page.
