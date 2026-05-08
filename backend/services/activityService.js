@@ -23,6 +23,16 @@ export const getActivityIds = async () => {
 };
 
 /**
+ * Get all visible activities, fully enriched (categories + internshipCount).
+ * Replaces the N+1 pattern of getActivityIds() + getActivityById(id) per id.
+ *
+ * @returns {Promise<Array<Object>>}
+ */
+export const getActivityDetails = async () => {
+  return await Activity.getAllDetails();
+};
+
+/**
  * Get Activity by ID
  * @param {number} id - Activity ID
  * @returns {Promise<Object>} Activity object

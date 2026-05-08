@@ -2,8 +2,7 @@ import { computed, onMounted, ref } from 'vue';
 import {
   deleteActivity,
   deleteActivityDocument,
-  getActivities,
-  getActivityById,
+  getActivityDetails,
   getCategories,
   uploadActivityDocument,
 } from '../services/activityService';
@@ -26,10 +25,7 @@ export function useActivityList() {
 
   const loadActivities = async () => {
     try {
-      const idList = await getActivities();
-      activities.value = await Promise.all(
-        idList.map((item) => getActivityById(item.id)),
-      );
+      activities.value = await getActivityDetails();
     } catch (error) {
       console.error('Failed to load activities', error);
     }

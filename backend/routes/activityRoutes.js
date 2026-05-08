@@ -5,6 +5,7 @@ import {
   deleteDocument,
   downloadDocument,
   getActivityById,
+  getActivityDetails,
   getActivityIds,
   updateActivity,
   uploadDocument,
@@ -18,6 +19,9 @@ router.get('/', getActivityIds);
 
 // POST /activities
 router.post('/', createActivity);
+
+// GET /activities/details — must come BEFORE /:id so the static path is not swallowed by the param route
+router.get('/details', getActivityDetails);
 
 // GET /activities/:id
 router.get('/:id', getActivityById);

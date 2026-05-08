@@ -1,5 +1,26 @@
 import { withConnection } from '../config/db.js';
 
+/**
+ * Maps a raw DB row (from the enriched activity query) to a full activity object.
+ * Shared by getById and getAllDetails to avoid duplicated mapping logic.
+ *
+ * @param {Object} row - Raw row from the activity JOIN query.
+ * @returns {Object} Enriched activity object.
+ */
+const mapRow = (row) => {
+  const ids = row.category_ids ? row.category_ids.split(',').map(Number) : [];
+  const names = row.category_names ? row.category_names.split('||') : [];
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    documentUrl: row.document_url,
+    visible: row.visible,
+    categories: ids.map((cid, i) => ({ id: cid, name: names[i] })),
+    internshipCount: Number(row.internship_count),
+  };
+};
+
 const Activity = {
   /**
    * Retrieves all IDs of ACTIVE activities (visible = 1).
@@ -15,6 +36,35 @@ const Activity = {
         'SELECT id FROM activity WHERE visible = 1',
       );
       return rows;
+    });
+  },
+
+  /**
+   * Retrieves full details of all visible activities in one query.
+   * Powers the catalogue endpoint — replaces the N+1 getAllIds + getById pattern.
+   *
+   * @returns {Promise<Array<Object>>} Array of enriched activity objects.
+   */
+  getAllDetails: async () => {
+    return withConnection(async (conn) => {
+      const rows = await conn.query(
+        `SELECT
+          a.id,
+          a.title,
+          a.description,
+          a.document_url,
+          a.visible,
+          GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS category_ids,
+          GROUP_CONCAT(DISTINCT c.name ORDER BY c.id SEPARATOR '||') AS category_names,
+          (SELECT COUNT(*) FROM internship_activity ia WHERE ia.activity_id = a.id) AS internship_count
+        FROM activity a
+        LEFT JOIN activity_category ac ON ac.activity_id = a.id
+        LEFT JOIN category c ON c.id = ac.category_id
+        WHERE a.visible = 1
+        GROUP BY a.id
+        ORDER BY a.id ASC`,
+      );
+      return rows.map(mapRow);
     });
   },
 
@@ -45,21 +95,7 @@ const Activity = {
         [id],
       );
       if (!rows[0]) return null;
-      const row = rows[0];
-      const ids = row.category_ids
-        ? row.category_ids.split(',').map(Number)
-        : [];
-      const names = row.category_names ? row.category_names.split('||') : [];
-      const categories = ids.map((cid, i) => ({ id: cid, name: names[i] }));
-      return {
-        id: row.id,
-        title: row.title,
-        description: row.description,
-        documentUrl: row.document_url,
-        visible: row.visible,
-        categories,
-        internshipCount: Number(row.internship_count),
-      };
+      return mapRow(rows[0]);
     });
   },
 

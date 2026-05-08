@@ -24,6 +24,18 @@ export const getActivityById = async (id) => {
 };
 
 /**
+ * Service: Get Activity Details
+ * Retrieves all visible activities, fully enriched (categories + internshipCount).
+ * Single round-trip — replaces the N+1 pattern of getActivities + N×getActivityById.
+ *
+ * @returns {Promise<Array<Object>>}
+ */
+export const getActivityDetails = async () => {
+  const res = await axios.get('/api/activities/details');
+  return res.data;
+};
+
+/**
  * Service: Create Activity
  * Creates a new activity.
  *

@@ -16,6 +16,20 @@ export const getActivityIds = async (_req, res) => {
 };
 
 /**
+ * Controller: Get Activity Details
+ * Returns the full enriched list of visible activities in one call.
+ */
+export const getActivityDetails = async (_req, res) => {
+  try {
+    const activities = await activityService.getActivityDetails();
+    res.status(200).json(activities);
+  } catch (err) {
+    logger.error('Error fetching activity details:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
  * Controller: Get Activity By ID
  * Fetches full details of a specific activity.
  */
