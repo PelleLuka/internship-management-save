@@ -1,24 +1,18 @@
-import pool from '../config/db.js';
+import { withConnection } from '../config/db.js';
 
 const Person = {
   create: async (data) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const res = await conn.query(
         'INSERT INTO person (first_name, last_name, email) VALUES (?, ?, ?)',
         [data.firstName, data.lastName, data.email],
       );
       return Number(res.insertId);
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   getById: async (id) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const rows = await conn.query('SELECT * FROM person WHERE id = ?', [id]);
       if (!rows[0]) return null;
       return {
@@ -27,15 +21,11 @@ const Person = {
         lastName: rows[0].last_name,
         email: rows[0].email,
       };
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   update: async (id, data) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const fields = [];
       const values = [];
       if (data.firstName !== undefined) {
@@ -57,20 +47,14 @@ const Person = {
         values,
       );
       return res.affectedRows > 0;
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   delete: async (id) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const res = await conn.query('DELETE FROM person WHERE id = ?', [id]);
       return res.affectedRows > 0;
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 };
 

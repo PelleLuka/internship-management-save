@@ -21,3 +21,20 @@ const pool = mariadb.createPool({
 });
 
 export default pool;
+
+/**
+ * Run `fn` with a pooled connection that is always released, even on error.
+ *
+ * @template T
+ * @param {(conn: import('mariadb').PoolConnection) => Promise<T>} fn
+ * @returns {Promise<T>}
+ */
+export const withConnection = async (fn) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    return await fn(conn);
+  } finally {
+    if (conn) conn.end();
+  }
+};

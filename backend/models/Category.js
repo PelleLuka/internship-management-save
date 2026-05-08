@@ -1,10 +1,8 @@
-import pool from '../config/db.js';
+import { withConnection } from '../config/db.js';
 
 const Category = {
   getAll: async () => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const rows = await conn.query(`
         SELECT c.id, c.name, c.description,
                COUNT(CASE WHEN a.visible = 1 THEN 1 END) as activity_count
@@ -20,15 +18,11 @@ const Category = {
         description: row.description,
         activityCount: Number(row.activity_count),
       }));
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   getById: async (id) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const rows = await conn.query(
         `
         SELECT c.id, c.name, c.description,
@@ -47,29 +41,21 @@ const Category = {
         description: rows[0].description,
         activityCount: Number(rows[0].activity_count),
       };
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   create: async (data) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const res = await conn.query(
         'INSERT INTO category (name, description) VALUES (?, ?)',
         [data.name, data.description ?? null],
       );
       return Number(res.insertId);
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   update: async (id, data) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const fields = [];
       const values = [];
       if (data.name !== undefined) {
@@ -87,20 +73,14 @@ const Category = {
         values,
       );
       return res.affectedRows > 0;
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   delete: async (id) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const res = await conn.query('DELETE FROM category WHERE id = ?', [id]);
       return res.affectedRows > 0;
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 };
 

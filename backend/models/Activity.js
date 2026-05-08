@@ -1,4 +1,4 @@
-import pool from '../config/db.js';
+import { withConnection } from '../config/db.js';
 
 const Activity = {
   /**
@@ -9,17 +9,13 @@ const Activity = {
    * @returns {Promise<Array<{id: number}>>} Array of activity IDs.
    */
   getAllIds: async () => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       // Only return visible activites
       const rows = await conn.query(
         'SELECT id FROM activity WHERE visible = 1',
       );
       return rows;
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   /**
@@ -30,9 +26,7 @@ const Activity = {
    * @returns {Promise<Object|null>} The activity object or null.
    */
   getById: async (id) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const rows = await conn.query('SELECT * FROM activity WHERE id = ?', [
         id,
       ]);
@@ -60,9 +54,7 @@ const Activity = {
         categories: categories.map((c) => ({ id: c.id, name: c.name })),
         internshipCount: Number(internCount[0].cnt),
       };
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   /**
@@ -74,9 +66,7 @@ const Activity = {
    * @returns {Promise<number>} The ID of the newly created activity.
    */
   create: async (data) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const res = await conn.query(
         'INSERT INTO activity (title, description, visible) VALUES (?, ?, ?)',
         [
@@ -95,9 +85,7 @@ const Activity = {
         }
       }
       return id;
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   /**
@@ -109,9 +97,7 @@ const Activity = {
    * @returns {Promise<boolean>} True if successful.
    */
   update: async (id, data) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const fields = [];
       const values = [];
       if (data.title !== undefined) {
@@ -150,9 +136,7 @@ const Activity = {
         }
       }
       return true;
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 
   /**
@@ -163,17 +147,13 @@ const Activity = {
    * @returns {Promise<boolean>} True if successful.
    */
   delete: async (id) => {
-    let conn;
-    try {
-      conn = await pool.getConnection();
+    return withConnection(async (conn) => {
       const res = await conn.query(
         'UPDATE activity SET visible = 0 WHERE id = ?',
         [id],
       );
       return res.affectedRows > 0;
-    } finally {
-      if (conn) conn.end();
-    }
+    });
   },
 };
 
