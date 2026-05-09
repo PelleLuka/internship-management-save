@@ -1,0 +1,53 @@
+@startuml sequence-create-internship
+' Diagramme de séquence — Création d'un stagiaire (Figure 11 du rapport)
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #1E293B
+  ActorBorderColor #1E293B
+  LifeLineBorderColor #94A3B8
+  ParticipantBorderColor #2563EB
+  ParticipantBackgroundColor #EFF6FF
+  DatabaseBorderColor #16A34A
+  DatabaseBackgroundColor #DCFCE7
+  FontName "Helvetica"
+}
+
+actor "Administrateur" as Admin
+participant "Vue.js\n(InternshipFormModal)" as Vue
+participant "Express\ninternshipController" as API
+participant "internshipService" as SVC
+database "MariaDB\n(person, internship)" as DB
+
+== Saisie ==
+Admin -> Vue : Remplit le formulaire et clique « Enregistrer »
+Vue -> Vue : validate() côté client\n(prénom, nom, email, dates)
+
+== Appel API ==
+Vue -> API : POST /api/internships\n{firstName, lastName, email,\n startDate, endDate}
+
+== Validation backend ==
+API -> SVC : createInternship(data)
+SVC -> SVC : validateFields(data)\n(MISSING_FIELDS, INVALID_EMAIL,\n END_DATE_BEFORE_START, etc.)
+
+alt Validation OK
+  SVC -> DB : INSERT INTO person ...
+  DB --> SVC : insertId (personId)
+  SVC -> DB : INSERT INTO internship\n(person_id, start_date, end_date)
+  DB --> SVC : insertId (internshipId)
+  SVC -> DB : SELECT ... WHERE internship.id = ?\n(via Internship.getById)
+  DB --> SVC : full Internship row
+  SVC --> API : Internship object
+  API --> Vue : 201 Created\n{id, personId, firstName, ...}
+
+  == Mise à jour UI ==
+  Vue -> Vue : Recharge la liste\nFerme le modal
+  Vue --> Admin : Carte ajoutée à la grille
+
+else Validation KO
+  SVC -->X API : throw Error('END_DATE_BEFORE_START')
+  API --> Vue : 422 Unprocessable Entity\n{error: "..."}
+  Vue --> Admin : Affiche le message\nsous le champ concerné
+end
+
+@enduml

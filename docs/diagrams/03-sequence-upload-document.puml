@@ -1,0 +1,54 @@
+@startuml sequence-upload-document
+' Diagramme de séquence — Upload d'un document sur un atelier (Figure 12 du rapport)
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #1E293B
+  ActorBorderColor #1E293B
+  ParticipantBorderColor #2563EB
+  ParticipantBackgroundColor #EFF6FF
+  DatabaseBorderColor #16A34A
+  DatabaseBackgroundColor #DCFCE7
+  FontName "Helvetica"
+}
+
+actor "Administrateur" as Admin
+participant "Vue.js\n(ActivityCard)" as Vue
+participant "Express\n+ multer" as API
+participant "activityService" as SVC
+database "MariaDB\n(activity)" as DB
+collections "Filesystem\n/app/backend/uploads/activities" as FS
+
+== Sélection du fichier ==
+Admin -> Vue : Glisse / sélectionne un fichier
+Vue -> Vue : Build FormData\n{document: <file>}
+
+== Upload ==
+Vue -> API : POST /api/activities/{id}/document\n(multipart/form-data)
+
+== Validation multer ==
+API -> API : fileFilter\n(MIME ∈ liste blanche ?)
+API -> API : limits\n(taille ≤ 10 Mo ?)
+
+alt Fichier rejeté
+  API -->X Vue : 400 Bad Request\n{error: "INVALID_FILE_TYPE" / "File too large"}
+  Vue --> Admin : Modal d'erreur
+else Fichier accepté
+  API -> FS : Stocke <uuid>-<sanitized-name>.<ext>
+  API -> SVC : uploadActivityDocument(id, filename)
+
+  alt Document existant à remplacer
+    SVC -> FS : try unlinkSync(oldPath)
+    note right : Erreur loggée\nvia logger.warn,\nnon propagée
+  end
+
+  SVC -> DB : UPDATE activity\nSET document_url = ?\nWHERE id = ?
+  DB --> SVC : OK
+  SVC --> API : new filename
+  API --> Vue : 200 OK\n{documentUrl, originalName}
+
+  Vue -> Vue : Reload activities\n(getActivityDetails)
+  Vue --> Admin : Zone Documentation\nmise à jour
+end
+
+@enduml

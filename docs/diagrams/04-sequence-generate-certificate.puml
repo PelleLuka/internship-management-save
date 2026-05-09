@@ -1,0 +1,76 @@
+@startuml sequence-generate-certificate
+' Diagramme de séquence — Génération du certificat PDF (Figure 13 du rapport)
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #1E293B
+  ActorBorderColor #1E293B
+  ParticipantBorderColor #2563EB
+  ParticipantBackgroundColor #EFF6FF
+  DatabaseBorderColor #16A34A
+  DatabaseBackgroundColor #DCFCE7
+  FontName "Helvetica"
+}
+
+actor "Administrateur" as Admin
+participant "Vue.js\n(CertificateView)" as Vue
+participant "Express\ncertificateController" as API
+participant "certificateService" as SVC
+database "MariaDB" as DB
+collections "Filesystem" as FS
+participant "carbone.js" as CARB
+participant "LibreOffice\n(soffice.bin)" as LO
+
+== Navigation ==
+Admin -> Vue : Clique « Aperçu du certificat »\nsur la carte d'un stage
+Vue -> Vue : router.push('/certificate/:id')
+
+== Appel API ==
+Vue -> API : GET /api/internships/{id}/certificate
+API -> SVC : generateCertificate(internshipId)
+
+== Vérifications préalables ==
+SVC -> DB : Internship.getById(id)
+DB --> SVC : Internship row
+alt Stage inexistant
+  SVC -->X API : throw NOT_FOUND
+  API --> Vue : 404 Not Found
+end
+
+SVC -> FS : fs.existsSync(template.docx)
+alt Template absent
+  SVC -->X API : throw NO_TEMPLATE
+  API --> Vue : 404 Not Found
+end
+
+SVC -> SVC : isLibreOfficeAvailable()\n(execSync 'which soffice')
+alt LibreOffice indisponible
+  SVC -->X API : throw NO_LIBREOFFICE
+  API --> Vue : 503 Service Unavailable
+end
+
+== Récupération des données ==
+SVC -> DB : Internship.getActivities(internshipId)
+DB --> SVC : [{id}, {id}, ...]
+SVC -> DB : Activity.getById(id) × N\n(parallèle, Promise.all)
+DB --> SVC : [enriched activities]
+
+== Génération ==
+SVC -> SVC : Build data {prenom, nom, email,\n date_debut, date_fin,\n date_emission, ateliers[]}
+SVC -> CARB : carboneRender(template, data,\n {convertTo: 'pdf'})
+CARB -> CARB : Inject {d.prenom},\n {d.ateliers[i].titre}, etc.
+CARB -> LO : soffice.bin --convert-to pdf
+LO --> CARB : PDF buffer
+CARB --> SVC : pdf (Buffer)
+
+== Streaming ==
+SVC --> API : pdf
+API -> API : res.setHeader('Content-Type',\n 'application/pdf')
+API --> Vue : application/pdf (binary stream)
+
+== Affichage ==
+Vue -> Vue : URL.createObjectURL(blob)
+Vue -> Vue : <iframe :src="blobUrl">
+Vue --> Admin : PDF affiché\n+ boutons Imprimer / Télécharger
+
+@enduml

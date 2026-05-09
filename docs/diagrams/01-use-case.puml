@@ -1,0 +1,112 @@
+@startuml use-case
+' Diagramme de cas d'utilisation — WorkXP Admin (Figure 4 du rapport)
+' Coller dans https://www.plantuml.com/plantuml/uml/ ou utiliser
+' l'extension PlantUML de VS Code pour générer le PNG.
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #EFF6FF
+  BorderColor #2563EB
+  ArrowColor #1E293B
+  FontName "Helvetica"
+}
+skinparam actor {
+  BackgroundColor #F8FAFC
+  BorderColor #1E293B
+  FontName "Helvetica"
+}
+left to right direction
+
+actor "Administrateur\nCA TIC" as Admin
+actor "MariaDB" as DB
+
+rectangle "WorkXP Admin" {
+  package "Stagiaires" {
+    usecase "Créer un stagiaire"        as UC_CreateInt
+    usecase "Modifier un stagiaire"     as UC_UpdateInt
+    usecase "Supprimer un stagiaire"    as UC_DeleteInt
+    usecase "Consulter les stagiaires\n(pagination + recherche)" as UC_ListInt
+  }
+
+  package "Ateliers" {
+    usecase "Créer un atelier"          as UC_CreateAct
+    usecase "Modifier un atelier"       as UC_UpdateAct
+    usecase "Supprimer un atelier\n(soft delete)" as UC_DeleteAct
+    usecase "Consulter le catalogue"    as UC_ListAct
+    usecase "Téléverser un document"    as UC_UploadDoc
+    usecase "Télécharger un document"   as UC_DownloadDoc
+    usecase "Supprimer un document"     as UC_DeleteDoc
+  }
+
+  package "Catégories" {
+    usecase "Créer une catégorie"       as UC_CreateCat
+    usecase "Modifier une catégorie"    as UC_UpdateCat
+    usecase "Supprimer une catégorie"   as UC_DeleteCat
+  }
+
+  package "Associations" {
+    usecase "Associer un atelier\nà un stage"     as UC_LinkAct
+    usecase "Dissocier un atelier\nd'un stage"    as UC_UnlinkAct
+    usecase "Lister les ateliers\nd'un stagiaire" as UC_ListInternAct
+  }
+
+  package "Certificat" {
+    usecase "Générer le certificat\nPDF d'un stage" as UC_GenCert
+    usecase "Téléverser le template\ndu certificat" as UC_UploadTpl
+    usecase "Télécharger le template\nactuel"       as UC_DownloadTpl
+  }
+}
+
+' === Liens administrateur → cas d'utilisation ===
+Admin --> UC_CreateInt
+Admin --> UC_UpdateInt
+Admin --> UC_DeleteInt
+Admin --> UC_ListInt
+
+Admin --> UC_CreateAct
+Admin --> UC_UpdateAct
+Admin --> UC_DeleteAct
+Admin --> UC_ListAct
+Admin --> UC_UploadDoc
+Admin --> UC_DownloadDoc
+Admin --> UC_DeleteDoc
+
+Admin --> UC_CreateCat
+Admin --> UC_UpdateCat
+Admin --> UC_DeleteCat
+
+Admin --> UC_LinkAct
+Admin --> UC_UnlinkAct
+Admin --> UC_ListInternAct
+
+Admin --> UC_GenCert
+Admin --> UC_UploadTpl
+Admin --> UC_DownloadTpl
+
+' === Liens DB (acteur secondaire) ===
+DB <-- UC_ListInt
+DB <-- UC_CreateInt
+DB <-- UC_GenCert
+DB <-- UC_LinkAct
+
+' === Contraintes métier (notes) ===
+note right of UC_DeleteAct
+  Bloqué si l'atelier est lié
+  à au moins un stagiaire
+  (HTTP 409 — HAS_LINKED_INTERNSHIPS)
+end note
+
+note right of UC_DeleteCat
+  Bloqué si la catégorie est liée
+  à au moins un atelier
+  (HTTP 409 — HAS_LINKED_ACTIVITIES)
+end note
+
+note right of UC_GenCert
+  Requiert : template DOCX uploadé
+  et LibreOffice disponible
+  dans le conteneur backend
+end note
+
+@enduml

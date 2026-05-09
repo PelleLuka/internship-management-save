@@ -1,0 +1,58 @@
+@startuml architecture
+' Schéma d'architecture 3-tiers (Figure 10 du rapport)
+
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #EFF6FF
+  BorderColor #2563EB
+  FontName "Helvetica"
+}
+skinparam database {
+  BackgroundColor #DCFCE7
+  BorderColor #16A34A
+  FontName "Helvetica"
+}
+skinparam cloud {
+  BackgroundColor #FEF3C7
+  BorderColor #D97706
+}
+skinparam ArrowColor #1E293B
+
+actor "Administrateur\nCA TIC" as Admin
+
+cloud "Navigateur" as Browser
+
+frame "Docker Compose — réseau app-network" {
+  rectangle "Frontend\nNginx + build Vite\n:8081" as Front #EFF6FF
+  rectangle "Backend\nNode.js 22 + Express.js\n+ LibreOffice (carbone)\n:3000" as Back #EFF6FF
+  database "MariaDB 10\n:3306" as DB #DCFCE7
+  rectangle "Backup\nAlpine + mariadb-client\n+ crond (hebdo)" as Bk #FEF3C7
+  rectangle "Volumes\n• mariadb_data (named)\n• backend/uploads (bind)\n• backup/data (bind)" as Vols #F8FAFC
+}
+
+Admin -down-> Browser : Saisie / clics
+Browser -down-> Front : HTTP / static files\n(SPA Vue.js bundle)
+Browser -right-> Back : XHR /api/*\n(proxifié par Nginx)
+Front .right.> Back : proxy /api/*\n(vhost Nginx)
+Back -down-> DB : SQL\n(driver mariadb-node, pool 5)
+Back -right-> Vols : R/W documents,\ntemplate certificat
+Bk -down-> DB : mariadb-dump\n(0 6 * * 1)
+Bk -right-> Vols : dumps SQL\nbackup_<date>.sql
+
+note bottom of Back
+  Pattern Routes → Controller →
+  Service → Model.
+  Helpers : withConnection(fn),
+  validation env vars au boot,
+  promisify(carbone.render).
+end note
+
+note right of DB
+  6 tables :
+  person, internship,
+  activity, category,
+  internship_activity (CASCADE),
+  activity_category (RESTRICT)
+end note
+
+@enduml

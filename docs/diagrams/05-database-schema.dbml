@@ -1,0 +1,78 @@
+// Modèle relationnel WorkXP Admin (Figure 14 du rapport)
+// Coller dans https://dbdiagram.io/ pour générer un MCD/MLD visuel
+// puis exporter en PNG / PDF.
+
+Project workxp_admin {
+  database_type: 'MariaDB'
+  Note: 'Schéma de la base de données WorkXP Admin — 6 tables, FK CASCADE/RESTRICT'
+}
+
+Table person [headercolor: #2563EB] {
+  id           int          [pk, increment]
+  first_name   varchar(80)  [not null]
+  last_name    varchar(80)  [not null]
+  email        varchar(254) [not null]
+
+  Note: 'Identité du stagiaire — référencée par internship.person_id (CASCADE)'
+}
+
+Table internship [headercolor: #2563EB] {
+  id          int  [pk, increment]
+  person_id   int  [not null, ref: > person.id]
+  start_date  date [not null]
+  end_date    date [not null]
+
+  Note: '''
+    Stage — un stagiaire peut en avoir plusieurs.
+    CHECK: end_date >= start_date (contrainte SQL).
+    Statut À venir / En cours / Terminé calculé côté frontend.
+  '''
+}
+
+Table activity [headercolor: #2563EB] {
+  id            int          [pk, increment]
+  title         varchar(255) [not null]
+  description   text         [null]
+  document_url  varchar(500) [null, note: 'Stored as <uuid>-<name>.<ext>']
+  visible       boolean      [not null, default: true, note: 'Soft delete: false = caché du catalogue']
+
+  Note: 'Catalogue des ateliers — soft delete pour préserver les historiques'
+}
+
+Table category [headercolor: #2563EB] {
+  id           int          [pk, increment]
+  name         varchar(100) [not null]
+  description  text         [null]
+
+  Note: 'Catégories de classification — Développement, Système, Réseau, Hardware, Graphisme, Modélisation 3D'
+}
+
+Table internship_activity [headercolor: #16A34A] {
+  internship_id int [not null, ref: > internship.id]
+  activity_id   int [not null, ref: > activity.id]
+
+  indexes {
+    (internship_id, activity_id) [pk]
+  }
+
+  Note: '''
+    Jonction N:M : ateliers réalisés par chaque stagiaire.
+    FK internship_id : ON DELETE CASCADE (suppression d'un stage retire ses liens).
+    FK activity_id   : ON DELETE RESTRICT (un atelier lié ne peut pas être supprimé).
+  '''
+}
+
+Table activity_category [headercolor: #16A34A] {
+  activity_id int [not null, ref: > activity.id]
+  category_id int [not null, ref: > category.id]
+
+  indexes {
+    (activity_id, category_id) [pk]
+  }
+
+  Note: '''
+    Jonction N:M : catégories d'un atelier.
+    FK activity_id : ON DELETE CASCADE (suppression d'un atelier retire ses liens).
+    FK category_id : ON DELETE RESTRICT (une catégorie liée ne peut pas être supprimée).
+  '''
+}
