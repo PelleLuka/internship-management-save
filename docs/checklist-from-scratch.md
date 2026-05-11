@@ -9,7 +9,8 @@ Les phases documentation et tests sont intégrées en continu ; une phase de vé
 
 ### Lecture du cahier des charges
 
-- [ ] Lire le cahier des charges en entier
+- [X] Lire le cahier des charges en entier
+- [ ] Création de la planificiation.
 - [ ] Identifier et noter les 5 exigences fonctionnelles (stagiaires, ateliers, catégories, association, certificat)
 - [ ] Identifier les technologies imposées : Vue.js 3, Express.js, MariaDB
 
