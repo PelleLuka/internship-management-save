@@ -93,8 +93,6 @@
       "Bash(git -C /Users/pellegrinelliluka/projects/Test-internship-management show 597f746 --stat)",
       "Bash(git -C /Users/pellegrinelliluka/projects/Test-internship-management show b64d898 --stat)"
     ],
-    "additionalDirectories": [
-      "/private/tmp"
-    ]
+    "additionalDirectories": ["/private/tmp"]
   }
 }
